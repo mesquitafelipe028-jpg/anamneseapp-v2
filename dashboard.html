@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel — AnamneseApp</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/config.js"></script>
+<style>
+:root {
+  --bg:      #f7f5f0;
+  --white:   #ffffff;
+  --ink:     #1a1814;
+  --muted:   #9a9588;
+  --border:  #e4e0d8;
+  --olive:   #6b7a42;
+  --gold:    #a8893a;
+  --cream:   #f0ece3;
+  --danger:  #c0392b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+
+/* ── AUTH SCREEN ── */
+#authScreen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.auth-card{
+  background:var(--white);border:1px solid var(--border);border-radius:16px;
+  padding:48px 40px;width:100%;max-width:400px;text-align:center;
+}
+.auth-logo{
+  font-family:'Instrument Serif',serif;font-style:italic;font-size:28px;
+  color:var(--olive);margin-bottom:6px;
+}
+.auth-logo span{font-style:normal;color:var(--ink);}
+.auth-sub{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:36px;}
+.auth-title{font-family:'Instrument Serif',serif;font-size:24px;font-weight:400;color:var(--ink);margin-bottom:28px;}
+.auth-tabs{display:flex;background:var(--cream);border-radius:8px;padding:4px;margin-bottom:28px;}
+.auth-tab{
+  flex:1;padding:9px;border:none;background:none;font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:6px;transition:all .2s;
+}
+.auth-tab.active{background:var(--white);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08);}
+.field{margin-bottom:16px;text-align:left;}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.field input{
+  width:100%;padding:13px 14px;background:var(--cream);border:1px solid var(--border);
+  border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);
+  outline:none;transition:border-color .2s;
+}
+.field input:focus{border-color:var(--olive);}
+.btn-auth{
+  width:100%;padding:15px;background:var(--olive);color:#fff;border:none;border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;letter-spacing:.5px;
+  cursor:pointer;transition:opacity .2s;margin-top:8px;
+}
+.btn-auth:hover{opacity:.88;}
+.auth-msg{font-size:13px;margin-top:14px;min-height:20px;}
+.auth-msg.err{color:var(--danger);}
+.auth-msg.ok{color:var(--olive);}
+
+/* ── DASHBOARD ── */
+#dashboard{display:none;}
+.topbar{
+  background:var(--white);border-bottom:1px solid var(--border);
+  height:60px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.topbar-logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:20px;color:var(--olive);}
+.topbar-logo span{font-style:normal;color:var(--ink);}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.topbar-user{font-size:13px;color:var(--muted);}
+.btn-logout{
+  padding:8px 16px;background:none;border:1px solid var(--border);border-radius:6px;
+  font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;
+  transition:all .2s;
+}
+.btn-logout:hover{border-color:var(--danger);color:var(--danger);}
+
+.dash-inner{max-width:1080px;margin:0 auto;padding:36px 24px;}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px;}
+.stat-card{
+  background:var(--white);border:1px solid var(--border);border-radius:10px;
+  padding:20px 18px;
+}
+.stat-val{font-family:'Instrument Serif',serif;font-size:36px;font-weight:400;color:var(--ink);line-height:1;}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.5px;}
+.stat-card.highlight{background:var(--olive);}
+.stat-card.highlight .stat-val,.stat-card.highlight .stat-lbl{color:#fff;}
+.stat-card.highlight .stat-lbl{color:rgba(255,255,255,.7);}
+
+/* Table */
+.section-hd{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;
+}
+.section-hd h2{font-family:'Instrument Serif',serif;font-size:24px;font-weight:400;}
+.search-input{
+  padding:10px 14px;background:var(--white);border:1px solid var(--border);
+  border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);
+  outline:none;width:220px;transition:border-color .2s;
+}
+.search-input:focus{border-color:var(--olive);}
+.table-wrap{
+  background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;
+}
+table{width:100%;border-collapse:collapse;}
+thead{background:var(--cream);}
+th{
+  padding:12px 16px;text-align:left;font-size:10px;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);
+}
+td{padding:14px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--cream);}
+.badge-mode{
+  padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.5px;
+}
+.badge-o{background:rgba(107,122,66,.1);color:var(--olive);}
+.badge-p{background:rgba(168,137,58,.1);color:var(--gold);}
+.btn-view{
+  padding:6px 14px;background:none;border:1px solid var(--border);border-radius:6px;
+  font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;
+  transition:all .2s;
+}
+.btn-view:hover{border-color:var(--olive);color:var(--olive);}
+.empty-state{text-align:center;padding:60px 24px;color:var(--muted);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-title{font-family:'Instrument Serif',serif;font-size:20px;color:var(--ink);margin-bottom:8px;}
+.empty-desc{font-size:13px;line-height:1.7;}
+
+/* Share banner */
+.share-banner{
+  background:var(--olive);border-radius:12px;padding:24px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:28px;gap:16px;flex-wrap:wrap;
+}
+.share-left{color:#fff;}
+.share-left h3{font-family:'Instrument Serif',serif;font-size:20px;font-weight:400;margin-bottom:4px;}
+.share-left p{font-size:13px;opacity:.8;}
+.share-link-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.share-link-box{
+  padding:10px 14px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);
+  border-radius:6px;font-size:13px;color:#fff;min-width:260px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.btn-copy{
+  padding:10px 18px;background:#fff;color:var(--olive);border:none;border-radius:6px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;
+  transition:opacity .2s;white-space:nowrap;
+}
+.btn-copy:hover{opacity:.88;}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;
+  display:none;align-items:center;justify-content:center;padding:24px;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--white);border-radius:16px;max-width:600px;width:100%;
+  max-height:85vh;overflow-y:auto;
+}
+.modal-hd{
+  padding:24px 28px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;
+}
+.modal-hd h3{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;}
+.modal-close{background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1;}
+.modal-body{padding:24px 28px;}
+.modal-block{margin-bottom:24px;}
+.modal-block-title{
+  font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  color:var(--olive);margin-bottom:12px;
+}
+.modal-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:12px;}
+.modal-row:last-child{border:none;}
+.modal-row .mk{color:var(--muted);flex-shrink:0;}
+.modal-row .mv{color:var(--ink);text-align:right;font-weight:300;word-break:break-word;}
+
+/* Spinner */
+.spinner-wrap{text-align:center;padding:48px;color:var(--muted);font-size:13px;}
+.spin{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--olive);
+  border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 12px;}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+@media(max-width:640px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .topbar{padding:0 16px;}
+  .dash-inner{padding:20px 16px;}
+  .share-banner{flex-direction:column;}
+  .auth-card{padding:32px 24px;}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">Anamnese<span>App</span></div>
+    <div class="auth-sub">Painel do Profissional</div>
+    <div class="auth-title">Acesse sua conta</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Entrar</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchTab('signup')">Cadastrar</button>
+    </div>
+    <div id="loginForm">
+      <div class="field"><label>E-mail</label><input type="email" id="loginEmail" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+      <button class="btn-auth" onclick="doLogin()">Entrar</button>
+    </div>
+    <div id="signupForm" style="display:none">
+      <div class="field"><label>Seu nome</label><input type="text" id="signupName" placeholder="Dr. Lucas Ferreira"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="signupEmail" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="signupPass" placeholder="mínimo 6 caracteres"></div>
+      <button class="btn-auth" onclick="doSignup()">Criar conta</button>
+    </div>
+    <div class="auth-msg" id="authMsg"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-logo">Anamnese<span>App</span></div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topUser"></span>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="dash-inner">
+    <!-- Share banner -->
+    <div class="share-banner">
+      <div class="share-left">
+        <h3>Seu link de anamnese</h3>
+        <p>Compartilhe com seus pacientes pelo WhatsApp ou Instagram</p>
+      </div>
+      <div class="share-link-row">
+        <div class="share-link-box" id="shareLink">—</div>
+        <button class="btn-copy" onclick="copyLink()">Copiar link</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card highlight">
+        <div class="stat-val" id="statTotal">—</div>
+        <div class="stat-lbl">Total de fichas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="statOnline">—</div>
+        <div class="stat-lbl">Online</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="statPresencial">—</div>
+        <div class="stat-lbl">Presencial</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="statWeek">—</div>
+        <div class="stat-lbl">Esta semana</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="section-hd">
+      <h2>Fichas recebidas</h2>
+      <input class="search-input" id="searchInput" placeholder="Buscar paciente…" oninput="filterTable()">
+    </div>
+    <div class="table-wrap">
+      <div id="tableContent">
+        <div class="spinner-wrap"><div class="spin"></div>Carregando fichas…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-hd">
+      <h3 id="modalTitle">Anamnese</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE INIT ──
+const SB_URL  = window.SUPABASE_URL  || '';
+const SB_ANON = window.SUPABASE_ANON || '';
+if (!SB_URL || !SB_ANON || SB_URL === 'COLE_SUA_URL_AQUI') {
+  document.getElementById('authScreen').innerHTML =
+    '<p style="padding:80px 24px;text-align:center;font-family:sans-serif;color:#9a9588;font-size:14px">Preencha as chaves Supabase em <code>config.js</code> antes do deploy.</p>';
+  throw new Error('Supabase keys not configured.');
+}
+const sb = supabase.createClient(SB_URL, SB_ANON);
+
+let allRows = [];
+let profId  = null;
+
+// ── AUTH TABS ──
+function switchTab(t){
+  document.getElementById('loginForm').style.display  = t==='login'  ? '' : 'none';
+  document.getElementById('signupForm').style.display = t==='signup' ? '' : 'none';
+  document.getElementById('tabLogin').classList.toggle('active',  t==='login');
+  document.getElementById('tabSignup').classList.toggle('active', t==='signup');
+  document.getElementById('authMsg').textContent = '';
+}
+
+function setMsg(txt, type='err'){
+  const el = document.getElementById('authMsg');
+  el.textContent = txt; el.className = 'auth-msg ' + type;
+}
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  if(!email||!pass){ setMsg('Preencha e-mail e senha.'); return; }
+  setMsg('Entrando…','ok');
+  const {error} = await sb.auth.signInWithPassword({email, password:pass});
+  if(error){ setMsg(error.message); } else { await loadDashboard(); }
+}
+
+async function doSignup(){
+  const name  = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const pass  = document.getElementById('signupPass').value;
+  if(!name||!email||!pass){ setMsg('Preencha todos os campos.'); return; }
+  if(pass.length < 6){ setMsg('Senha mínimo 6 caracteres.'); return; }
+  setMsg('Criando conta…','ok');
+  const {data, error} = await sb.auth.signUp({email, password:pass});
+  if(error){ setMsg(error.message); return; }
+  // Create professional record
+  await sb.from('professionals').insert({user_id: data.user.id, name, specialty:'personal'});
+  setMsg('Conta criada! Verifique seu e-mail se necessário.','ok');
+  setTimeout(()=>loadDashboard(), 1200);
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+}
+
+// ── DASHBOARD ──
+async function loadDashboard(){
+  const {data:{user}} = await sb.auth.getUser();
+  if(!user) return;
+
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display  = 'block';
+  document.getElementById('topUser').textContent = user.email;
+
+  // Get professional
+  const {data:prof} = await sb.from('professionals').select('*').eq('user_id', user.id).single();
+  if(prof){ profId = prof.id; }
+
+  // Share link
+  const link = window.location.origin + '/anamnese';
+  document.getElementById('shareLink').textContent = link;
+
+  // Load anamneses
+  await loadAnamneses();
+}
+
+async function loadAnamneses(){
+  if(!profId){ renderEmpty(); return; }
+  const {data, error} = await sb
+    .from('anamneses')
+    .select('*')
+    .eq('professional_id', profId)
+    .order('created_at', {ascending: false});
+
+  if(error || !data){ renderEmpty(); return; }
+  allRows = data;
+  updateStats(data);
+  renderTable(data);
+}
+
+function updateStats(rows){
+  const now   = new Date();
+  const week  = new Date(now - 7*24*60*60*1000);
+  document.getElementById('statTotal').textContent     = rows.length;
+  document.getElementById('statOnline').textContent    = rows.filter(r=>r.mode==='online').length;
+  document.getElementById('statPresencial').textContent= rows.filter(r=>r.mode==='presencial').length;
+  document.getElementById('statWeek').textContent      = rows.filter(r=>new Date(r.created_at)>week).length;
+}
+
+function renderTable(rows){
+  if(!rows.length){ renderEmpty(); return; }
+  let html = `<table>
+    <thead><tr>
+      <th>Paciente</th><th>Modalidade</th><th>Objetivo</th><th>Data</th><th></th>
+    </tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const d = r.data || {};
+    const dt = new Date(r.created_at).toLocaleDateString('pt-BR');
+    html += `<tr>
+      <td><strong>${r.patient_name||d.nome||'—'}</strong><br><span style="font-size:11px;color:#9a9588">${r.patient_phone||d.fone||''}</span></td>
+      <td><span class="badge-mode ${r.mode==='online'?'badge-o':'badge-p'}">${r.mode==='online'?'Online':'Presencial'}</span></td>
+      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.obj||'—'}</td>
+      <td style="color:#9a9588;white-space:nowrap">${dt}</td>
+      <td><button class="btn-view" onclick="openModal('${r.id}')">Ver ficha</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('tableContent').innerHTML = html;
+}
+
+function renderEmpty(){
+  document.getElementById('tableContent').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Nenhuma ficha ainda</div>
+      <div class="empty-desc">Compartilhe seu link com pacientes para começar a receber anamneses.</div>
+    </div>`;
+}
+
+function filterTable(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allRows.filter(r=>{
+    const nome = (r.patient_name||r.data?.nome||'').toLowerCase();
+    const fone = (r.patient_phone||r.data?.fone||'').toLowerCase();
+    return nome.includes(q)||fone.includes(q);
+  });
+  renderTable(filtered);
+}
+
+// ── MODAL ──
+const LABELS = {
+  nome:'Nome',nasc:'Nascimento',cidade:'Cidade',sexo:'Sexo',profissao:'Profissão',
+  carga:'Carga horária',origem:'Como encontrou',obj:'Objetivo',tempo_obj:'Tempo do objetivo',
+  tentativas:'Tentativas anteriores',resultado:'Resultado esperado',nivel:'Nível',
+  treina_agora:'Treina atualmente',freq_atual:'Frequência atual',modalidades:'Modalidades',
+  relacao:'Relação com exercício',duracao:'Duração sessão',local:'Local',
+  equip:'Equipamentos',horario:'Horários',diag:'Diagnósticos',meds:'Medicamentos',
+  lesoes:'Lesões/dores',cirurg:'Cirurgias',liberacao:'Liberação médica',gestante:'Gestante/pós-parto',
+  sono_h:'Horas de sono',sono_q:'Qualidade sono',estresse:'Estresse',alcool:'Álcool',
+  fuma:'Fuma',nutri:'Nutricionista',alimentacao:'Alimentação',
+  peso:'Peso',altura:'Altura',medidas:'Medidas em casa',fotos:'Fotos enviadas',
+  aval_anterior:'Avaliação anterior',formato:'Formato treino',canal:'Canal',
+  feedback:'Frequência feedback',obstaculos:'Obstáculos',comprometimento:'Comprometimento',
+  fone:'Telefone',email:'E-mail',turno:'Turno',indicacao:'Indicação',prazo:'Prazo',
+  motivacao:'Motivação',metas:'Metas anteriores',tempo_pratica:'Tempo prática',pausa:'Motivo pausa',
+  dias:'Dias disponíveis',horarios:'Horários',freq:'Frequência',formato_treino:'Formato',
+  histo_cv:'Histórico CV familiar',pressao:'Pressão arterial',sintomas:'Sintomas',
+  parq:'PAR-Q',fem:'Situação feminina',circunf:'Circunferências',metodo:'Método',
+  fotos_av:'Fotos avaliação',testes:'Testes funcionais',postura:'Postura',
+  at_espon:'Atividade espontânea',hidrat:'Hidratação',
+  nao_func:'O que não funcionou',barreiras:'Barreiras',expect:'Expectativas',
+  autonomia:'Autonomia',motivacao_est:'Estilo motivação',motiv_est:'Estilo motivação'
+};
+
+function openModal(id){
+  const row = allRows.find(r=>r.id===id);
+  if(!row) return;
+  const d = row.data || {};
+  const dt = new Date(row.created_at).toLocaleString('pt-BR');
+  document.getElementById('modalTitle').textContent = row.patient_name||d.nome||'Anamnese';
+  let html = `<div style="font-size:12px;color:#9a9588;margin-bottom:20px">${row.mode==='online'?'Consultoria Online':'Presencial'} · ${dt}</div>`;
+  // Group by known keys
+  const entries = Object.entries(d).filter(([k,v])=>v&&v!=='—');
+  if(entries.length){
+    html += '<div class="modal-block"><div class="modal-block-title">Todos os dados</div>';
+    entries.forEach(([k,v])=>{
+      html += `<div class="modal-row"><span class="mk">${LABELS[k]||k}</span><span class="mv">${v}</span></div>`;
+    });
+    html += '</div>';
+  }
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e){
+  if(!e||e.target===document.getElementById('modalOverlay')||e.currentTarget===document.querySelector('.modal-close')){
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+function copyLink(){
+  const link = window.location.origin + '/anamnese';
+  navigator.clipboard.writeText(link).then(()=>{
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = 'Copiado ✓';
+    setTimeout(()=>btn.textContent='Copiar link', 2000);
+  });
+}
+
+// ── AUTO-LOGIN CHECK ──
+(async()=>{
+  const {data:{session}} = await sb.auth.getSession();
+  if(session) await loadDashboard();
+})();
+</script>
+</body>
+</html>

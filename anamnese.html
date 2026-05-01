@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#f5f2ec">
+<title>LP Consultoria & Treinamento — Anamnese</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/config.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+body {
+  background-color: #f5f2ec;
+  color: #1c1a15;
+  font-family: 'Jost', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── LANDING ── */
+#landing {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 56px 24px 60px; min-height: 100vh;
+}
+.brand-mark { text-align: center; margin-bottom: 40px; }
+.brand-crest {
+  width: 80px; height: 80px; border-radius: 50%;
+  border: 1.5px solid #c8c2b2; background: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 4px 20px rgba(107,122,66,.1);
+}
+.brand-lp {
+  font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600;
+  letter-spacing: 4px; color: #6b7a42; line-height: 1;
+}
+.brand-sub { font-size: 9px; letter-spacing: 3.5px; text-transform: uppercase; color: #7a7668; }
+
+/* Phone input on landing */
+.land-phone { width: 100%; max-width: 460px; margin-bottom: 28px; }
+.land-phone label {
+  display: block; font-size: 11px; font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase; color: #7a7668; margin-bottom: 8px;
+}
+.land-phone input {
+  width: 100%; background: #fff; border: 1.5px solid #e0dbd0; border-radius: 12px;
+  padding: 14px 16px; color: #1c1a15; font-family: 'Jost', sans-serif;
+  font-size: 16px; font-weight: 400; outline: none;
+  transition: border-color 0.2s; appearance: none; -webkit-appearance: none;
+}
+.land-phone input:focus { border-color: #6b7a42; }
+.land-phone input::placeholder { color: #b0ab9e; }
+.land-phone .land-phone-hint { font-size: 11px; color: #b0ab9e; margin-top: 6px; }
+
+/* Preview screen */
+.preview-wrap { animation: fIn 0.28s ease forwards; }
+.preview-hd {
+  background: #fff; border: 1px solid #e0dbd0; border-radius: 16px;
+  padding: 20px 20px 16px; margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.preview-hd-title { font-family: 'Cormorant Garamond',serif; font-size: 26px; font-weight: 400; color: #1c1a15; }
+.preview-hd-sub { font-size: 11px; color: #7a7668; margin-top: 2px; letter-spacing: 0.5px; }
+.preview-badge { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; padding: 6px 12px; border-radius: 20px; }
+.preview-badge.o { background: rgba(107,122,66,.1); color: #6b7a42; }
+.preview-badge.p { background: rgba(168,137,58,.1); color: #a8893a; }
+
+.pblock {
+  background: #fff; border: 1px solid #e0dbd0; border-radius: 14px;
+  padding: 18px 18px 12px; margin-bottom: 8px; overflow: hidden;
+}
+.pblock-title {
+  font-size: 10px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.pblock-title.o { color: #6b7a42; }
+.pblock-title.p { color: #a8893a; }
+.pblock-num {
+  width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.pblock-num.o { border-color: #6b7a42; color: #6b7a42; }
+.pblock-num.p { border-color: #a8893a; color: #a8893a; }
+.prow { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid #f0ede6; gap: 12px; font-size: 13px; }
+.prow:last-child { border: none; padding-bottom: 0; }
+.pk { color: #7a7668; font-size: 11px; letter-spacing: 0.5px; flex-shrink: 0; max-width: 140px; }
+.pv { color: #1c1a15; text-align: right; font-weight: 400; word-break: break-word; }
+.pv.empty { color: #b0ab9e; font-style: italic; }
+
+.preview-nav { padding-top: 16px; }
+.preview-actions { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
+.land-title {
+  font-family: 'Cormorant Garamond', serif; font-size: clamp(32px,8vw,50px);
+  font-weight: 400; line-height: 1.1; text-align: center; color: #1c1a15; margin-bottom: 14px;
+}
+.land-title em { font-style: italic; color: #6b7a42; }
+.land-desc { font-size: 14px; color: #7a7668; text-align: center; line-height: 1.8; max-width: 320px; margin-bottom: 40px; }
+.divider-ln { width: 36px; height: 1px; background: #ccc8bc; margin: 0 auto 40px; }
+
+.mode-cards { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 460px; }
+.mcard {
+  background: #fff; border: 1.5px solid #e0dbd0; border-radius: 14px;
+  padding: 22px 20px; cursor: pointer; display: flex; align-items: center; gap: 16px;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.15s;
+  -webkit-user-select: none; user-select: none;
+}
+.mcard:active { transform: scale(0.98); }
+.mcard.online:hover  { border-color: #8a9a58; box-shadow: 0 4px 18px rgba(107,122,66,.13); }
+.mcard.presencial:hover { border-color: #c9a84c; box-shadow: 0 4px 18px rgba(168,137,58,.13); }
+.mcard-icon {
+  width: 50px; height: 50px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+}
+.mcard.online   .mcard-icon { background: rgba(107,122,66,.1); }
+.mcard.presencial .mcard-icon { background: rgba(168,137,58,.1); }
+.mcard-info { flex: 1; }
+.mcard-tag { font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; margin-bottom: 3px; }
+.mcard.online   .mcard-tag { color: #6b7a42; }
+.mcard.presencial .mcard-tag { color: #a8893a; }
+.mcard-title { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 500; color: #1c1a15; margin-bottom: 3px; }
+.mcard-body { font-size: 12px; color: #7a7668; line-height: 1.5; }
+.mcard-arr { font-size: 20px; color: #b0ab9e; flex-shrink: 0; transition: transform 0.2s, color 0.2s; }
+.mcard:hover .mcard-arr { transform: translateX(4px); }
+.mcard.online:hover .mcard-arr   { color: #6b7a42; }
+.mcard.presencial:hover .mcard-arr { color: #a8893a; }
+
+/* ── FORM SHELL ── */
+#formShell { display: none; background-color: #f5f2ec; min-height: 100vh; }
+.fhdr {
+  position: sticky; top: 0; z-index: 100;
+  background-color: rgba(245,242,236,0.95);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e0dbd0;
+  padding: 0 20px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.fhdr-brand { display: flex; flex-direction: column; }
+.fhdr-name { font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 500; letter-spacing: 3px; }
+.fhdr-name.online    { color: #6b7a42; }
+.fhdr-name.presencial { color: #a8893a; }
+.fhdr-mode { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #7a7668; }
+.fhdr-r { display: flex; align-items: center; gap: 12px; }
+.fhdr-cnt { font-size: 12px; color: #7a7668; font-weight: 500; }
+.btn-voltar {
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: #7a7668; background: none; border: none; cursor: pointer;
+  font-family: 'Jost', sans-serif; transition: color 0.2s;
+}
+.btn-voltar:hover { color: #1c1a15; }
+
+.pbar { height: 3px; background: #e0dbd0; }
+.pfill { height: 100%; transition: width 0.5s ease; }
+.pfill.online    { background: linear-gradient(90deg,#505d30,#8a9a58); }
+.pfill.presencial { background: linear-gradient(90deg,#8a6c20,#c9a84c); }
+
+.sdots { display: flex; gap: 5px; padding: 14px 20px; justify-content: center; }
+.sdot { height: 3px; border-radius: 2px; background: #e0dbd0; cursor: pointer; transition: all 0.25s; flex: 1; max-width: 30px; }
+.sdot.done-o  { background: #8a9a58; opacity: .4; }
+.sdot.done-p  { background: #c9a84c; opacity: .4; }
+.sdot.act-o   { background: #6b7a42; max-width: 52px; }
+.sdot.act-p   { background: #a8893a; max-width: 52px; }
+
+.fbody { max-width: 560px; margin: 0 auto; padding: 8px 16px 80px; }
+
+/* ── FORM CARD ── */
+.form-card {
+  background: #fff; border: 1px solid #e0dbd0; border-radius: 16px;
+  padding: 24px 20px; margin-bottom: 14px;
+  animation: fIn 0.28s ease forwards;
+}
+@keyframes fIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+.sec-badge { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.sec-num {
+  width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; border: 1.5px solid;
+}
+.sec-num.o { border-color: #6b7a42; color: #6b7a42; }
+.sec-num.p { border-color: #a8893a; color: #a8893a; }
+.sec-tag { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #7a7668; }
+.sec-title {
+  font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 400;
+  letter-spacing: 1px; color: #1c1a15; margin-bottom: 4px; line-height: 1.15;
+}
+.sec-req { font-size: 11px; color: #b0ab9e; margin-bottom: 22px; }
+.rmark.o { color: #6b7a42; }
+.rmark.p { color: #a8893a; }
+
+/* Fields */
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
+.field label {
+  display: block; font-size: 11px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; color: #7a7668; margin-bottom: 8px;
+}
+.rstar.o { color: #6b7a42; margin-left: 2px; }
+.rstar.p { color: #a8893a; margin-left: 2px; }
+
+.field input, .field select, .field textarea {
+  width: 100%; background: #f5f2ec; border: 1.5px solid #e0dbd0;
+  border-radius: 10px; padding: 13px 14px; color: #1c1a15;
+  font-family: 'Jost', sans-serif; font-size: 15px; font-weight: 400;
+  outline: none; transition: border-color 0.2s, background 0.2s;
+  appearance: none; -webkit-appearance: none;
+}
+.field input::placeholder, .field textarea::placeholder { color: #b0ab9e; font-size: 14px; }
+.online-form .field input:focus,
+.online-form .field select:focus,
+.online-form .field textarea:focus { border-color: #6b7a42; background: #fff; }
+.presencial-form .field input:focus,
+.presencial-form .field select:focus,
+.presencial-form .field textarea:focus { border-color: #a8893a; background: #fff; }
+.field textarea { resize: vertical; min-height: 86px; line-height: 1.6; }
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23b0ab9e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+  background-color: #f5f2ec; padding-right: 38px; cursor: pointer;
+}
+.field .hint { font-size: 11px; color: #b0ab9e; margin-top: 6px; line-height: 1.5; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 9px 14px; border-radius: 8px; border: 1.5px solid #e0dbd0;
+  background: #f5f2ec; color: #7a7668; font-family: 'Jost',sans-serif;
+  font-size: 13px; font-weight: 400; cursor: pointer;
+  transition: all 0.18s; -webkit-user-select: none; user-select: none;
+}
+.chip:hover { border-color: #ccc8bc; color: #1c1a15; }
+.online-form   .chip.sel { border-color: #6b7a42; color: #6b7a42; background: rgba(107,122,66,.08); font-weight: 500; }
+.presencial-form .chip.sel { border-color: #a8893a; color: #a8893a; background: rgba(168,137,58,.08); font-weight: 500; }
+
+/* Toggle */
+.tog-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 14px; background: #f5f2ec; border: 1.5px solid #e0dbd0;
+  border-radius: 10px; margin-bottom: 10px; cursor: pointer;
+  transition: border-color 0.2s; gap: 12px;
+}
+.tog-row:last-child { margin-bottom: 0; }
+.online-form   .tog-row:hover { border-color: #6b7a42; }
+.presencial-form .tog-row:hover { border-color: #a8893a; }
+.tog-label { font-size: 14px; color: #1c1a15; font-weight: 400; line-height: 1.4; }
+.sw {
+  width: 44px; height: 24px; border-radius: 12px; background: #d8d3c8;
+  position: relative; flex-shrink: 0; transition: background 0.25s;
+}
+.sw::after {
+  content: ''; width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  position: absolute; top: 3px; left: 3px; transition: transform 0.25s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.online-form   .sw.on { background: #6b7a42; }
+.presencial-form .sw.on { background: #a8893a; }
+.sw.on::after { transform: translateX(20px); }
+
+/* Scale */
+.scale-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.scn {
+  width: 44px; height: 44px; border-radius: 8px; border: 1.5px solid #e0dbd0;
+  background: #f5f2ec; color: #7a7668; font-family: 'Cormorant Garamond',serif;
+  font-size: 17px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.scn:hover { border-color: #ccc8bc; color: #1c1a15; }
+.online-form   .scn.sel { background: #6b7a42; border-color: #6b7a42; color: #fff; }
+.presencial-form .scn.sel { background: #a8893a; border-color: #a8893a; color: #fff; }
+.scale-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; color: #b0ab9e; letter-spacing: 1px; }
+
+/* Nav */
+.fnav { display: flex; align-items: center; gap: 10px; padding-top: 20px; border-top: 1px solid #e0dbd0; margin-top: 20px; }
+.btn-prev {
+  padding: 14px 18px; background: none; border: 1.5px solid #e0dbd0;
+  color: #7a7668; font-family: 'Jost',sans-serif; font-size: 12px; font-weight: 500;
+  letter-spacing: 1.5px; text-transform: uppercase; border-radius: 10px; cursor: pointer;
+  transition: all 0.2s; white-space: nowrap;
+}
+.btn-prev:hover { border-color: #ccc8bc; color: #1c1a15; }
+.btn-next {
+  flex: 1; padding: 15px; border: none; border-radius: 10px;
+  font-family: 'Jost',sans-serif; font-size: 12px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+}
+.btn-next:active { transform: scale(0.98); }
+.online-next    { background: #6b7a42; color: #fff; }
+.presencial-next { background: #a8893a; color: #fff; }
+
+/* ── SUCCESS ── */
+.success {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; padding: 48px 20px 80px;
+  animation: fIn 0.4s ease forwards;
+}
+.scheck {
+  width: 68px; height: 68px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; margin: 0 auto 24px; border: 1.5px solid;
+}
+.scheck.o { border-color: #6b7a42; background: rgba(107,122,66,.08); color: #6b7a42; }
+.scheck.p { border-color: #a8893a; background: rgba(168,137,58,.08); color: #a8893a; }
+.stitle { font-family: 'Cormorant Garamond',serif; font-size: 34px; font-weight: 400; letter-spacing: 3px; margin-bottom: 12px; }
+.stitle.o { color: #6b7a42; }
+.stitle.p { color: #a8893a; }
+.ssub { font-size: 14px; color: #7a7668; line-height: 1.8; max-width: 340px; margin: 0 auto 28px; }
+.sum-card {
+  width: 100%; max-width: 460px; background: #fff; border: 1px solid #e0dbd0;
+  border-radius: 14px; padding: 22px 18px; margin-bottom: 18px; text-align: left;
+}
+.sum-hd { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; margin-bottom: 16px; }
+.sum-hd.o { color: #6b7a42; }
+.sum-hd.p { color: #a8893a; }
+.sum-row { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px solid #e0dbd0; font-size: 13px; gap: 12px; }
+.sum-row:last-child { border: none; padding-bottom: 0; }
+.sum-row .sk { color: #7a7668; font-size: 11px; letter-spacing: 1px; flex-shrink: 0; }
+.sum-row .sv { color: #1c1a15; text-align: right; }
+
+.btn-wpp {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; max-width: 460px; padding: 17px 24px;
+  background: #25D366; color: #fff; border: none; border-radius: 12px;
+  font-family: 'Jost',sans-serif; font-size: 13px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
+  margin-bottom: 10px; transition: opacity 0.2s, transform 0.15s;
+}
+.btn-wpp:active { transform: scale(0.98); }
+.btn-wpp:hover { opacity: .9; }
+.btn-pdf {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; max-width: 460px; padding: 17px 24px;
+  border: none; border-radius: 12px;
+  font-family: 'Jost',sans-serif; font-size: 13px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
+  margin-bottom: 10px; transition: opacity 0.2s, transform 0.15s;
+}
+.btn-pdf.o { background: #6b7a42; color: #fff; }
+.btn-pdf.p { background: #a8893a; color: #fff; }
+.btn-pdf:active { transform: scale(0.98); }
+.btn-pdf:hover { opacity: .88; }
+.pdf-generating {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 12px; color: #7a7668; margin-bottom: 10px; min-height: 52px;
+}
+.spinner {
+  width: 18px; height: 18px; border: 2px solid #e0dbd0;
+  border-top-color: #6b7a42; border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.wpp-note { font-size: 11px; color: #b0ab9e; max-width: 340px; margin: 0 auto 22px; line-height: 1.7; }
+.btn-new {
+  padding: 13px 30px; background: none; border-radius: 10px;
+  font-family: 'Jost',sans-serif; font-size: 11px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; border: 1.5px solid;
+}
+.btn-new.o { border-color: #6b7a42; color: #6b7a42; }
+.btn-new.p { border-color: #a8893a; color: #a8893a; }
+
+@media (max-width: 380px) {
+  .two-col { grid-template-columns: 1fr; }
+  .chip { font-size: 12px; padding: 8px 11px; }
+  .scn { width: 38px; height: 38px; font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="brand-mark">
+    <div class="brand-crest">
+      <span class="brand-lp">LP</span>
+    </div>
+    <span class="brand-sub">Consultoria &amp; Treinamento</span>
+  </div>
+  <h1 class="land-title">Ficha de <em>Anamnese</em></h1>
+  <p class="land-desc">Preencha seu WhatsApp e selecione o tipo de atendimento para começar.</p>
+  <div class="divider-ln"></div>
+
+  <div class="land-phone">
+    <label>Seu WhatsApp <span style="color:#6b7a42">*</span></label>
+    <input type="tel" id="alunoFone" placeholder="(85) 99999-9999" maxlength="15" oninput="fmtFone(this)">
+    <div class="land-phone-hint">Seus dados serão enviados para este número também.</div>
+  </div>
+
+  <div class="mode-cards">
+    <div class="mcard online" onclick="startForm('online')">
+      <div class="mcard-icon">🖥</div>
+      <div class="mcard-info">
+        <div class="mcard-tag">Modalidade</div>
+        <div class="mcard-title">Consultoria Online</div>
+        <div class="mcard-body">Treinos e acompanhamento 100% digital.</div>
+      </div>
+      <div class="mcard-arr">›</div>
+    </div>
+    <div class="mcard presencial" onclick="startForm('presencial')">
+      <div class="mcard-icon">🏋️</div>
+      <div class="mcard-info">
+        <div class="mcard-tag">Modalidade</div>
+        <div class="mcard-title">Atendimento Presencial</div>
+        <div class="mcard-body">Sessões ao vivo com avaliação física.</div>
+      </div>
+      <div class="mcard-arr">›</div>
+    </div>
+  </div>
+</div>
+
+<!-- FORM -->
+<div id="formShell">
+  <header class="fhdr">
+    <div class="fhdr-brand">
+      <div class="fhdr-name" id="fhName">LP</div>
+      <div class="fhdr-mode" id="fhMode">—</div>
+    </div>
+    <div class="fhdr-r">
+      <span class="fhdr-cnt" id="fhCnt"></span>
+      <button class="btn-voltar" onclick="goHome()">← Voltar</button>
+    </div>
+  </header>
+  <div class="pbar"><div class="pfill" id="pfill"></div></div>
+  <div class="sdots" id="sdots"></div>
+  <div class="fbody" id="fbody"></div>
+</div>
+
+<script>
+const WA_NUMBER='5585981403048';
+
+let mode=null,step=0,data={},chips={},toggles={},scales={},alunoFone='';
+const ss=()=>mode==='online'?SO:SP;
+const io=()=>mode==='online';
+const c=()=>io()?'o':'p';
+
+function fmtFone(el){
+  let v=el.value.replace(/\D/g,'');
+  if(v.length>11)v=v.slice(0,11);
+  if(v.length>6)v='('+v.slice(0,2)+') '+v.slice(2,7)+'-'+v.slice(7);
+  else if(v.length>2)v='('+v.slice(0,2)+') '+v.slice(2);
+  else if(v.length>0)v='('+v;
+  el.value=v;
+}
+
+function startForm(m){
+  alunoFone=document.getElementById('alunoFone').value||'';
+  mode=m;step=0;data={};chips={};toggles={};scales={};
+  document.getElementById('landing').style.display='none';
+  document.getElementById('formShell').style.display='block';
+  const n=document.getElementById('fhName');
+  n.textContent='LP';n.className='fhdr-name '+(io()?'online':'presencial');
+  document.getElementById('fhMode').textContent=io()?'Consultoria Online':'Atendimento Presencial';
+  document.getElementById('fbody').className='fbody '+(io()?'online-form':'presencial-form');
+  render();window.scrollTo({top:0,behavior:'instant'});
+}
+function goHome(){
+  document.getElementById('landing').style.display='flex';
+  document.getElementById('formShell').style.display='none';
+}
+
+function render(){
+  const s=ss();if(step>=s.length){renderPreview();return;}
+  updP();updD();
+  document.getElementById('fhCnt').textContent='Bloco '+(step+1)+' de '+s.length;
+  const st=s[step];const cl=c();
+  const html=`<div class="form-card">
+    <div class="sec-badge"><div class="sec-num ${cl}">${st.num}</div><span class="sec-tag">${io()?'Consultoria Online':'Presencial'}</span></div>
+    <div class="sec-title">${st.title}</div>
+    <div class="sec-req"><span class="rmark ${cl}">*</span> campos obrigatórios</div>
+    ${st.fields.map(f=>rf(f,cl)).join('')}
+    <div class="fnav">
+      ${step>0?'<button class="btn-prev" onclick="prevStep()">← Anterior</button>':''}
+      <button class="btn-next ${io()?'online-next':'presencial-next'}" onclick="nextStep()">${step<s.length-1?'Continuar →':'Revisar & Enviar →'}</button>
+    </div>
+  </div>`;
+  document.getElementById('fbody').innerHTML=html;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── PREVIEW SCREEN ──
+function renderPreview(){
+  document.getElementById('fhCnt').textContent='Revisão';
+  updP(true);updD(true);
+  const cl=c();
+  const s=ss();
+  const v=k=>data[k]||'';
+  const pv=k=>{const val=v(k);return val?`<span class="pv">${val}</span>`:`<span class="pv empty">—</span>`;};
+
+  const blocks = s.map(blk=>{
+    const rows = [];
+    function collectRows(f){
+      if(f.t==='row'){f.cols.forEach(collectRows);return;}
+      if(['text','date','textarea','select','chips','toggle','scale'].includes(f.t)){
+        rows.push({lbl:f.lbl,key:f.id});
+      }
+    }
+    blk.fields.forEach(collectRows);
+    const rowsHtml = rows.map(r=>`
+      <div class="prow">
+        <span class="pk">${r.lbl}</span>
+        ${pv(r.key)}
+      </div>`).join('');
+    return`<div class="pblock">
+      <div class="pblock-title ${cl}">
+        <div class="pblock-num ${cl}">${blk.num}</div>
+        ${blk.title}
+      </div>
+      ${rowsHtml}
+    </div>`;
+  }).join('');
+
+  const html=`<div class="preview-wrap">
+    <div class="preview-hd">
+      <div>
+        <div class="preview-hd-title">Revisão da Anamnese</div>
+        <div class="preview-hd-sub">Confira os dados antes de enviar ao personal</div>
+      </div>
+      <div class="preview-badge ${cl}">${io()?'Online':'Presencial'}</div>
+    </div>
+    ${alunoFone?`<div class="pblock"><div class="pblock-title ${cl}"><div class="pblock-num ${cl}">📱</div> Seu WhatsApp</div><div class="prow"><span class="pk">Número</span><span class="pv">${alunoFone}</span></div></div>`:''}
+    ${blocks}
+    <div class="preview-nav">
+      <div class="preview-actions">
+        <button class="btn-wpp" onclick="confirmSend()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.119.554 4.107 1.523 5.827L.057 23.486a.5.5 0 0 0 .611.61l5.76-1.505A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.87 9.87 0 0 1-5.026-1.368l-.36-.214-3.733.975.998-3.636-.235-.374A9.838 9.838 0 0 1 2.118 12C2.118 6.52 6.52 2.118 12 2.118c5.48 0 9.882 4.402 9.882 9.882 0 5.48-4.402 9.882-9.882 9.882z"/></svg>
+          Confirmar e Enviar pelo WhatsApp
+        </button>
+        <p class="wpp-note">O WhatsApp abrirá com toda a anamnese formatada.</p>
+        <button class="btn-prev" onclick="backToForm()" style="width:100%;text-align:center;border-radius:10px;padding:14px">← Voltar e Revisar</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('fbody').innerHTML=html;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function updP(full){
+  const f=document.getElementById('pfill');
+  const pct=full?100:Math.round((step/ss().length)*100);
+  f.style.width=pct+'%';
+  f.className='pfill '+(io()?'online':'presencial');
+}
+function updD(full){
+  document.getElementById('sdots').innerHTML=ss().map((s,i)=>{
+    let cl='sdot';
+    if(full||i<step)cl+=' '+(io()?'done-o':'done-p');
+    else if(i===step)cl+=' '+(io()?'act-o':'act-p');
+    return`<div class="${cl}" onclick="${!full?'jmp('+i+')':''}" title="${s.title}"></div>`;
+  }).join('');
+}
+
+function backToForm(){ step=ss().length-1; render(); }
+function confirmSend(){
+  // Save to Supabase if configured
+  const sbUrl  = window.SUPABASE_URL;
+  const sbAnon = window.SUPABASE_ANON;
+  if(sbUrl && sbAnon && sbUrl !== 'COLE_SUA_URL_AQUI'){
+    const sb = supabase.createClient(sbUrl, sbAnon);
+    // Get professional id from URL param ?pid=xxx or use default
+    const pid = new URLSearchParams(window.location.search).get('pid') || null;
+    sb.from('anamneses').insert({
+      professional_id: pid,
+      mode: mode,
+      patient_name:  data['nome']  || null,
+      patient_phone: alunoFone || data['fone'] || null,
+      data: data
+    }).then(({error})=>{ if(error) console.warn('Supabase save error:', error.message); });
+  }
+  sendWpp();
+  renderSuccess();
+}
+
+const SO=[
+  {num:'01',title:'Identificação',fields:[
+    {t:'text',id:'nome',lbl:'Nome completo',req:true},
+    {t:'row',cols:[{t:'date',id:'nasc',lbl:'Data de nascimento',req:true},{t:'text',id:'cidade',lbl:'Cidade / Fuso horário'}]},
+    {t:'chips',id:'sexo',lbl:'Sexo biológico',req:true,opts:['Masculino','Feminino','Prefiro não informar']},
+    {t:'row',cols:[{t:'text',id:'profissao',lbl:'Profissão'},{t:'text',id:'carga',lbl:'Carga horária/semana'}]},
+    {t:'chips',id:'origem',lbl:'Como nos encontrou?',opts:['Instagram','Indicação','Google','TikTok','YouTube','Outro']}
+  ]},
+  {num:'02',title:'Objetivo',fields:[
+    {t:'chips',id:'obj',lbl:'Objetivo principal',req:true,multi:true,opts:['Emagrecimento','Hipertrofia','Condicionamento','Saúde','Estética','Performance','Reabilitação','Outro']},
+    {t:'text',id:'tempo_obj',lbl:'Há quanto tempo tem esse objetivo?'},
+    {t:'textarea',id:'tentativas',lbl:'Já tentou outras abordagens? O que funcionou ou não?'},
+    {t:'textarea',id:'resultado',lbl:'Qual resultado mínimo faria o investimento valer a pena?'}
+  ]},
+  {num:'03',title:'Histórico de Treino',fields:[
+    {t:'chips',id:'nivel',lbl:'Nível atual',req:true,opts:['Iniciante','Intermediário','Avançado']},
+    {t:'toggle',id:'treina_agora',lbl:'Treina atualmente?'},
+    {t:'text',id:'freq_atual',lbl:'Se sim — frequência semanal atual'},
+    {t:'chips',id:'modalidades',lbl:'Modalidades praticadas',multi:true,opts:['Musculação','Funcional','Crossfit','HIIT','Corrida','Natação','Artes marciais','Pilates','Yoga','Outro']},
+    {t:'chips',id:'relacao',lbl:'Sua relação com exercício',opts:['Prazer','Obrigação','Indiferença','Ansiedade','Descobrindo']}
+  ]},
+  {num:'04',title:'Disponibilidade',fields:[
+    {t:'chips',id:'dias',lbl:'Dias disponíveis por semana',req:true,multi:true,opts:['2 dias','3 dias','4 dias','5 dias','6 dias']},
+    {t:'chips',id:'duracao',lbl:'Tempo por sessão',req:true,opts:['30 min','45 min','1 hora','1h30','+ de 1h30']},
+    {t:'chips',id:'local',lbl:'Local de treino',multi:true,opts:['Academia','Casa — sem equipamentos','Casa — com equipamentos','Ao ar livre','Varia']},
+    {t:'textarea',id:'equip',lbl:'Equipamentos disponíveis em casa'},
+    {t:'chips',id:'horario',lbl:'Seus horários são',opts:['Fixos','Flexíveis','Variam muito']}
+  ]},
+  {num:'05',title:'Saúde & Histórico Médico',fields:[
+    {t:'textarea',id:'diag',lbl:'Diagnósticos médicos relevantes',hint:'Ex: hipertensão, diabetes, hipotireoidismo…'},
+    {t:'textarea',id:'meds',lbl:'Medicamentos em uso contínuo'},
+    {t:'textarea',id:'lesoes',lbl:'Lesões, dores ou limitações articulares',hint:'Localização e há quanto tempo'},
+    {t:'textarea',id:'cirurg',lbl:'Histórico de cirurgias'},
+    {t:'chips',id:'liberacao',lbl:'Liberação médica para atividade física?',opts:['Sim','Não','Nunca consultei']},
+    {t:'toggle',id:'gestante',lbl:'Está grávida ou em pós-parto? (se aplicável)'}
+  ]},
+  {num:'06',title:'Hábitos de Vida',fields:[
+    {t:'row',cols:[{t:'text',id:'sono_h',lbl:'Horas de sono/noite'},{t:'select',id:'sono_q',lbl:'Qualidade do sono',opts:['Ótima','Boa','Regular','Ruim','Péssima']}]},
+    {t:'chips',id:'estresse',lbl:'Nível de estresse',req:true,opts:['Baixo','Médio','Alto','Muito alto']},
+    {t:'chips',id:'alcool',lbl:'Consumo de álcool',opts:['Não bebo','Ocasional','Fins de semana','Frequente']},
+    {t:'toggle',id:'fuma',lbl:'Fuma ou usa outras substâncias?'},
+    {t:'toggle',id:'nutri',lbl:'Acompanhamento nutricional?'},
+    {t:'chips',id:'alimentacao',lbl:'Como classifica sua alimentação',opts:['Muito boa','Boa','Regular','Ruim','Péssima']}
+  ]},
+  {num:'07',title:'Dados Físicos',fields:[
+    {t:'row',cols:[{t:'text',id:'peso',lbl:'Peso atual (kg)'},{t:'text',id:'altura',lbl:'Altura (cm)'}]},
+    {t:'chips',id:'medidas',lbl:'Tem em casa?',multi:true,opts:['Balança','Fita métrica','Ambos','Nenhum']},
+    {t:'toggle',id:'fotos',lbl:'Consegue enviar fotos de avaliação? (frente, costas, lateral)'},
+    {t:'toggle',id:'aval_anterior',lbl:'Já realizou avaliação física anterior?'},
+    {t:'textarea',id:'obs_fis',lbl:'Observações sobre seus dados físicos'}
+  ]},
+  {num:'08',title:'Comunicação',fields:[
+    {t:'chips',id:'formato',lbl:'Prefere receber treinos em',multi:true,opts:['Planilha PDF','App de treino','Vídeo explicativo','WhatsApp']},
+    {t:'chips',id:'canal',lbl:'Canal de comunicação preferido',opts:['WhatsApp','E-mail','Plataforma da consultoria','Telegram']},
+    {t:'chips',id:'feedback',lbl:'Frequência de retorno',opts:['Diário','Semanal','Quinzenal','Mensal']},
+    {t:'textarea',id:'obstaculos',lbl:'O que pode atrapalhar sua consistência?'},
+    {t:'scale',id:'comprometimento',lbl:'Nível de comprometimento hoje (1–10)',min:1,max:10}
+  ]}
+];
+
+const SP=[
+  {num:'01',title:'Identificação',fields:[
+    {t:'text',id:'nome',lbl:'Nome completo',req:true},
+    {t:'row',cols:[{t:'date',id:'nasc',lbl:'Data de nascimento',req:true},{t:'text',id:'fone',lbl:'Telefone / WhatsApp',req:true}]},
+    {t:'text',id:'email',lbl:'E-mail'},
+    {t:'chips',id:'sexo',lbl:'Sexo biológico',req:true,opts:['Masculino','Feminino','Prefiro não informar']},
+    {t:'row',cols:[{t:'text',id:'profissao',lbl:'Profissão'},{t:'chips',id:'turno',lbl:'Turno',opts:['Manhã','Tarde','Noite','Home office','Variado']}]},
+    {t:'text',id:'indicacao',lbl:'Indicação / Como nos encontrou?'}
+  ]},
+  {num:'02',title:'Objetivo',fields:[
+    {t:'chips',id:'obj',lbl:'Objetivo principal',req:true,multi:true,opts:['Emagrecimento','Hipertrofia','Condicionamento','Saúde','Estética','Performance','Reabilitação','Outro']},
+    {t:'text',id:'prazo',lbl:'Prazo que tem em mente para ver resultados'},
+    {t:'chips',id:'motivacao',lbl:'Motivação principal',multi:true,opts:['Evento específico','Saúde','Autoestima','Estética','Médico indicou','Esporte','Qualidade de vida']},
+    {t:'textarea',id:'metas',lbl:'Já estipulou metas antes? Conseguiu? Por quê?'}
+  ]},
+  {num:'03',title:'Histórico de Treino',fields:[
+    {t:'chips',id:'nivel',lbl:'Nível atual',req:true,opts:['Iniciante','Intermediário','Avançado']},
+    {t:'text',id:'tempo_pratica',lbl:'Tempo total de prática ao longo da vida'},
+    {t:'chips',id:'modalidades',lbl:'Modalidades praticadas',multi:true,opts:['Musculação','Funcional','Crossfit','HIIT','Corrida','Natação','Artes marciais','Pilates','Yoga','Outro']},
+    {t:'textarea',id:'pausa',lbl:'Motivo de pausa ou abandono (se houver)'}
+  ]},
+  {num:'04',title:'Disponibilidade',fields:[
+    {t:'chips',id:'dias',lbl:'Dias disponíveis',multi:true,opts:['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo']},
+    {t:'chips',id:'horarios',lbl:'Horários preferidos',multi:true,opts:['Manhã 6–9h','Manhã 9–12h','Tarde 12–15h','Tarde 15–18h','Noite 18–20h','Noite 20–22h']},
+    {t:'chips',id:'freq',lbl:'Frequência semanal desejada',req:true,opts:['2×','3×','4×','5×','6×']},
+    {t:'chips',id:'duracao',lbl:'Duração ideal da sessão',opts:['45 min','1 hora','1h30','Flexível']},
+    {t:'chips',id:'formato_treino',lbl:'Prefere treinar',opts:['Só com o personal','Em dupla','Em grupo']}
+  ]},
+  {num:'05',title:'Saúde & Histórico Médico',fields:[
+    {t:'textarea',id:'diag',lbl:'Diagnósticos médicos relevantes',hint:'Ex: hipertensão, diabetes, cardiopatia…'},
+    {t:'textarea',id:'meds',lbl:'Medicamentos em uso contínuo'},
+    {t:'textarea',id:'lesoes',lbl:'Lesões, dores ou limitações',hint:'Informe localização e o que piora ou melhora'},
+    {t:'textarea',id:'cirurg',lbl:'Histórico de cirurgias ou fraturas'},
+    {t:'toggle',id:'histo_cv',lbl:'Histórico de problemas cardiovasculares na família?'},
+    {t:'row',cols:[{t:'text',id:'pressao',lbl:'Pressão arterial habitual'},{t:'chips',id:'liberacao',lbl:'Liberação médica?',opts:['Sim','Não','Não sei']}]},
+    {t:'chips',id:'sintomas',lbl:'Durante exercício já sentiu',multi:true,opts:['Tontura','Falta de ar excessiva','Dor no peito','Mal-estar','Nenhum']},
+    {t:'toggle',id:'parq',lbl:'PAR-Q assinado e entregue?'},
+    {t:'chips',id:'fem',lbl:'Situação feminina (se aplicável)',multi:true,opts:['Ciclo regular','Pós-parto','Menopausa','Gestante','N/A']}
+  ]},
+  {num:'06',title:'Avaliação Física',fields:[
+    {t:'row',cols:[{t:'text',id:'peso',lbl:'Peso (kg)'},{t:'text',id:'altura',lbl:'Altura (cm)'}]},
+    {t:'text',id:'circunf',lbl:'Circunferências registradas',hint:'Cintura, quadril, abdômen, braço, coxa, panturrilha (cm)'},
+    {t:'chips',id:'metodo',lbl:'Método de composição corporal',opts:['Dobras cutâneas','Bioimpedância','Perimetria','Não realizado']},
+    {t:'toggle',id:'fotos_av',lbl:'Fotos de avaliação realizadas (com consentimento)?'},
+    {t:'chips',id:'testes',lbl:'Testes funcionais realizados',multi:true,opts:['Flexibilidade','Força de preensão','Resistência aeróbica','Equilíbrio','Nenhum por ora']},
+    {t:'chips',id:'postura',lbl:'Observações posturais',multi:true,opts:['Hipercifose','Hiperlordose','Escoliose','Anteversão pélvica','Joelhos valgo','Nenhum observado']}
+  ]},
+  {num:'07',title:'Hábitos de Vida',fields:[
+    {t:'row',cols:[{t:'text',id:'sono_h',lbl:'Horas de sono/noite'},{t:'select',id:'sono_q',lbl:'Qualidade do sono',opts:['Ótima','Boa','Regular','Ruim','Péssima']}]},
+    {t:'chips',id:'estresse',lbl:'Nível de estresse',opts:['Baixo','Médio','Alto','Muito alto']},
+    {t:'chips',id:'at_espon',lbl:'Atividade física espontânea',multi:true,opts:['Caminha bastante','Sobe escadas','Trabalho ativo','Sedentário','Outro']},
+    {t:'chips',id:'alcool',lbl:'Consumo de álcool',opts:['Não bebo','Ocasional','Fins de semana','Frequente']},
+    {t:'toggle',id:'fuma',lbl:'Fuma ou usa outras substâncias?'},
+    {t:'text',id:'hidrat',lbl:'Hidratação diária estimada (litros)'},
+    {t:'toggle',id:'nutri',lbl:'Acompanhamento nutricional?'}
+  ]},
+  {num:'08',title:'Aspectos Comportamentais',fields:[
+    {t:'textarea',id:'nao_func',lbl:'O que já tentou e não funcionou?'},
+    {t:'chips',id:'barreiras',lbl:'Principais barreiras',multi:true,opts:['Tempo','Dinheiro','Motivação','Dor / lesão','Vergonha','Falta de apoio']},
+    {t:'textarea',id:'expect',lbl:'Expectativas em relação ao personal'},
+    {t:'chips',id:'autonomia',lbl:'Como você se vê',opts:['Muito autônomo','Preciso de direcionamento','No meio-termo']},
+    {t:'chips',id:'motiv_est',lbl:'Responde melhor a',opts:['Estímulo positivo','Desafio / Cobrança','Equilíbrio dos dois']},
+    {t:'scale',id:'comprometimento',lbl:'Nível de comprometimento hoje (1–10)',min:1,max:10}
+  ]}
+];
+
+function rf(f,cl){
+  if(f.t==='row')return`<div class="two-col">${f.cols.map(ff=>rf(ff,cl)).join('')}</div>`;
+  const req=f.req?`<span class="rstar ${cl}">*</span>`:'';
+  if(f.t==='text'||f.t==='date')return`<div class="field"><label>${f.lbl}${req}</label><input type="${f.t}" id="${f.id}" value="${data[f.id]||''}" placeholder="${f.t==='date'?'':'—'}">${f.hint?`<div class="hint">${f.hint}</div>`:''}</div>`;
+  if(f.t==='textarea')return`<div class="field"><label>${f.lbl}${req}</label><textarea id="${f.id}" placeholder="—">${data[f.id]||''}</textarea>${f.hint?`<div class="hint">${f.hint}</div>`:''}</div>`;
+  if(f.t==='select'){const o=f.opts.map(o=>`<option value="${o}"${data[f.id]===o?' selected':''}>${o}</option>`).join('');return`<div class="field"><label>${f.lbl}</label><select id="${f.id}"><option value="">Selecione…</option>${o}</select></div>`;}
+  if(f.t==='chips'){const sel=chips[f.id]||[];const cs=f.opts.map(o=>`<div class="chip${sel.includes(o)?' sel':''}" onclick="tChip('${f.id}','${o}',${!!f.multi})">${o}</div>`).join('');return`<div class="field"><label>${f.lbl}${req}</label><div class="chips" id="cw-${f.id}">${cs}</div></div>`;}
+  if(f.t==='toggle'){const on=toggles[f.id]||false;return`<div class="tog-row" onclick="tSw('${f.id}')"><span class="tog-label">${f.lbl}</span><div class="sw${on?' on':''}" id="sw-${f.id}"></div></div>`;}
+  if(f.t==='scale'){const v=scales[f.id]||null;let b='';for(let i=f.min;i<=f.max;i++)b+=`<button class="scn${v===i?' sel':''}" onclick="sSc('${f.id}',${i})">${i}</button>`;return`<div class="field"><label>${f.lbl}${req}</label><div class="scale-row">${b}</div><div class="scale-labels"><span>Nenhum</span><span>Máximo</span></div></div>`;}
+  return'';
+}
+
+function tChip(id,val,multi){
+  if(!chips[id])chips[id]=[];
+  const i=chips[id].indexOf(val);
+  if(multi){if(i>-1)chips[id].splice(i,1);else chips[id].push(val);}
+  else{chips[id]=i>-1?[]:[val];}
+  data[id]=chips[id].join(', ');
+  const w=document.getElementById('cw-'+id);
+  if(w)w.querySelectorAll('.chip').forEach(el=>el.classList.toggle('sel',chips[id].includes(el.textContent)));
+}
+function tSw(id){
+  toggles[id]=!toggles[id];data[id]=toggles[id]?'Sim':'Não';
+  const sw=document.getElementById('sw-'+id);if(sw)sw.classList.toggle('on',toggles[id]);
+}
+function sSc(id,val){
+  scales[id]=val;data[id]=val;
+  document.querySelectorAll('.scale-row .scn').forEach(btn=>btn.classList.toggle('sel',parseInt(btn.textContent)===val));
+}
+function save(){
+  if(step>=ss().length)return;
+  function sf(f){if(f.t==='row'){f.cols.forEach(sf);return;}if(['text','date','textarea','select'].includes(f.t)){const el=document.getElementById(f.id);if(el)data[f.id]=el.value;}}
+  ss()[step].fields.forEach(sf);
+}
+function nextStep(){save();step++;render();}
+function prevStep(){save();step--;render();}
+function jmp(i){if(i<=step){save();step=i;render();}}
+
+function buildMsg(){
+  const v=k=>data[k]||'—';
+  const mod=io()?'🖥 Consultoria Online':'🏋️ Presencial';
+  const foneAluno=alunoFone?`\n📱 WhatsApp do aluno: ${alunoFone}`:'';
+  return`╔══════════════════════╗
+  📋 ANAMNESE — LP CONSULTORIA
+╚══════════════════════╝
+Modalidade: ${mod}${foneAluno}
+
+*📌 BLOCO 1 — IDENTIFICAÇÃO*
+▸ Nome: ${v('nome')}
+▸ Nascimento: ${v('nasc')}
+${io()?`▸ Cidade/Fuso: ${v('cidade')}
+▸ Profissão: ${v('profissao')} | Carga: ${v('carga')}
+▸ Como nos encontrou: ${v('origem')}`:`▸ Telefone: ${v('fone')} | E-mail: ${v('email')}
+▸ Profissão: ${v('profissao')} | Turno: ${v('turno')}
+▸ Indicação: ${v('indicacao')}`}
+▸ Sexo: ${v('sexo')}
+
+*🎯 BLOCO 2 — OBJETIVO*
+▸ Objetivo: ${v('obj')}
+${io()?`▸ Tempo do objetivo: ${v('tempo_obj')}
+▸ Tentativas: ${v('tentativas')}
+▸ Resultado esperado: ${v('resultado')}`:`▸ Prazo: ${v('prazo')}
+▸ Motivação: ${v('motivacao')}
+▸ Metas anteriores: ${v('metas')}`}
+
+*🏃 BLOCO 3 — HISTÓRICO*
+▸ Nível: ${v('nivel')}
+${io()?`▸ Treina agora: ${v('treina_agora')} | Frequência: ${v('freq_atual')}`:`▸ Tempo de prática: ${v('tempo_pratica')}`}
+▸ Modalidades: ${v('modalidades')}
+${io()?`▸ Relação com exercício: ${v('relacao')}`:`▸ Motivo de pausa: ${v('pausa')}`}
+
+*📅 BLOCO 4 — DISPONIBILIDADE*
+▸ Dias: ${v('dias')}
+${io()?`▸ Duração: ${v('duracao')} | Horários: ${v('horario')}
+▸ Local: ${v('local')}
+▸ Equipamentos: ${v('equip')}`:`▸ Horários: ${v('horarios')}
+▸ Frequência: ${v('freq')} | Duração: ${v('duracao')}
+▸ Formato: ${v('formato_treino')}`}
+
+*🏥 BLOCO 5 — SAÚDE*
+▸ Diagnósticos: ${v('diag')}
+▸ Medicamentos: ${v('meds')}
+▸ Lesões/dores: ${v('lesoes')}
+▸ Cirurgias: ${v('cirurg')}
+▸ Liberação médica: ${v('liberacao')}
+${io()?`▸ Gestante/pós-parto: ${v('gestante')}`:`▸ Histórico CV familiar: ${v('histo_cv')}
+▸ Pressão arterial: ${v('pressao')}
+▸ Sintomas exercício: ${v('sintomas')}
+▸ PAR-Q: ${v('parq')} | Situação feminina: ${v('fem')}`}
+
+${!io()?`*📐 BLOCO 6 — AVALIAÇÃO FÍSICA*
+▸ Peso: ${v('peso')}kg | Altura: ${v('altura')}cm
+▸ Circunferências: ${v('circunf')}
+▸ Método: ${v('metodo')}
+▸ Fotos: ${v('fotos_av')}
+▸ Testes: ${v('testes')}
+▸ Postura: ${v('postura')}
+
+`:''}*🌿 BLOCO ${io()?'6':'7'} — HÁBITOS*
+▸ Sono: ${v('sono_h')}h | Qualidade: ${v('sono_q')}
+▸ Estresse: ${v('estresse')}
+${!io()?`▸ Atividade espontânea: ${v('at_espon')}\n`:''}▸ Álcool: ${v('alcool')} | Fuma: ${v('fuma')}
+${!io()?`▸ Hidratação: ${v('hidrat')}L/dia\n`:''}▸ Nutricionista: ${v('nutri')}
+${io()?`▸ Alimentação: ${v('alimentacao')}`:''}
+
+*${io()?'💬 BLOCO 7 — COMUNICAÇÃO':'🧠 BLOCO 8 — COMPORTAMENTAL'}*
+${io()?`▸ Formato treino: ${v('formato')}
+▸ Canal: ${v('canal')}
+▸ Frequência feedback: ${v('feedback')}
+▸ Obstáculos: ${v('obstaculos')}`:`▸ O que não funcionou: ${v('nao_func')}
+▸ Barreiras: ${v('barreiras')}
+▸ Expectativas: ${v('expect')}
+▸ Autonomia: ${v('autonomia')}
+▸ Motivação: ${v('motiv_est')}`}
+▸ Comprometimento: ${v('comprometimento')}/10
+
+_Enviado via LP Consultoria & Treinamento_`.trim();
+}
+
+function sendWpp(){window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(buildMsg())}`,'_blank');}
+
+// ── PDF GENERATION ──
+function gerarPDF(){
+  const btnEl = document.getElementById('btnPdf');
+  if(btnEl){ btnEl.style.display='none'; }
+  const spinEl = document.getElementById('pdfSpinner');
+  if(spinEl){ spinEl.style.display='flex'; }
+
+  setTimeout(()=>{
+    try{
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const PW = 210; const PH = 297;
+      const ML = 18; const MR = 18; const CW = PW - ML - MR;
+      let y = 0;
+
+      // Colors
+      const OLIVE = [107,122,66];
+      const GOLD  = [168,137,58];
+      const DARK  = [28,26,21];
+      const MID   = [122,118,104];
+      const LIGHT = [224,219,208];
+      const BG    = [245,242,236];
+      const WHITE = [255,255,255];
+      const accent = io() ? OLIVE : GOLD;
+
+      function newPage(){
+        doc.addPage();
+        y = 16;
+        // footer
+        doc.setDrawColor(...LIGHT);
+        doc.setLineWidth(0.3);
+        doc.line(ML, PH-12, PW-MR, PH-12);
+        doc.setFontSize(7); doc.setTextColor(...MID);
+        doc.setFont('helvetica','normal');
+        doc.text('LP Consultoria & Treinamento  |  Documento gerado automaticamente', PW/2, PH-7, {align:'center'});
+      }
+
+      function checkY(needed){
+        if(y + needed > PH - 18){ newPage(); }
+      }
+
+      // ── COVER PAGE ──
+      // Background
+      doc.setFillColor(...BG);
+      doc.rect(0, 0, PW, PH, 'F');
+
+      // Top accent bar
+      doc.setFillColor(...accent);
+      doc.rect(0, 0, PW, 3, 'F');
+
+      // LP monogram circle
+      doc.setDrawColor(...accent);
+      doc.setLineWidth(0.8);
+      doc.circle(PW/2, 52, 16);
+      doc.setFontSize(20); doc.setFont('helvetica','bold');
+      doc.setTextColor(...accent);
+      doc.text('LP', PW/2, 55.5, {align:'center'});
+
+      // Title
+      doc.setFontSize(9); doc.setFont('helvetica','normal');
+      doc.setTextColor(...MID);
+      doc.text('CONSULTORIA & TREINAMENTO', PW/2, 76, {align:'center', charSpace:2});
+
+      // Divider
+      doc.setDrawColor(...LIGHT);
+      doc.setLineWidth(0.5);
+      doc.line(PW/2-20, 82, PW/2+20, 82);
+
+      // Anamnese title
+      doc.setFontSize(28); doc.setFont('helvetica','bold');
+      doc.setTextColor(...DARK);
+      doc.text('ANAMNESE', PW/2, 96, {align:'center'});
+
+      // Modalidade badge
+      const badgeLabel = io() ? 'CONSULTORIA ONLINE' : 'ATENDIMENTO PRESENCIAL';
+      const badgeW = 58;
+      doc.setFillColor(...accent);
+      doc.roundedRect(PW/2 - badgeW/2, 100, badgeW, 9, 2, 2, 'F');
+      doc.setFontSize(7); doc.setFont('helvetica','bold');
+      doc.setTextColor(...WHITE);
+      doc.text(badgeLabel, PW/2, 105.5, {align:'center', charSpace:1});
+
+      // Info box
+      const v = k => data[k] || '—';
+      const infoY = 120;
+      doc.setFillColor(...WHITE);
+      doc.roundedRect(ML, infoY, CW, 50, 3, 3, 'F');
+      doc.setDrawColor(...LIGHT);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(ML, infoY, CW, 50, 3, 3, 'S');
+
+      const rows = [
+        ['Nome', v('nome')],
+        ['Data de nascimento', v('nasc')],
+        ['Objetivo', v('obj')],
+        ['Nível', v('nivel')],
+        ['WhatsApp', alunoFone || v('fone') || '—'],
+      ];
+      let iy = infoY + 10;
+      rows.forEach(([lbl, val])=>{
+        doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(...MID);
+        doc.text(lbl.toUpperCase(), ML+8, iy, {charSpace:0.5});
+        doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(...DARK);
+        const wrapped = doc.splitTextToSize(val, CW - 60);
+        doc.text(wrapped[0], PW - MR - 8, iy, {align:'right'});
+        iy += 8;
+      });
+
+      // Date
+      const hoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+      doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(...MID);
+      doc.text(hoje, PW/2, 180, {align:'center'});
+
+      // Bottom bar
+      doc.setFillColor(...accent);
+      doc.rect(0, PH-3, PW, 3, 'F');
+
+      // ── CONTENT PAGES ──
+      newPage();
+
+      const steps = ss();
+      steps.forEach((blk, bi)=>{
+        // collect all fields flat
+        const fields = [];
+        function flat(f){
+          if(f.t==='row'){f.cols.forEach(flat);return;}
+          fields.push(f);
+        }
+        blk.fields.forEach(flat);
+
+        // block header
+        checkY(22);
+        doc.setFillColor(...accent);
+        doc.rect(ML, y, 1.5, 14, 'F');
+        doc.setFontSize(7); doc.setFont('helvetica','bold');
+        doc.setTextColor(...accent);
+        doc.text(`BLOCO ${blk.num}`, ML+5, y+5, {charSpace:1.5});
+        doc.setFontSize(13); doc.setFont('helvetica','bold');
+        doc.setTextColor(...DARK);
+        doc.text(blk.title.toUpperCase(), ML+5, y+12);
+        y += 18;
+
+        // fields
+        fields.forEach(f=>{
+          const val = data[f.id] || '—';
+          const lines = doc.splitTextToSize(val, CW - 8);
+          const rowH = Math.max(12, lines.length * 5 + 8);
+          checkY(rowH + 2);
+
+          // row bg alternating
+          if(fields.indexOf(f) % 2 === 0){
+            doc.setFillColor(250,248,244);
+            doc.rect(ML, y, CW, rowH, 'F');
+          }
+
+          doc.setFontSize(7); doc.setFont('helvetica','normal');
+          doc.setTextColor(...MID);
+          doc.text(f.lbl.toUpperCase(), ML+4, y+5, {charSpace:0.3});
+
+          doc.setFontSize(9); doc.setFont('helvetica','normal');
+          if(val==='—'){ doc.setTextColor(...LIGHT); } else { doc.setTextColor(...DARK); }
+          doc.text(lines, ML+4, y+10);
+
+          // bottom border
+          doc.setDrawColor(...LIGHT);
+          doc.setLineWidth(0.2);
+          doc.line(ML, y+rowH, ML+CW, y+rowH);
+          y += rowH;
+        });
+
+        y += 8; // space between blocks
+      });
+
+      // commitment highlight
+      const comp = data['comprometimento'];
+      if(comp){
+        checkY(28);
+        doc.setFillColor(...accent);
+        doc.roundedRect(ML, y, CW, 22, 3, 3, 'F');
+        doc.setFontSize(8); doc.setFont('helvetica','bold');
+        doc.setTextColor(...WHITE);
+        doc.text('NÍVEL DE COMPROMETIMENTO', ML+8, y+8, {charSpace:1});
+        doc.setFontSize(20);
+        doc.text(`${comp} / 10`, PW-MR-8, y+15, {align:'right'});
+        y += 28;
+      }
+
+      const nome = (data['nome']||'aluno').replace(/[^a-zA-Z0-9\s]/g,'').replace(/\s+/g,'_');
+      doc.save(`Anamnese_LP_${nome}.pdf`);
+    } catch(e){
+      console.error(e);
+      alert('Erro ao gerar PDF. Tente novamente.');
+    } finally {
+      if(btnEl){ btnEl.style.display='flex'; }
+      if(spinEl){ spinEl.style.display='none'; }
+    }
+  }, 80);
+}
+
+function renderSuccess(){
+  document.getElementById('pfill').style.width='100%';
+  document.getElementById('sdots').innerHTML='';
+  document.getElementById('fhCnt').textContent='Concluído';
+  const cl=c();
+  const wppSvg=`<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.119.554 4.107 1.523 5.827L.057 23.486a.5.5 0 0 0 .611.61l5.76-1.505A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.87 9.87 0 0 1-5.026-1.368l-.36-.214-3.733.975.998-3.636-.235-.374A9.838 9.838 0 0 1 2.118 12C2.118 6.52 6.52 2.118 12 2.118c5.48 0 9.882 4.402 9.882 9.882 0 5.48-4.402 9.882-9.882 9.882z"/></svg>`;
+  const pdfSvg=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>`;
+  document.getElementById('fbody').innerHTML=`<div class="success">
+    <div class="scheck ${cl}">✓</div>
+    <div class="stitle ${cl}">Anamnese Concluída</div>
+    <p class="ssub">Obrigado, <strong>${data['nome']||'aluno(a)'}</strong>! Baixe o PDF e envie ao seu personal pelo WhatsApp.</p>
+    <div class="sum-card">
+      <div class="sum-hd ${cl}">Resumo do Perfil</div>
+      <div class="sum-row"><span class="sk">Nome</span><span class="sv">${data['nome']||'—'}</span></div>
+      <div class="sum-row"><span class="sk">Modalidade</span><span class="sv">${io()?'Consultoria Online':'Presencial'}</span></div>
+      <div class="sum-row"><span class="sk">Objetivo</span><span class="sv">${data['obj']||'—'}</span></div>
+      <div class="sum-row"><span class="sk">Nível</span><span class="sv">${data['nivel']||'—'}</span></div>
+      <div class="sum-row"><span class="sk">Comprometimento</span><span class="sv">${data['comprometimento']||'—'}/10</span></div>
+    </div>
+
+    <div id="pdfSpinner" class="pdf-generating" style="display:none">
+      <div class="spinner"></div> Gerando PDF…
+    </div>
+    <button id="btnPdf" class="btn-pdf ${cl}" onclick="gerarPDF()">
+      ${pdfSvg} Baixar PDF da Anamnese
+    </button>
+    <p class="wpp-note">Salve o PDF e envie ao personal pelo WhatsApp, e-mail ou Drive.</p>
+
+    <button class="btn-wpp" onclick="sendWpp()">
+      ${wppSvg} Enviar resumo pelo WhatsApp
+    </button>
+    <p class="wpp-note" style="margin-bottom:24px">Envia um resumo em texto para agilizar o primeiro contato.</p>
+
+    <button class="btn-new ${cl}" onclick="restart()">+ Nova Anamnese</button>
+  </div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function restart(){
+  mode=null;step=0;data={};chips={};toggles={};scales={};alunoFone='';
+  document.getElementById('landing').style.display='flex';
+  document.getElementById('formShell').style.display='none';
+  const fi=document.getElementById('alunoFone');if(fi)fi.value='';
+  window.scrollTo({top:0,behavior:'instant'});
+}
+</script>
+</body>
+</html>
