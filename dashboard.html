@@ -187,6 +187,45 @@ tr:hover td{background:var(--cream);}
   border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 12px;}
 @keyframes sp{to{transform:rotate(360deg);}}
 
+/* Filter buttons */
+.filter-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.filter-btn{
+  padding:7px 14px;border-radius:20px;border:1px solid var(--border);
+  background:var(--white);font-family:'DM Sans',sans-serif;
+  font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.filter-btn.active{background:var(--olive);border-color:var(--olive);color:#fff;}
+.filter-btn:hover:not(.active){border-color:var(--olive);color:var(--olive);}
+
+/* Refresh */
+.btn-refresh{
+  padding:8px 12px;background:none;border:1px solid var(--border);
+  border-radius:6px;cursor:pointer;transition:all .2s;
+  color:var(--muted);display:flex;align-items:center;
+}
+.btn-refresh:hover{border-color:var(--olive);color:var(--olive);}
+.btn-refresh.spinning svg{animation:sp .7s linear infinite;}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:500;
+  background:var(--ink);color:#fff;border-radius:10px;
+  padding:14px 20px;font-size:13px;display:flex;align-items:center;gap:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+  transform:translateY(80px);opacity:0;transition:all .3s ease;
+  pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast-dot{width:8px;height:8px;border-radius:50%;background:#6bcb77;flex-shrink:0;}
+
+/* Delete */
+.btn-delete{
+  padding:9px 16px;background:none;border:1px solid var(--border);
+  border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;
+  color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.btn-delete:hover{border-color:var(--danger);color:var(--danger);}
+
 @media(max-width:640px){
   .stats-row{grid-template-columns:1fr 1fr;}
   .topbar{padding:0 16px;}
@@ -268,8 +307,20 @@ tr:hover td{background:var(--cream);}
 
     <!-- Table -->
     <div class="section-hd">
-      <h2>Fichas recebidas</h2>
-      <input class="search-input" id="searchInput" placeholder="Buscar paciente…" oninput="filterTable()">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <h2>Fichas recebidas</h2>
+        <div class="filter-btns">
+          <button class="filter-btn active" id="fAll"        onclick="setFilter('all')">Todas</button>
+          <button class="filter-btn"        id="fOnline"     onclick="setFilter('online')">Online</button>
+          <button class="filter-btn"        id="fPresencial" onclick="setFilter('presencial')">Presencial</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="search-input" id="searchInput" placeholder="Buscar paciente…" oninput="applyFilters()">
+        <button class="btn-refresh" id="btnRefresh" onclick="refreshData()" title="Atualizar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        </button>
+      </div>
     </div>
     <div class="table-wrap">
       <div id="tableContent">
@@ -277,6 +328,12 @@ tr:hover td{background:var(--cream);}
       </div>
     </div>
   </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-dot"></div>
+  <span id="toastMsg">Nova ficha recebida!</span>
 </div>
 
 <!-- MODAL -->
@@ -287,6 +344,9 @@ tr:hover td{background:var(--cream);}
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
+    <div style="padding:16px 28px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;">
+      <button class="btn-delete" id="modalDeleteBtn" onclick="deleteAnamnese()">Excluir ficha</button>
+    </div>
   </div>
 </div>
 
@@ -361,13 +421,15 @@ async function loadDashboard(){
   const {data:prof} = await sb.from('professionals').select('*').eq('user_id', user.id).single();
   if(prof){ profId = prof.id; }
 
-  // Share link
-  const link = window.location.origin + '/anamnese';
+  // Share link — inclui ?pid= para que o paciente salve com o profissional correto
+  const link = window.location.origin + '/anamnese?pid=' + (profId || '');
   document.getElementById('shareLink').textContent = link;
 
   // Load anamneses
   await loadAnamneses();
 }
+
+let realtimeChannel = null;
 
 async function loadAnamneses(){
   if(!profId){ renderEmpty(); return; }
@@ -380,7 +442,22 @@ async function loadAnamneses(){
   if(error || !data){ renderEmpty(); return; }
   allRows = data;
   updateStats(data);
-  renderTable(data);
+  applyFilters();
+
+  // Realtime: escuta novas fichas sem precisar recarregar a página
+  if(!realtimeChannel){
+    realtimeChannel = sb.channel('anamneses_' + profId)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'anamneses',
+        filter: 'professional_id=eq.' + profId
+      }, payload => {
+        allRows.unshift(payload.new);
+        updateStats(allRows);
+        applyFilters();
+        showToast('Nova ficha: ' + (payload.new.patient_name || 'Paciente'));
+      })
+      .subscribe();
+  }
 }
 
 function updateStats(rows){
@@ -422,14 +499,53 @@ function renderEmpty(){
     </div>`;
 }
 
-function filterTable(){
+let activeFilter = 'all';
+let currentModalId = null;
+
+function setFilter(f){
+  activeFilter = f;
+  document.getElementById('fAll').classList.toggle('active', f==='all');
+  document.getElementById('fOnline').classList.toggle('active', f==='online');
+  document.getElementById('fPresencial').classList.toggle('active', f==='presencial');
+  applyFilters();
+}
+
+function applyFilters(){
   const q = document.getElementById('searchInput').value.toLowerCase();
-  const filtered = allRows.filter(r=>{
+  let rows = allRows;
+  if(activeFilter !== 'all') rows = rows.filter(r => r.mode === activeFilter);
+  if(q) rows = rows.filter(r => {
     const nome = (r.patient_name||r.data?.nome||'').toLowerCase();
     const fone = (r.patient_phone||r.data?.fone||'').toLowerCase();
     return nome.includes(q)||fone.includes(q);
   });
-  renderTable(filtered);
+  renderTable(rows);
+}
+
+async function refreshData(){
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('spinning');
+  await loadAnamneses();
+  setTimeout(()=>btn.classList.remove('spinning'), 400);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 4000);
+}
+
+async function deleteAnamnese(){
+  if(!currentModalId) return;
+  if(!confirm('Excluir esta ficha permanentemente? A ação não pode ser desfeita.')) return;
+  const {error} = await sb.from('anamneses').delete().eq('id', currentModalId);
+  if(error){ alert('Erro ao excluir: ' + error.message); return; }
+  allRows = allRows.filter(r => r.id !== currentModalId);
+  updateStats(allRows);
+  applyFilters();
+  closeModal();
+  showToast('Ficha excluída.');
 }
 
 // ── MODAL ──
@@ -460,11 +576,11 @@ const LABELS = {
 function openModal(id){
   const row = allRows.find(r=>r.id===id);
   if(!row) return;
+  currentModalId = id;
   const d = row.data || {};
   const dt = new Date(row.created_at).toLocaleString('pt-BR');
   document.getElementById('modalTitle').textContent = row.patient_name||d.nome||'Anamnese';
   let html = `<div style="font-size:12px;color:#9a9588;margin-bottom:20px">${row.mode==='online'?'Consultoria Online':'Presencial'} · ${dt}</div>`;
-  // Group by known keys
   const entries = Object.entries(d).filter(([k,v])=>v&&v!=='—');
   if(entries.length){
     html += '<div class="modal-block"><div class="modal-block-title">Todos os dados</div>';
@@ -478,13 +594,14 @@ function openModal(id){
 }
 
 function closeModal(e){
-  if(!e||e.target===document.getElementById('modalOverlay')||e.currentTarget===document.querySelector('.modal-close')){
+  if(!e||e.target===document.getElementById('modalOverlay')){
     document.getElementById('modalOverlay').classList.remove('open');
+    currentModalId = null;
   }
 }
 
 function copyLink(){
-  const link = window.location.origin + '/anamnese';
+  const link = window.location.origin + '/anamnese?pid=' + (profId || '');
   navigator.clipboard.writeText(link).then(()=>{
     const btn = document.querySelector('.btn-copy');
     btn.textContent = 'Copiado ✓';

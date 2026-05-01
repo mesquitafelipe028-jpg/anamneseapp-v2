@@ -429,6 +429,12 @@ body {
 <script>
 const WA_NUMBER='5585981403048';
 
+// Client Supabase global — reutilizado em confirmSend
+const _SBU = window.SUPABASE_URL  || '';
+const _SBA = window.SUPABASE_ANON || '';
+const sb = (_SBU && _SBA && _SBU !== 'COLE_SUA_URL_AQUI')
+  ? supabase.createClient(_SBU, _SBA) : null;
+
 let mode=null,step=0,data={},chips={},toggles={},scales={},alunoFone='';
 const ss=()=>mode==='online'?SO:SP;
 const io=()=>mode==='online';
@@ -553,12 +559,7 @@ function updD(full){
 
 function backToForm(){ step=ss().length-1; render(); }
 function confirmSend(){
-  // Save to Supabase if configured
-  const sbUrl  = window.SUPABASE_URL;
-  const sbAnon = window.SUPABASE_ANON;
-  if(sbUrl && sbAnon && sbUrl !== 'COLE_SUA_URL_AQUI'){
-    const sb = supabase.createClient(sbUrl, sbAnon);
-    // Get professional id from URL param ?pid=xxx or use default
+  if(sb){
     const pid = new URLSearchParams(window.location.search).get('pid') || null;
     sb.from('anamneses').insert({
       professional_id: pid,
