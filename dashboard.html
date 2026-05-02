@@ -423,7 +423,7 @@ async function loadDashboard(){
   document.getElementById('topUser').textContent = user.email;
 
   // Get or create professional (criação pode falhar silenciosamente no signup)
-  let {data:prof} = await sb.from('professionals').select('*').eq('user_id', user.id).single();
+  let {data:prof} = await sb.from('professionals').select('*').eq('user_id', user.id).maybeSingle();
   if(!prof){
     const {data:created} = await sb
       .from('professionals')
