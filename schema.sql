@@ -23,8 +23,16 @@ create table if not exists anamneses (
   patient_name    text,
   patient_phone   text,
   data            jsonb not null default '{}',
+  status          text not null default 'nova' check (status in ('nova','lida','arquivada')),
+  notes           text,
+  photos          jsonb not null default '[]',
   created_at      timestamptz default now()
 );
+
+-- Migração: adiciona colunas se a tabela já existir
+alter table anamneses add column if not exists status text not null default 'nova' check (status in ('nova','lida','arquivada'));
+alter table anamneses add column if not exists notes  text;
+alter table anamneses add column if not exists photos jsonb not null default '[]';
 
 -- 3. SEGURANÇA (Row Level Security)
 alter table professionals enable row level security;
@@ -55,11 +63,29 @@ create policy "anamneses: professional reads own"
 create policy "anamneses: professional deletes own"
   on anamneses for delete
   using (
-    professional_id in (
-      select id from professionals where user_id = auth.uid()
-    )
+    professional_id in (select id from professionals where user_id = auth.uid())
     or professional_id is null
   );
+
+-- Profissional pode atualizar (status, notes, photos)
+create policy "anamneses: professional updates own"
+  on anamneses for update
+  using (
+    professional_id in (select id from professionals where user_id = auth.uid())
+    or professional_id is null
+  );
+
+-- 5. STORAGE (execute no Supabase > SQL Editor)
+-- insert into storage.buckets (id, name, public) values ('anamnese-photos', 'anamnese-photos', true);
+-- create policy "photos: authenticated upload"
+--   on storage.objects for insert to authenticated
+--   with check (bucket_id = 'anamnese-photos');
+-- create policy "photos: public read"
+--   on storage.objects for select to public
+--   using (bucket_id = 'anamnese-photos');
+-- create policy "photos: owner delete"
+--   on storage.objects for delete to authenticated
+--   using (bucket_id = 'anamnese-photos' and auth.uid()::text = (storage.foldername(name))[1]);
 
 -- 4. ÍNDICES
 create index if not exists idx_anamneses_professional on anamneses(professional_id);
