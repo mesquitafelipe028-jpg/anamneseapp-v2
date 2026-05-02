@@ -43,9 +43,22 @@ create policy "anamneses: public insert"
 create policy "anamneses: professional reads own"
   on anamneses for select
   using (
+    -- fichas vinculadas ao profissional
     professional_id in (
       select id from professionals where user_id = auth.uid()
     )
+    -- fichas antigas sem pid (submetidas antes do link ter ?pid=)
+    or professional_id is null
+  );
+
+-- Profissional pode deletar suas próprias fichas
+create policy "anamneses: professional deletes own"
+  on anamneses for delete
+  using (
+    professional_id in (
+      select id from professionals where user_id = auth.uid()
+    )
+    or professional_id is null
   );
 
 -- 4. ÍNDICES

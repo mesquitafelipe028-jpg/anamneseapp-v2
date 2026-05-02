@@ -396,10 +396,15 @@ async function doSignup(){
   setMsg('Criando conta…','ok');
   const {data, error} = await sb.auth.signUp({email, password:pass});
   if(error){ setMsg(error.message); return; }
-  // Create professional record
-  await sb.from('professionals').insert({user_id: data.user.id, name, specialty:'personal'});
-  setMsg('Conta criada! Verifique seu e-mail se necessário.','ok');
-  setTimeout(()=>loadDashboard(), 1200);
+  // Aguarda sessão ativa antes de criar o registro do profissional
+  if(data.session){
+    await sb.from('professionals').insert({user_id: data.user.id, name, specialty:'personal'});
+    setMsg('Conta criada!','ok');
+    setTimeout(()=>loadDashboard(), 800);
+  } else {
+    // Confirmação de e-mail ativada no Supabase — profId será criado no primeiro login
+    setMsg('Verifique seu e-mail para ativar a conta.','ok');
+  }
 }
 
 async function doLogout(){
@@ -417,9 +422,17 @@ async function loadDashboard(){
   document.getElementById('dashboard').style.display  = 'block';
   document.getElementById('topUser').textContent = user.email;
 
-  // Get professional
-  const {data:prof} = await sb.from('professionals').select('*').eq('user_id', user.id).single();
-  if(prof){ profId = prof.id; }
+  // Get or create professional (criação pode falhar silenciosamente no signup)
+  let {data:prof} = await sb.from('professionals').select('*').eq('user_id', user.id).single();
+  if(!prof){
+    const {data:created} = await sb
+      .from('professionals')
+      .insert({user_id: user.id, name: user.email.split('@')[0], specialty:'personal'})
+      .select().single();
+    prof = created;
+  }
+  if(prof) profId = prof.id;
+  console.log('[dashboard] profId:', profId);
 
   // Share link — inclui ?pid= para que o paciente salve com o profissional correto
   const link = window.location.origin + '/anamnese?pid=' + (profId || '');
@@ -433,12 +446,14 @@ let realtimeChannel = null;
 
 async function loadAnamneses(){
   if(!profId){ renderEmpty(); return; }
+  // Busca fichas do profissional + fichas antigas sem pid (professional_id IS NULL)
   const {data, error} = await sb
     .from('anamneses')
     .select('*')
-    .eq('professional_id', profId)
+    .or(`professional_id.eq.${profId},professional_id.is.null`)
     .order('created_at', {ascending: false});
 
+  console.log('[dashboard] anamneses carregadas:', data?.length, error);
   if(error || !data){ renderEmpty(); return; }
   allRows = data;
   updateStats(data);
