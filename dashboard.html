@@ -195,6 +195,8 @@ tr:hover td{background:var(--cream);}
 .toast-dot{width:8px;height:8px;border-radius:50%;background:#6bcb77;flex-shrink:0;}
 .btn-delete{padding:9px 16px;background:none;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;min-height:44px;}
 .btn-delete:hover{border-color:var(--danger);color:var(--danger);}
+.btn-new-ficha{padding:8px 16px;background:var(--olive);color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;min-height:44px;white-space:nowrap;}
+.btn-new-ficha:hover{opacity:.88;}
 
 /* ── CARDS MOBILE ── */
 .cards-list{padding:12px;display:flex;flex-direction:column;gap:10px;}
@@ -308,7 +310,8 @@ tr:hover td{background:var(--cream);}
             <button class="filter-btn"        id="fPresencial" onclick="setFilter('presencial')">Presencial</button>
           </div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="btn-new-ficha" onclick="openNew()">+ Nova ficha</button>
           <input class="search-input" id="searchInput" placeholder="Buscar paciente…" oninput="applyFilters()">
           <button class="btn-refresh" id="btnRefresh" onclick="refreshData()" title="Atualizar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
@@ -384,6 +387,44 @@ tr:hover td{background:var(--cream);}
     <div class="modal-footer">
       <button class="btn-delete" onclick="deleteAnamnese()">Excluir ficha</button>
       <button class="btn-save-notes" onclick="saveNotes()">Salvar nota</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOVA FICHA MODAL -->
+<div class="modal-overlay" id="newOverlay" onclick="closeNew(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Nova ficha</h3>
+      <div class="modal-hd-right"><button class="modal-close" onclick="closeNew()">✕</button></div>
+    </div>
+    <div class="modal-body">
+      <div class="pf">
+        <label>Modalidade <span style="color:var(--danger)">*</span></label>
+        <select id="new_mode">
+          <option value="online">Consultoria Online</option>
+          <option value="presencial">Atendimento Presencial</option>
+        </select>
+      </div>
+      <div class="pf">
+        <label>Nome completo <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="new_nome" autocomplete="name" placeholder="Nome do paciente">
+      </div>
+      <div class="pf">
+        <label>WhatsApp / Telefone</label>
+        <input type="tel" id="new_fone" autocomplete="tel" inputmode="tel" placeholder="(85) 99999-9999">
+      </div>
+      <div class="pf">
+        <label>Objetivo</label>
+        <input type="text" id="new_obj" placeholder="Ex: emagrecimento, hipertrofia…">
+      </div>
+      <div class="pf">
+        <label>Observações iniciais</label>
+        <textarea class="notes-area" id="new_obs" placeholder="Notas sobre o paciente…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end">
+      <button class="btn-save-profile" onclick="createFicha()">Criar ficha</button>
     </div>
   </div>
 </div>
@@ -614,8 +655,8 @@ async function cycleStatus(id, e){
   const row = allRows.find(r=>r.id===id);
   if(!row) return;
   const next = STATUS_CYCLE[row.status||'nova'];
-  const {error} = await sb.from('anamneses').update({status:next}).eq('id',id);
-  if(error){ showToast('Erro ao atualizar status'); return; }
+  const {data, error} = await sb.from('anamneses').update({status:next}).eq('id',id).select().single();
+  if(error){ console.error('[cycleStatus]', error); showToast('Erro: '+error.message); return; }
   row.status = next;
   applyFilters();
 }
@@ -654,8 +695,22 @@ function openModal(id){
   const st = row.status||'nova';
   document.getElementById('modalTitle').textContent = row.patient_name||d.nome||'Anamnese';
 
-  // Status selector
-  let html = `<div style="font-size:12px;color:#9a9588;margin-bottom:14px">${row.mode==='online'?'Consultoria Online':'Presencial'} · ${dt}</div>`;
+  // Editar dados básicos
+  let html = `<div class="modal-block">
+    <div class="modal-block-title">Editar dados básicos</div>
+    <div class="pf" style="margin-bottom:10px">
+      <label>Nome</label>
+      <input type="text" id="editNome" value="${(row.patient_name||d.nome||'').replace(/"/g,'&quot;')}" autocomplete="name" style="background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;width:100%;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;min-height:44px;color:var(--ink);transition:border-color .2s;" onfocus="this.style.borderColor='var(--olive)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <div class="pf" style="margin-bottom:12px">
+      <label>Telefone</label>
+      <input type="tel" id="editFone" value="${(row.patient_phone||d.fone||'').replace(/"/g,'&quot;')}" autocomplete="tel" inputmode="tel" style="background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;width:100%;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;min-height:44px;color:var(--ink);transition:border-color .2s;" onfocus="this.style.borderColor='var(--olive)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <button onclick="saveEdit()" style="padding:9px 18px;background:var(--olive);color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;min-height:44px;">Salvar edição</button>
+  </div>`;
+
+  // Metadata line
+  html += `<div style="font-size:12px;color:#9a9588;margin-bottom:14px">${row.mode==='online'?'Consultoria Online':'Presencial'} · ${dt}</div>`;
   html += `<div class="modal-block">
     <div class="modal-block-title">Status da ficha</div>
     <div class="status-row">
@@ -721,8 +776,8 @@ function closeModal(e){
 // ── STATUS NO MODAL ──
 async function setModalStatus(st){
   if(!currentModalId) return;
-  const {error} = await sb.from('anamneses').update({status:st}).eq('id',currentModalId);
-  if(error){ showToast('Erro ao salvar status'); return; }
+  const {data, error} = await sb.from('anamneses').update({status:st}).eq('id',currentModalId).select().single();
+  if(error){ console.error('[setModalStatus]', error); showToast('Erro: '+error.message); return; }
   const row = allRows.find(r=>r.id===currentModalId);
   if(row) row.status = st;
   document.querySelectorAll('.status-opt').forEach(b=>{
@@ -737,8 +792,8 @@ async function setModalStatus(st){
 async function saveNotes(){
   if(!currentModalId) return;
   const notes = document.getElementById('modalNotes').value;
-  const {error} = await sb.from('anamneses').update({notes}).eq('id',currentModalId);
-  if(error){ showToast('Erro ao salvar nota'); return; }
+  const {data, error} = await sb.from('anamneses').update({notes}).eq('id',currentModalId).select().single();
+  if(error){ console.error('[saveNotes]', error); showToast('Erro: '+error.message); return; }
   const row = allRows.find(r=>r.id===currentModalId);
   if(row) row.notes = notes;
   showToast('Nota salva.');
@@ -771,8 +826,9 @@ async function handlePhotoUpload(input){
 
   if(newUrls.length){
     const allUrls = [...existing, ...newUrls];
-    const {error} = await sb.from('anamneses').update({photos:allUrls}).eq('id',currentModalId);
-    if(!error && row) row.photos = allUrls;
+    const {data, error} = await sb.from('anamneses').update({photos:allUrls}).eq('id',currentModalId).select().single();
+    if(error){ console.error('[handlePhotoUpload photos update]', error); showToast('Erro ao salvar fotos: '+error.message); hideProgress(); return; }
+    if(row) row.photos = allUrls;
     setProgressPct(100);
     document.getElementById('progressLbl').textContent = 'Concluído!';
     setTimeout(hideProgress, 900);
@@ -825,6 +881,67 @@ async function deleteAnamnese(){
   allRows = allRows.filter(r=>r.id!==currentModalId);
   updateStats(allRows); applyFilters(); closeModal();
   showToast('Ficha excluída.');
+}
+
+// ── EDIT BÁSICO ──
+async function saveEdit(){
+  if(!currentModalId) return;
+  const nome = document.getElementById('editNome').value.trim();
+  const fone = document.getElementById('editFone').value.trim();
+  if(!nome){ showToast('Nome é obrigatório.'); return; }
+  const {data, error} = await sb.from('anamneses')
+    .update({patient_name:nome, patient_phone:fone||null})
+    .eq('id', currentModalId).select().single();
+  if(error){ console.error('[saveEdit]', error); showToast('Erro: '+error.message); return; }
+  const row = allRows.find(r=>r.id===currentModalId);
+  if(row){ row.patient_name = nome; row.patient_phone = fone||null; }
+  document.getElementById('modalTitle').textContent = nome;
+  applyFilters();
+  showToast('Dados atualizados.');
+}
+
+// ── CRIAR FICHA ──
+function openNew(){
+  ['new_nome','new_fone','new_obj','new_obs'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  document.getElementById('new_mode').value = 'online';
+  document.getElementById('newOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('new_nome').focus(), 120);
+}
+
+async function createFicha(){
+  const nome = document.getElementById('new_nome').value.trim();
+  if(!nome){ showToast('Nome é obrigatório.'); return; }
+  const newData = {
+    nome,
+    fone: document.getElementById('new_fone').value.trim(),
+    obj:  document.getElementById('new_obj').value.trim(),
+    obs:  document.getElementById('new_obs').value.trim(),
+  };
+  const {data, error} = await sb.from('anamneses')
+    .insert({
+      professional_id: profId,
+      mode:          document.getElementById('new_mode').value,
+      patient_name:  nome,
+      patient_phone: newData.fone || null,
+      data:          newData,
+      status:        'nova'
+    })
+    .select().single();
+  if(error){ console.error('[createFicha]', error); showToast('Erro: '+error.message); return; }
+  allRows.unshift(data);
+  updateStats(allRows);
+  applyFilters();
+  closeNew();
+  showToast('Ficha criada!');
+}
+
+function closeNew(e){
+  if(!e || e.target===document.getElementById('newOverlay')){
+    document.getElementById('newOverlay').classList.remove('open');
+  }
 }
 
 // ── PROFILE ──
