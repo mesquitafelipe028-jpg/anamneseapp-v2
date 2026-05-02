@@ -1,0 +1,19 @@
+{
+  "name": "AnamneseApp",
+  "short_name": "AnamneseApp",
+  "description": "Fichas digitais para profissionais de saúde",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f5f0",
+  "theme_color": "#6b7a42",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -3,8 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#f5f2ec">
+<meta name="theme-color" content="#6b7a42">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.svg">
 <title>LP Consultoria & Treinamento — Anamnese</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -365,6 +369,11 @@ body {
   .chip { font-size: 12px; padding: 8px 11px; }
   .scn { width: 38px; height: 38px; font-size: 15px; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .form-card, .preview-wrap, .success { animation: none; }
+  .spinner { animation: none; }
+  * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
 </style>
 </head>
 <body>
@@ -383,7 +392,7 @@ body {
 
   <div class="land-phone">
     <label>Seu WhatsApp <span style="color:#6b7a42">*</span></label>
-    <input type="tel" id="alunoFone" placeholder="(85) 99999-9999" maxlength="15" oninput="fmtFone(this)">
+    <input type="tel" id="alunoFone" placeholder="(85) 99999-9999" maxlength="15" autocomplete="tel" inputmode="tel" oninput="fmtFone(this)">
     <div class="land-phone-hint">Seus dados serão enviados para este número também.</div>
   </div>
 
@@ -699,10 +708,21 @@ const SP=[
   ]}
 ];
 
+// Retorna autocomplete e inputmode corretos por campo
+function fieldAttrs(id){
+  const ac={nome:'name',fone:'tel',email:'email',nasc:'bday',cidade:'address-level2'};
+  const im={peso:'decimal',altura:'decimal',sono_h:'decimal',hidrat:'decimal',
+            fone:'tel',pressao:'decimal',circunf:'decimal'};
+  let s='';
+  if(ac[id]) s+=` autocomplete="${ac[id]}"`;
+  if(im[id]) s+=` inputmode="${im[id]}"`;
+  return s;
+}
+
 function rf(f,cl){
   if(f.t==='row')return`<div class="two-col">${f.cols.map(ff=>rf(ff,cl)).join('')}</div>`;
   const req=f.req?`<span class="rstar ${cl}">*</span>`:'';
-  if(f.t==='text'||f.t==='date')return`<div class="field"><label>${f.lbl}${req}</label><input type="${f.t}" id="${f.id}" value="${data[f.id]||''}" placeholder="${f.t==='date'?'':'—'}">${f.hint?`<div class="hint">${f.hint}</div>`:''}</div>`;
+  if(f.t==='text'||f.t==='date')return`<div class="field"><label>${f.lbl}${req}</label><input type="${f.t}" id="${f.id}" value="${data[f.id]||''}" placeholder="${f.t==='date'?'':'—'}"${fieldAttrs(f.id)}>${f.hint?`<div class="hint">${f.hint}</div>`:''}</div>`;
   if(f.t==='textarea')return`<div class="field"><label>${f.lbl}${req}</label><textarea id="${f.id}" placeholder="—">${data[f.id]||''}</textarea>${f.hint?`<div class="hint">${f.hint}</div>`:''}</div>`;
   if(f.t==='select'){const o=f.opts.map(o=>`<option value="${o}"${data[f.id]===o?' selected':''}>${o}</option>`).join('');return`<div class="field"><label>${f.lbl}</label><select id="${f.id}"><option value="">Selecione…</option>${o}</select></div>`;}
   if(f.t==='chips'){const sel=chips[f.id]||[];const cs=f.opts.map(o=>`<div class="chip${sel.includes(o)?' sel':''}" onclick="tChip('${f.id}','${o}',${!!f.multi})">${o}</div>`).join('');return`<div class="field"><label>${f.lbl}${req}</label><div class="chips" id="cw-${f.id}">${cs}</div></div>`;}
@@ -1064,6 +1084,7 @@ function restart(){
   const fi=document.getElementById('alunoFone');if(fi)fi.value='';
   window.scrollTo({top:0,behavior:'instant'});
 }
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 </body>
 </html>

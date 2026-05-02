@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AnamneseApp — Fichas digitais para profissionais de saúde</title>
 <meta name="description" content="Crie fichas de anamnese digitais profissionais. PDF automático, envio por WhatsApp, personalizado para cada especialidade.">
+<meta name="theme-color" content="#6b7a42">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -353,6 +357,10 @@ footer{
 /* ── SCROLL ANIMATION ── */
 .fade-up{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease;}
 .fade-up.visible{opacity:1;transform:translateY(0);}
+@media(prefers-reduced-motion:reduce){
+  .fade-up{opacity:1;transform:none;transition:none;}
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important;}
+}
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
@@ -645,11 +653,11 @@ footer{
 </footer>
 
 <script>
-// Scroll animations
 const obs = new IntersectionObserver((entries)=>{
   entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
 },{threshold:0.1});
 document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 </body>
 </html>

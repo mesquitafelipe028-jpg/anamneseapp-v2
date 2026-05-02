@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#6b7a42">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.svg">
 <title>Painel — AnamneseApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/config.js"></script>
@@ -233,6 +238,9 @@ tr:hover td{background:var(--cream);}
   .share-banner{flex-direction:column;}
   .auth-card{padding:32px 24px;}
 }
+@media(prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important;}
+}
 </style>
 </head>
 <body>
@@ -248,14 +256,14 @@ tr:hover td{background:var(--cream);}
       <button class="auth-tab" id="tabSignup" onclick="switchTab('signup')">Cadastrar</button>
     </div>
     <div id="loginForm">
-      <div class="field"><label>E-mail</label><input type="email" id="loginEmail" placeholder="seu@email.com"></div>
-      <div class="field"><label>Senha</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email" inputmode="email"></div>
+      <div class="field"><label>Senha</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"></div>
       <button class="btn-auth" onclick="doLogin()">Entrar</button>
     </div>
     <div id="signupForm" style="display:none">
-      <div class="field"><label>Seu nome</label><input type="text" id="signupName" placeholder="Dr. Lucas Ferreira"></div>
-      <div class="field"><label>E-mail</label><input type="email" id="signupEmail" placeholder="seu@email.com"></div>
-      <div class="field"><label>Senha</label><input type="password" id="signupPass" placeholder="mínimo 6 caracteres"></div>
+      <div class="field"><label>Seu nome</label><input type="text" id="signupName" placeholder="Dr. Lucas Ferreira" autocomplete="name"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="signupEmail" placeholder="seu@email.com" autocomplete="email" inputmode="email"></div>
+      <div class="field"><label>Senha</label><input type="password" id="signupPass" placeholder="mínimo 6 caracteres" autocomplete="new-password"></div>
       <button class="btn-auth" onclick="doSignup()">Criar conta</button>
     </div>
     <div class="auth-msg" id="authMsg"></div>
@@ -629,6 +637,7 @@ function copyLink(){
   const {data:{session}} = await sb.auth.getSession();
   if(session) await loadDashboard();
 })();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 </body>
 </html>
