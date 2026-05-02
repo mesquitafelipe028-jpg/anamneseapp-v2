@@ -19,7 +19,8 @@
   --border:#e4e0d8;--olive:#6b7a42;--gold:#a8893a;--cream:#f0ece3;--danger:#c0392b;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+html{overflow-x:hidden;max-width:100vw;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;max-width:100vw;}
 
 /* ── AUTH ── */
 #authScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -73,7 +74,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 /* ── STATS ── */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
 .stat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:20px 18px;}
-.stat-val{font-family:'Instrument Serif',serif;font-size:36px;font-weight:400;color:var(--ink);line-height:1;}
+.stat-val{font-family:'Instrument Serif',serif;font-size:clamp(24px,6vw,36px);font-weight:400;color:var(--ink);line-height:1;}
 .stat-lbl{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.5px;}
 .stat-card.highlight{background:var(--olive);}
 .stat-card.highlight .stat-val,.stat-card.highlight .stat-lbl{color:#fff;}
@@ -195,14 +196,38 @@ tr:hover td{background:var(--cream);}
 .btn-delete{padding:9px 16px;background:none;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;min-height:44px;}
 .btn-delete:hover{border-color:var(--danger);color:var(--danger);}
 
+/* ── CARDS MOBILE ── */
+.cards-list{padding:12px;display:flex;flex-direction:column;gap:10px;}
+.ficha-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.ficha-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.ficha-card-name{font-size:15px;font-weight:500;color:var(--ink);}
+.ficha-card-phone{font-size:12px;color:var(--muted);margin-top:2px;}
+.ficha-card-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.ficha-card-obj{font-size:12px;color:var(--ink);margin-bottom:10px;line-height:1.5;}
+.ficha-card .btn-view{width:100%;text-align:center;justify-content:center;display:flex;}
+
 @media(max-width:640px){
+  /* Global */
   .stats-row{grid-template-columns:1fr 1fr;}
   .topbar{padding:0 16px;}
-  .dash-inner{padding:16px;}
+  .dash-inner{padding:12px;}
   .share-banner{flex-direction:column;}
+  .share-link-box{min-width:0;width:100%;}
   .auth-card{padding:32px 24px;}
   .export-grid{grid-template-columns:1fr;}
   .dash-tabs .dash-tab{font-size:12px;padding:9px 10px;}
+  /* Section-hd empilha verticalmente */
+  .section-hd{flex-direction:column;align-items:stretch;}
+  .section-hd > div{width:100%;}
+  /* Search ocupa todo o espaço, refresh ao lado */
+  .search-input{width:auto;flex:1;}
+}
+
+@media(max-width:480px){
+  /* Email some, logo e Sair nas extremidades */
+  .topbar-user{display:none;}
+  /* Stat numbers nunca cortam */
+  .stat-card{padding:14px 12px;}
 }
 @media(prefers-reduced-motion:reduce){
   *{transition-duration:.01ms!important;animation-duration:.01ms!important;}
@@ -496,8 +521,11 @@ function updateStats(rows){
   document.getElementById('statWeek').textContent       = rows.filter(r=>new Date(r.created_at)>week).length;
 }
 
+function isMobile(){ return window.innerWidth < 640; }
+
 function renderTable(rows){
   if(!rows.length){ renderEmpty(); return; }
+  if(isMobile()){ renderCards(rows); return; }
   let h = `<table><thead><tr>
     <th>Paciente</th><th>Modalidade</th><th>Status</th><th>Objetivo</th><th>Data</th><th></th>
   </tr></thead><tbody>`;
@@ -516,6 +544,33 @@ function renderTable(rows){
     </tr>`;
   });
   h += '</tbody></table>';
+  document.getElementById('tableContent').innerHTML = h;
+}
+
+function renderCards(rows){
+  if(!rows.length){ renderEmpty(); return; }
+  let h = '<div class="cards-list">';
+  rows.forEach(r=>{
+    const d  = r.data||{};
+    const dt = new Date(r.created_at).toLocaleDateString('pt-BR');
+    const st = r.status||'nova';
+    h += `<div class="ficha-card">
+      <div class="ficha-card-top">
+        <div>
+          <div class="ficha-card-name">${r.patient_name||d.nome||'—'}</div>
+          ${(r.patient_phone||d.fone)?`<div class="ficha-card-phone">${r.patient_phone||d.fone}</div>`:''}
+        </div>
+        <button class="badge-status s-${st}" onclick="cycleStatus('${r.id}',event)">${STATUS_LABEL[st]}</button>
+      </div>
+      <div class="ficha-card-meta">
+        <span class="badge-mode ${r.mode==='online'?'badge-o':'badge-p'}">${r.mode==='online'?'Online':'Presencial'}</span>
+        <span style="font-size:11px;color:#9a9588">${dt}</span>
+      </div>
+      ${d.obj?`<div class="ficha-card-obj">${d.obj}</div>`:''}
+      <button class="btn-view" onclick="openModal('${r.id}')">Ver ficha completa</button>
+    </div>`;
+  });
+  h += '</div>';
   document.getElementById('tableContent').innerHTML = h;
 }
 
@@ -881,6 +936,12 @@ function copyLink(){
   const {data:{session}} = await sb.auth.getSession();
   if(session) await loadDashboard();
 })();
+// Re-renderiza ao girar o dispositivo (portrait ↔ landscape)
+let _resizeTimer;
+window.addEventListener('resize', ()=>{
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(()=>{ if(allRows.length) applyFilters(); }, 150);
+});
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 </body>
