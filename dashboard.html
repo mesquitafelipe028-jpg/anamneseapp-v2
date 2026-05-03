@@ -112,6 +112,14 @@ tr:hover td{background:var(--cream);}
 .empty-icon{font-size:40px;margin-bottom:12px;}
 .empty-title{font-family:'Instrument Serif',serif;font-size:20px;color:var(--ink);margin-bottom:8px;}
 .empty-desc{font-size:13px;line-height:1.7;}
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;justify-content:center;gap:4px;padding:14px 16px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.pg-btn{min-width:34px;height:34px;padding:0 8px;border-radius:6px;border:1px solid var(--border);background:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.pg-btn:hover:not(:disabled){border-color:var(--olive);color:var(--olive);}
+.pg-btn:disabled{opacity:.35;cursor:default;}
+.pg-btn.pg-active{background:var(--olive);border-color:var(--olive);color:#fff;font-weight:600;}
+.pg-info{font-size:12px;color:var(--muted);margin-right:6px;white-space:nowrap;}
+.pg-dots{font-size:13px;color:var(--muted);padding:0 4px;}
 
 /* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center;padding:24px;}
@@ -535,6 +543,8 @@ let profData = null;
 let currentModalId = null;
 let activeFilter = 'all';
 let activeStatusFilter = 'all';
+let currentPage = 1;
+const PAGE_SIZE = 20;
 
 const STATUS_LABEL = {nova:'Nova', lida:'Lida', arquivada:'Arquivada'};
 const STATUS_CYCLE = {nova:'lida', lida:'arquivada', arquivada:'nova'};
@@ -948,13 +958,39 @@ function updateStats(rows){
 
 function isMobile(){ return window.innerWidth < 640; }
 
+function renderPagination(total){
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if(totalPages <= 1) return '';
+  const start = (currentPage-1)*PAGE_SIZE + 1;
+  const end   = Math.min(currentPage*PAGE_SIZE, total);
+  const pages = [];
+  if(totalPages <= 7){
+    for(let i=1;i<=totalPages;i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if(currentPage > 3) pages.push('…');
+    for(let i=Math.max(2,currentPage-1);i<=Math.min(totalPages-1,currentPage+1);i++) pages.push(i);
+    if(currentPage < totalPages-2) pages.push('…');
+    pages.push(totalPages);
+  }
+  let h = `<div class="pagination"><span class="pg-info">${start}–${end} de ${total}</span>`;
+  h += `<button class="pg-btn" onclick="goToPage(${currentPage-1})"${currentPage===1?' disabled':''}>‹</button>`;
+  pages.forEach(p=>{
+    if(p==='…') h += '<span class="pg-dots">…</span>';
+    else h += `<button class="pg-btn${p===currentPage?' pg-active':''}" onclick="goToPage(${p})">${p}</button>`;
+  });
+  h += `<button class="pg-btn" onclick="goToPage(${currentPage+1})"${currentPage===totalPages?' disabled':''}>›</button>`;
+  return h + '</div>';
+}
+
 function renderTable(rows){
   if(!rows.length){ renderEmpty(); return; }
   if(isMobile()){ renderCards(rows); return; }
+  const page = rows.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
   let h = `<table><thead><tr>
     <th>Paciente</th><th>Modalidade</th><th>Status</th><th>Objetivo</th><th>Data</th><th></th>
   </tr></thead><tbody>`;
-  rows.forEach(r=>{
+  page.forEach(r=>{
     const d  = r.data||{};
     const dt = new Date(r.created_at).toLocaleDateString('pt-BR');
     const st = r.status||'nova';
@@ -969,13 +1005,15 @@ function renderTable(rows){
     </tr>`;
   });
   h += '</tbody></table>';
+  h += renderPagination(rows.length);
   document.getElementById('tableContent').innerHTML = h;
 }
 
 function renderCards(rows){
   if(!rows.length){ renderEmpty(); return; }
+  const page = rows.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
   let h = '<div class="cards-list">';
-  rows.forEach(r=>{
+  page.forEach(r=>{
     const d  = r.data||{};
     const dt = new Date(r.created_at).toLocaleDateString('pt-BR');
     const st = r.status||'nova';
@@ -996,6 +1034,7 @@ function renderCards(rows){
     </div>`;
   });
   h += '</div>';
+  h += renderPagination(rows.length);
   document.getElementById('tableContent').innerHTML = h;
 }
 
@@ -1023,7 +1062,8 @@ function setStatusFilter(f){
   document.getElementById('fsArquivada').classList.toggle('active', f==='arquivada');
   applyFilters();
 }
-function applyFilters(){
+function applyFilters(resetPage=true){
+  if(resetPage) currentPage = 1;
   const q = document.getElementById('searchInput').value.toLowerCase();
   let rows = allRows;
   if(activeFilter!=='all') rows = rows.filter(r=>r.mode===activeFilter);
@@ -1034,6 +1074,10 @@ function applyFilters(){
     return nm.includes(q)||ph.includes(q);
   });
   renderTable(rows);
+}
+function goToPage(p){
+  currentPage = p;
+  applyFilters(false);
 }
 async function refreshData(){
   const btn = document.getElementById('btnRefresh');
@@ -1051,7 +1095,7 @@ async function cycleStatus(id, e){
   const {data, error} = await sb.from('anamneses').update({status:next}).eq('id',id).select().single();
   if(error){ console.error('[cycleStatus]', error); showToast('Erro: '+error.message); return; }
   row.status = next;
-  applyFilters();
+  applyFilters(false);
 }
 
 // ── MODAL ──
@@ -1178,7 +1222,7 @@ async function setModalStatus(st){
     const val = b.textContent.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
     if(val===st) b.classList.add('active-'+st);
   });
-  applyFilters();
+  applyFilters(false);
 }
 
 // ── NOTES ──
@@ -1290,7 +1334,7 @@ async function saveEdit(){
   const row = allRows.find(r=>r.id===currentModalId);
   if(row){ row.patient_name = nome; row.patient_phone = fone||null; }
   document.getElementById('modalTitle').textContent = nome;
-  applyFilters();
+  applyFilters(false);
   showToast('Dados atualizados.');
 }
 
@@ -1486,7 +1530,7 @@ function copyLink(){
 let _resizeTimer;
 window.addEventListener('resize', ()=>{
   clearTimeout(_resizeTimer);
-  _resizeTimer = setTimeout(()=>{ if(allRows.length) applyFilters(); }, 150);
+  _resizeTimer = setTimeout(()=>{ if(allRows.length) applyFilters(false); }, 150);
 });
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
