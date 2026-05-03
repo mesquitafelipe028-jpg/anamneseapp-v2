@@ -33,6 +33,8 @@ create table if not exists anamneses (
 alter table anamneses add column if not exists status text not null default 'nova' check (status in ('nova','lida','arquivada'));
 alter table anamneses add column if not exists notes  text;
 alter table anamneses add column if not exists photos jsonb not null default '[]';
+-- wa_number em form_templates permite que pacientes leiam o número do profissional sem auth
+alter table form_templates add column if not exists wa_number text;
 
 -- 3. SEGURANÇA (Row Level Security)
 alter table professionals enable row level security;

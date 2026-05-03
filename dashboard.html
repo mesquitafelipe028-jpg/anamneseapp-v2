@@ -731,6 +731,7 @@ const DEFAULTS_FULL = {
       {id:'fotos_av',t:'toggle',  lbl:'Fotos de avaliação realizadas?',   active:true},
       {id:'testes',  t:'chips',   lbl:'Testes funcionais realizados',     active:true, multi:true,  opts:['Flexibilidade','Força de preensão','Resistência aeróbica','Equilíbrio','Nenhum por ora']},
       {id:'postura', t:'chips',   lbl:'Observações posturais',            active:true, multi:true,  opts:['Hipercifose','Hiperlordose','Escoliose','Anteversão pélvica','Joelhos valgo','Nenhum observado']},
+      {id:'obs_fis', t:'textarea',lbl:'Observações sobre avaliação física',active:true},
     ]},
     {num:'07',title:'Hábitos de Vida',active:true,custom:false,fields:[
       {id:'sono_h',  t:'text',  lbl:'Horas de sono por noite',         active:true},
@@ -847,11 +848,12 @@ function feToggle(bi){getDraft()[bi].active=!getDraft()[bi].active;renderFormEdi
 function feToggleExpand(bi){feExpanded[bi]=!feExpanded[bi];renderFormEditor();}
 function feUpdateTitle(bi,val){getDraft()[bi].title=val||getDraft()[bi].title;}
 function feRemoveBlock(bi){
-  if(!confirm('Remover este bloco?')) return;
-  getDraft().splice(bi,1);
-  const e2={};
-  Object.keys(feExpanded).forEach(k=>{const ki=parseInt(k);if(ki<bi)e2[ki]=feExpanded[k];else if(ki>bi)e2[ki-1]=feExpanded[k];});
-  feExpanded=e2;renderFormEditor();
+  showConfirm('Remover este bloco personalizado?', ()=>{
+    getDraft().splice(bi,1);
+    const e2={};
+    Object.keys(feExpanded).forEach(k=>{const ki=parseInt(k);if(ki<bi)e2[ki]=feExpanded[k];else if(ki>bi)e2[ki-1]=feExpanded[k];});
+    feExpanded=e2;renderFormEditor();
+  });
 }
 function feAddBlock(){
   const draft=getDraft();
@@ -866,7 +868,7 @@ function feToggleField(bi,fi){const f=getDraft()[bi].fields[fi];f.active=f.activ
 function feUpdateFieldLabel(bi,fi,val){getDraft()[bi].fields[fi].lbl=val;}
 function feChangeFieldType(bi,fi,key){applyTypeKey(getDraft()[bi].fields[fi],key);renderFormEditor();}
 function feToggleReq(bi,fi){const f=getDraft()[bi].fields[fi];f.req=!f.req;renderFormEditor();}
-function feDeleteField(bi,fi){if(!confirm('Excluir esta pergunta?'))return;getDraft()[bi].fields.splice(fi,1);renderFormEditor();}
+function feDeleteField(bi,fi){showConfirm('Excluir esta pergunta?',()=>{getDraft()[bi].fields.splice(fi,1);renderFormEditor();});}
 function feAddField(bi){
   const blk=getDraft()[bi];if(!blk.fields)blk.fields=[];
   blk.fields.push({id:'ef_'+Date.now(),t:'text',lbl:'',active:true});
@@ -883,7 +885,8 @@ async function saveFormConfig(){
   const msg=document.getElementById('feMsg');
   msg.textContent='Salvando…';msg.className='fe-msg ok';
   const {error}=await sb.from('form_templates').upsert({
-    professional_id:profId,
+    professional_id:  profId,
+    wa_number:        profData?.wa_number||'',
     online_config:    formDraft.online    ||buildDefaultDraft('online'),
     presencial_config:formDraft.presencial||buildDefaultDraft('presencial'),
     updated_at:new Date().toISOString()
@@ -893,8 +896,9 @@ async function saveFormConfig(){
   setTimeout(()=>msg.textContent='',5000);
 }
 function resetFormConfig(){
-  if(!confirm('Restaurar formulário padrão para o modo '+feMode+'?'))return;
-  formDraft[feMode]=buildDefaultDraft(feMode);feExpanded={};renderFormEditor();
+  showConfirm('Restaurar formulário padrão para o modo '+feMode+'?', ()=>{
+    formDraft[feMode]=buildDefaultDraft(feMode);feExpanded={};renderFormEditor();
+  });
 }
 
 // ── ANAMNESES ──
@@ -916,7 +920,14 @@ async function loadAnamneses(){
         allRows.unshift(payload.new);
         updateStats(allRows); applyFilters();
         showToast('Nova ficha: '+(payload.new.patient_name||'Paciente'));
-      }).subscribe();
+      })
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'anamneses',
+        filter:'professional_id=eq.'+profId}, payload=>{
+        const idx=allRows.findIndex(r=>r.id===payload.new.id);
+        if(idx>-1) allRows[idx]={...allRows[idx],...payload.new};
+        updateStats(allRows); applyFilters();
+      })
+      .subscribe();
   }
 }
 
@@ -1232,21 +1243,22 @@ async function deletePhoto(idx){
   const row = allRows.find(r=>r.id===currentModalId);
   if(!row||!row.photos) return;
   const updated = row.photos.filter((_,i)=>i!==idx);
-  const {error} = await sb.from('anamneses').update({photos:updated}).eq('id',currentModalId);
-  if(error){ showToast('Erro ao remover foto'); return; }
+  const {data, error} = await sb.from('anamneses').update({photos:updated}).eq('id',currentModalId).select().single();
+  if(error){ console.error('[deletePhoto]',error); showToast('Erro ao remover foto: '+error.message); return; }
   row.photos = updated;
   document.getElementById('photosGrid').innerHTML = buildPhotosGrid(updated);
 }
 
 // ── DELETE ANAMNESE ──
-async function deleteAnamnese(){
+function deleteAnamnese(){
   if(!currentModalId) return;
-  if(!confirm('Excluir esta ficha permanentemente? A ação não pode ser desfeita.')) return;
-  const {error} = await sb.from('anamneses').delete().eq('id',currentModalId);
-  if(error){ alert('Erro ao excluir: '+error.message); return; }
-  allRows = allRows.filter(r=>r.id!==currentModalId);
-  updateStats(allRows); applyFilters(); closeModal();
-  showToast('Ficha excluída.');
+  showConfirm('Excluir esta ficha permanentemente? A ação não pode ser desfeita.', async ()=>{
+    const {error} = await sb.from('anamneses').delete().eq('id',currentModalId);
+    if(error){ console.error('[deleteAnamnese]',error); showToast('Erro ao excluir: '+error.message); return; }
+    allRows = allRows.filter(r=>r.id!==currentModalId);
+    updateStats(allRows); applyFilters(); closeModal();
+    showToast('Ficha excluída.');
+  });
 }
 
 // ── EDIT BÁSICO ──
@@ -1326,10 +1338,23 @@ async function saveProfile(){
   setTimeout(()=>msg.textContent='', 3000);
 }
 
-// ── EXPORT CSV ──
+// ── EXPORT ──
+function getFilteredRows(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  let rows=allRows;
+  if(activeFilter!=='all') rows=rows.filter(r=>r.mode===activeFilter);
+  if(q) rows=rows.filter(r=>{
+    const nm=(r.patient_name||r.data?.nome||'').toLowerCase();
+    const ph=(r.patient_phone||r.data?.fone||'').toLowerCase();
+    return nm.includes(q)||ph.includes(q);
+  });
+  return rows;
+}
+
 function exportCSV(){
+  const filtered=getFilteredRows();
   const headers = ['Nome','Telefone','Modalidade','Status','Objetivo','Nível','Data'];
-  const rows = allRows.map(r=>{
+  const rows = filtered.map(r=>{
     const d = r.data||{};
     return [
       r.patient_name||d.nome||'',
@@ -1351,6 +1376,7 @@ function exportCSV(){
 
 // ── EXPORT PDF ──
 function exportPDF(){
+  const filtered=getFilteredRows();
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
   const PW=297, ML=14;
@@ -1363,7 +1389,9 @@ function exportPDF(){
   doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
   doc.text('AnamneseApp — Fichas recebidas', ML, 5.8);
   doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text(`${new Date().toLocaleDateString('pt-BR')} · ${allRows.length} fichas`, PW-ML, 5.8, {align:'right'});
+  const label=filtered.length<allRows.length?`${filtered.length} de ${allRows.length} fichas (filtrado)`:
+    `${new Date().toLocaleDateString('pt-BR')} · ${filtered.length} fichas`;
+  doc.text(label, PW-ML, 5.8, {align:'right'});
 
   let y=16;
   // Table header
@@ -1375,7 +1403,7 @@ function exportPDF(){
   y+=9;
 
   doc.setFont('helvetica','normal'); doc.setFontSize(8);
-  allRows.forEach((r,ri)=>{
+  filtered.forEach((r,ri)=>{
     if(y>190){ doc.addPage(); y=16; }
     const d=r.data||{};
     const row=[
@@ -1397,6 +1425,24 @@ function exportPDF(){
   });
 
   doc.save('fichas-anamnese.pdf');
+}
+
+// ── CONFIRM DIALOG (substitui confirm() nativo — ruim no mobile) ──
+function showConfirm(msg, onOk){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;';
+  el.innerHTML=`<div style="background:#fff;border-radius:14px;padding:28px 24px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <p style="font-size:14px;color:#1a1814;line-height:1.6;margin-bottom:22px">${msg}</p>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button id="_cdlCancel" style="padding:10px 20px;background:none;border:1px solid #e4e0d8;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:#9a9588;cursor:pointer;min-height:44px">Cancelar</button>
+      <button id="_cdlOk" style="padding:10px 20px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">Confirmar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  const rm=()=>el.remove();
+  el.addEventListener('click',e=>{if(e.target===el)rm();});
+  el.querySelector('#_cdlCancel').onclick=rm;
+  el.querySelector('#_cdlOk').onclick=()=>{rm();onOk();};
 }
 
 // ── MISC ──

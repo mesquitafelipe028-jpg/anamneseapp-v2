@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#6b7a42">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -374,6 +374,10 @@ body {
   .spinner { animation: none; }
   * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+.form-err-banner{
+  background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.3);
+  border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-bottom:14px;
+}
 </style>
 </head>
 <body>
@@ -436,7 +440,8 @@ body {
 </div>
 
 <script>
-const WA_NUMBER='5585981403048';
+const WA_NUMBER='5585981403048'; // fallback — sobrescrito por _profWa ao carregar config
+let _profWa = WA_NUMBER;
 
 // Client Supabase global — reutilizado em confirmSend
 const _SBU = window.SUPABASE_URL  || '';
@@ -573,7 +578,7 @@ function updD(full){
 function backToForm(){ step=ss().length-1; render(); }
 function confirmSend(){
   if(sb){
-    const pid = new URLSearchParams(window.location.search).get('pid') || null;
+    const pid = _pid;
     sb.from('anamneses').insert({
       professional_id: pid,
       mode: mode,
@@ -757,7 +762,30 @@ function save(){
   function sf(f){if(f.t==='row'){f.cols.forEach(sf);return;}if(['text','date','textarea','select'].includes(f.t)){const el=document.getElementById(f.id);if(el)data[f.id]=el.value;}}
   ss()[step].fields.forEach(sf);
 }
-function nextStep(){save();step++;render();}
+function nextStep(){
+  save();
+  // Valida campos obrigatórios antes de avançar
+  const s=ss()[step];
+  let firstMissing=null;
+  function checkReq(f){
+    if(firstMissing) return;
+    if(f.t==='row'){f.cols.forEach(checkReq);return;}
+    if(!f.req||f.t==='toggle') return;
+    const val=data[f.id];
+    if(!val||!String(val).trim()) firstMissing=f;
+  }
+  s.fields.forEach(checkReq);
+  if(firstMissing){
+    const card=document.querySelector('.form-card');
+    let banner=card.querySelector('.form-err-banner');
+    if(!banner){banner=document.createElement('div');banner.className='form-err-banner';card.insertBefore(banner,card.firstChild);}
+    banner.textContent=`Campo obrigatório: "${firstMissing.lbl}"`;
+    const el=document.getElementById(firstMissing.id)||document.getElementById('cw-'+firstMissing.id);
+    if(el){el.style.borderColor='#c0392b';el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{if(el.style)el.style.borderColor='';},2500);}
+    return;
+  }
+  step++;render();
+}
 function prevStep(){save();step--;render();}
 function jmp(i){if(i<=step){save();step=i;render();}}
 
@@ -842,7 +870,7 @@ ${io()?`▸ Formato treino: ${v('formato')}
 _Enviado via LP Consultoria & Treinamento_`.trim();
 }
 
-function sendWpp(){window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(buildMsg())}`,'_blank');}
+function sendWpp(){window.open(`https://wa.me/${_profWa}?text=${encodeURIComponent(buildMsg())}`,'_blank');}
 
 // ── PDF GENERATION ──
 function gerarPDF(){
@@ -1094,6 +1122,8 @@ async function loadAndApplyConfig(m){
   try{
     const {data}=await sb.from('form_templates')
       .select('*').eq('professional_id',_pid).maybeSingle();
+    // Injeta número do WhatsApp do profissional (campo público em form_templates)
+    if(data?.wa_number) _profWa=data.wa_number;
     if(!data) return;
     const cfg=m==='online'?data.online_config:data.presencial_config;
     if(!Array.isArray(cfg)||!cfg.length) return;
