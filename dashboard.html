@@ -198,6 +198,50 @@ tr:hover td{background:var(--cream);}
 .btn-new-ficha{padding:8px 16px;background:var(--olive);color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;min-height:44px;white-space:nowrap;}
 .btn-new-ficha:hover{opacity:.88;}
 
+/* ── FORM EDITOR ── */
+.fe-mode-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.fe-mode-tab{padding:9px 20px;border:1.5px solid var(--border);border-radius:20px;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;min-height:44px;transition:all .2s;}
+.fe-mode-tab.active{background:var(--olive);border-color:var(--olive);color:#fff;}
+.fe-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;}
+.fe-header h2{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;}
+.fe-actions{display:flex;gap:8px;}
+.btn-fe-save{padding:10px 20px;background:var(--olive);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;min-height:44px;transition:opacity .2s;}
+.btn-fe-save:hover{opacity:.88;}
+.btn-fe-reset{padding:10px 14px;background:none;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;min-height:44px;transition:all .2s;}
+.btn-fe-reset:hover{border-color:var(--ink);color:var(--ink);}
+.fe-tip{font-size:12px;color:var(--muted);background:var(--cream);border-radius:8px;padding:10px 14px;margin-bottom:16px;line-height:1.6;}
+.fe-block{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:opacity .2s;}
+.fe-block.inactive{opacity:.45;}
+.fe-block-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;}
+.fe-block-num{width:30px;height:30px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;}
+.fe-block-title{flex:1;font-size:14px;font-weight:500;color:var(--ink);border:none;background:none;font-family:'DM Sans',sans-serif;outline:none;padding:4px 6px;border-radius:4px;min-height:36px;transition:background .15s;}
+.fe-block-title:focus{background:var(--cream);}
+.fe-toggle{width:42px;height:24px;border-radius:12px;background:var(--border);position:relative;cursor:pointer;border:none;transition:background .25s;flex-shrink:0;}
+.fe-toggle.on{background:var(--olive);}
+.fe-toggle::after{content:'';width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.fe-toggle.on::after{transform:translateX(18px);}
+.fe-expand{padding:0 6px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;min-height:36px;min-width:36px;line-height:1;transition:transform .2s;display:flex;align-items:center;justify-content:center;}
+.fe-expand.open{transform:rotate(180deg);}
+.fe-block-body{padding:12px 16px 16px;border-top:1px solid var(--border);display:none;}
+.fe-block-body.open{display:block;}
+.fe-field-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.fe-field-lbl{flex:1;padding:9px 12px;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;min-height:44px;transition:border-color .2s;}
+.fe-field-lbl:focus{border-color:var(--olive);}
+.fe-field-type{padding:9px 10px;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);outline:none;min-height:44px;appearance:none;cursor:pointer;}
+.fe-field-del{min-width:44px;min-height:44px;border:none;background:none;color:var(--muted);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;transition:color .2s;}
+.fe-field-del:hover{color:var(--danger);}
+.btn-fe-add-field{width:100%;padding:9px;background:none;border:1.5px dashed var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;min-height:44px;transition:all .2s;margin-top:4px;}
+.btn-fe-add-field:hover{border-color:var(--olive);color:var(--olive);}
+.fe-block-footer{display:flex;justify-content:flex-end;margin-top:10px;}
+.btn-fe-del-block{padding:7px 14px;background:none;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);cursor:pointer;min-height:36px;transition:all .2s;}
+.btn-fe-del-block:hover{border-color:var(--danger);color:var(--danger);}
+.fe-add-block{width:100%;padding:14px;border:2px dashed var(--border);border-radius:12px;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;min-height:52px;transition:all .2s;margin-top:6px;}
+.fe-add-block:hover{border-color:var(--olive);color:var(--olive);}
+.fe-msg{font-size:12px;margin-top:12px;min-height:18px;}
+.fe-msg.ok{color:var(--olive);}
+.fe-msg.err{color:var(--danger);}
+.fe-default-note{font-size:11px;color:var(--muted);font-style:italic;padding:6px 0 4px;}
+
 /* ── CARDS MOBILE ── */
 .cards-list{padding:12px;display:flex;flex-direction:column;gap:10px;}
 .ficha-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;}
@@ -288,9 +332,10 @@ tr:hover td{background:var(--cream);}
 
     <!-- Tabs -->
     <div class="dash-tabs">
-      <button class="dash-tab active" id="dtFichas"  onclick="setDashTab('fichas')">Fichas</button>
-      <button class="dash-tab"        id="dtPerfil"  onclick="setDashTab('perfil')">Perfil</button>
-      <button class="dash-tab"        id="dtExportar" onclick="setDashTab('exportar')">Exportar</button>
+      <button class="dash-tab active" id="dtFichas"     onclick="setDashTab('fichas')">Fichas</button>
+      <button class="dash-tab"        id="dtFormulario" onclick="setDashTab('formulario')">Formulário</button>
+      <button class="dash-tab"        id="dtPerfil"     onclick="setDashTab('perfil')">Perfil</button>
+      <button class="dash-tab"        id="dtExportar"   onclick="setDashTab('exportar')">Exportar</button>
     </div>
 
     <!-- TAB: Fichas -->
@@ -319,6 +364,28 @@ tr:hover td{background:var(--cream);}
         </div>
       </div>
       <div class="table-wrap"><div id="tableContent"><div class="spinner-wrap"><div class="spin"></div>Carregando fichas…</div></div></div>
+    </div>
+
+    <!-- TAB: Formulário -->
+    <div class="tab-pane" id="pane-formulario">
+      <div class="fe-header">
+        <h2>Editor de Formulário</h2>
+        <div class="fe-actions">
+          <button class="btn-fe-reset" onclick="resetFormConfig()">Restaurar padrão</button>
+          <button class="btn-fe-save"  onclick="saveFormConfig()">Salvar</button>
+        </div>
+      </div>
+      <p class="fe-tip">
+        Personalize o formulário que seus pacientes preenchem ao abrir seu link.
+        Ative/desative blocos, edite títulos, adicione campos extras e crie blocos personalizados.
+        <a id="fePreviewLink" href="#" target="_blank" style="color:var(--olive);text-decoration:none;font-weight:500"> Visualizar formulário →</a>
+      </p>
+      <div class="fe-mode-tabs">
+        <button class="fe-mode-tab active" id="feModeOnline"     onclick="setFeMode('online')">Consultoria Online</button>
+        <button class="fe-mode-tab"        id="feModePresencial" onclick="setFeMode('presencial')">Atendimento Presencial</button>
+      </div>
+      <div id="feBlocks"></div>
+      <div class="fe-msg" id="feMsg"></div>
     </div>
 
     <!-- TAB: Perfil -->
@@ -525,10 +592,200 @@ async function loadDashboard(){
 
 // ── TABS ──
 function setDashTab(t){
-  ['fichas','perfil','exportar'].forEach(id=>{
+  ['fichas','formulario','perfil','exportar'].forEach(id=>{
     document.getElementById('pane-'+id).classList.toggle('active', id===t);
     document.getElementById('dt'+id.charAt(0).toUpperCase()+id.slice(1)).classList.toggle('active', id===t);
   });
+  if(t==='formulario' && !formDraft.online) loadFormConfig();
+}
+
+// ── FORM EDITOR ──
+const DEFAULT_BLOCKS = {
+  online:[
+    {num:'01',title:'Identificação'},
+    {num:'02',title:'Objetivo'},
+    {num:'03',title:'Histórico de Treino'},
+    {num:'04',title:'Disponibilidade'},
+    {num:'05',title:'Saúde & Histórico Médico'},
+    {num:'06',title:'Hábitos de Vida'},
+    {num:'07',title:'Dados Físicos'},
+    {num:'08',title:'Comunicação'},
+  ],
+  presencial:[
+    {num:'01',title:'Identificação'},
+    {num:'02',title:'Objetivo'},
+    {num:'03',title:'Histórico de Treino'},
+    {num:'04',title:'Disponibilidade'},
+    {num:'05',title:'Saúde & Histórico Médico'},
+    {num:'06',title:'Avaliação Física'},
+    {num:'07',title:'Hábitos de Vida'},
+    {num:'08',title:'Aspectos Comportamentais'},
+  ]
+};
+
+let formDraft  = {online:null, presencial:null};
+let feMode     = 'online';
+let feExpanded = {};
+
+function buildDefaultDraft(mode){
+  return DEFAULT_BLOCKS[mode].map(b=>({
+    num:b.num, title:b.title, active:true, custom:false, extraFields:[]
+  }));
+}
+function getDraft(){ return formDraft[feMode]; }
+
+async function loadFormConfig(){
+  if(!profId) return;
+  const {data} = await sb.from('form_templates')
+    .select('*').eq('professional_id',profId).maybeSingle();
+  formDraft.online     = data?.online_config     || buildDefaultDraft('online');
+  formDraft.presencial = data?.presencial_config || buildDefaultDraft('presencial');
+  // Actualiza link de prévia
+  const lnk = document.getElementById('fePreviewLink');
+  if(lnk) lnk.href = window.location.origin+'/anamnese?pid='+(profId||'');
+  renderFormEditor();
+}
+
+function setFeMode(mode){
+  feMode=mode; feExpanded={};
+  document.getElementById('feModeOnline').classList.toggle('active', mode==='online');
+  document.getElementById('feModePresencial').classList.toggle('active', mode==='presencial');
+  renderFormEditor();
+}
+
+function renderFormEditor(){
+  if(!formDraft[feMode]) formDraft[feMode]=buildDefaultDraft(feMode);
+  const draft=getDraft();
+  let html='';
+  draft.forEach((blk,idx)=>{
+    const exp=!!feExpanded[idx];
+    const extras=blk.extraFields||[];
+    let bodyHtml='';
+    if(!blk.custom){
+      bodyHtml+=`<p class="fe-default-note">Bloco padrão — adicione campos extras abaixo.</p>`;
+    }
+    extras.forEach((f,fi)=>{
+      bodyHtml+=`<div class="fe-field-row">
+        <input class="fe-field-lbl" type="text" value="${f.lbl.replace(/"/g,'&quot;')}"
+          onchange="feUpdateField(${idx},${fi},'lbl',this.value)" placeholder="Pergunta">
+        <select class="fe-field-type" onchange="feUpdateField(${idx},${fi},'t',this.value)">
+          <option value="text"${f.t==='text'?' selected':''}>Texto</option>
+          <option value="textarea"${f.t==='textarea'?' selected':''}>Parágrafo</option>
+          <option value="date"${f.t==='date'?' selected':''}>Data</option>
+        </select>
+        <button class="fe-field-del" onclick="feRemoveField(${idx},${fi})" title="Remover campo">×</button>
+      </div>`;
+    });
+    bodyHtml+=`<button class="btn-fe-add-field" onclick="feAddField(${idx})">+ Adicionar campo extra</button>`;
+    if(blk.custom){
+      bodyHtml+=`<div class="fe-block-footer">
+        <button class="btn-fe-del-block" onclick="feRemoveBlock(${idx})">Remover bloco</button>
+      </div>`;
+    }
+    html+=`<div class="fe-block${blk.active?'':' inactive'}">
+      <div class="fe-block-hd">
+        <div class="fe-block-num">${blk.num}</div>
+        <input class="fe-block-title" type="text" value="${blk.title.replace(/"/g,'&quot;')}"
+          onchange="feUpdateTitle(${idx},this.value)" placeholder="Título do bloco">
+        <button class="fe-toggle${blk.active?' on':''}" onclick="feToggle(${idx})"
+          title="${blk.active?'Desativar':'Ativar'}"></button>
+        <button class="fe-expand${exp?' open':''}" onclick="feToggleExpand(${idx})">⌄</button>
+      </div>
+      <div class="fe-block-body${exp?' open':''}">
+        ${bodyHtml}
+      </div>
+    </div>`;
+  });
+  html+=`<button class="fe-add-block" onclick="feAddBlock()">+ Adicionar bloco personalizado</button>`;
+  document.getElementById('feBlocks').innerHTML=html;
+}
+
+function feToggle(idx){
+  getDraft()[idx].active=!getDraft()[idx].active;
+  renderFormEditor();
+}
+function feToggleExpand(idx){
+  feExpanded[idx]=!feExpanded[idx];
+  renderFormEditor();
+}
+function feUpdateTitle(idx,val){ getDraft()[idx].title=val||getDraft()[idx].title; }
+function feUpdateField(bi,fi,key,val){ getDraft()[bi].extraFields[fi][key]=val; }
+
+function feAddField(blockIdx){
+  const blk=getDraft()[blockIdx];
+  if(!blk.extraFields) blk.extraFields=[];
+  blk.extraFields.push({id:'ef_'+Date.now(), t:'text', lbl:''});
+  feExpanded[blockIdx]=true;
+  renderFormEditor();
+  setTimeout(()=>{
+    const inputs=[...document.querySelectorAll('.fe-block-body.open .fe-field-lbl')];
+    if(inputs.length) inputs[inputs.length-1].focus();
+  },60);
+}
+
+function feRemoveField(bi,fi){
+  getDraft()[bi].extraFields.splice(fi,1);
+  renderFormEditor();
+}
+
+function feAddBlock(){
+  const draft=getDraft();
+  const customCount=draft.filter(b=>b.custom).length;
+  draft.push({
+    num:'C'+(customCount+1), title:'Bloco personalizado',
+    active:true, custom:true,
+    extraFields:[{id:'ef_'+Date.now(), t:'text', lbl:''}]
+  });
+  const newIdx=draft.length-1;
+  feExpanded[newIdx]=true;
+  renderFormEditor();
+  setTimeout(()=>{
+    const inputs=[...document.querySelectorAll('.fe-block-body.open .fe-field-lbl')];
+    if(inputs.length) inputs[inputs.length-1].focus();
+  },60);
+}
+
+function feRemoveBlock(idx){
+  if(!confirm('Remover este bloco personalizado?')) return;
+  getDraft().splice(idx,1);
+  const newExp={};
+  Object.keys(feExpanded).forEach(k=>{
+    const ki=parseInt(k);
+    if(ki<idx) newExp[ki]=feExpanded[k];
+    else if(ki>idx) newExp[ki-1]=feExpanded[k];
+  });
+  feExpanded=newExp;
+  renderFormEditor();
+}
+
+async function saveFormConfig(){
+  if(!profId) return;
+  const msg=document.getElementById('feMsg');
+  // Sync any title inputs that weren't changed via onchange
+  getDraft().forEach((blk,i)=>{
+    const el=document.querySelector(`#feBlocks .fe-block:nth-child(${i+1}) .fe-block-title`);
+    if(el) blk.title=el.value.trim()||blk.title;
+  });
+  msg.textContent='Salvando…'; msg.className='fe-msg ok';
+  const payload={
+    professional_id:profId,
+    online_config:    formDraft.online    || buildDefaultDraft('online'),
+    presencial_config:formDraft.presencial|| buildDefaultDraft('presencial'),
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await sb.from('form_templates')
+    .upsert(payload,{onConflict:'professional_id'});
+  if(error){console.error('[saveFormConfig]',error);msg.textContent='Erro: '+error.message;msg.className='fe-msg err';return;}
+  msg.textContent='Formulário salvo! Pacientes verão as mudanças no próximo acesso ao link.';
+  msg.className='fe-msg ok';
+  setTimeout(()=>msg.textContent='',5000);
+}
+
+function resetFormConfig(){
+  if(!confirm('Restaurar o formulário padrão para o modo '+feMode+'?')) return;
+  formDraft[feMode]=buildDefaultDraft(feMode);
+  feExpanded={};
+  renderFormEditor();
 }
 
 // ── ANAMNESES ──

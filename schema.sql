@@ -87,7 +87,23 @@ create policy "anamneses: professional updates own"
 --   on storage.objects for delete to authenticated
 --   using (bucket_id = 'anamnese-photos' and auth.uid()::text = (storage.foldername(name))[1]);
 
--- 4. ÍNDICES
+-- 4. FORM TEMPLATES (configuração do formulário por profissional)
+create table if not exists form_templates (
+  professional_id   uuid primary key references professionals(id) on delete cascade,
+  online_config     jsonb not null default '[]',
+  presencial_config jsonb not null default '[]',
+  updated_at        timestamptz default now()
+);
+alter table form_templates enable row level security;
+-- Pacientes lêem para montar o formulário (sem autenticação)
+create policy "form_templates: public select"
+  on form_templates for select using (true);
+-- Só o dono escreve
+create policy "form_templates: owner all"
+  on form_templates for all to authenticated
+  using (professional_id in (select id from professionals where user_id = auth.uid()));
+
+-- 5. ÍNDICES
 create index if not exists idx_anamneses_professional on anamneses(professional_id);
 create index if not exists idx_anamneses_created      on anamneses(created_at desc);
 create index if not exists idx_professionals_user     on professionals(user_id);

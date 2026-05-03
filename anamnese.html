@@ -445,7 +445,9 @@ const sb = (_SBU && _SBA && _SBU !== 'COLE_SUA_URL_AQUI')
   ? supabase.createClient(_SBU, _SBA) : null;
 
 let mode=null,step=0,data={},chips={},toggles={},scales={},alunoFone='';
-const ss=()=>mode==='online'?SO:SP;
+let _SOc=null,_SPc=null; // versões customizadas pelo profissional
+const _pid=new URLSearchParams(window.location.search).get('pid')||null;
+const ss=()=>mode==='online'?(_SOc||SO):(_SPc||SP);
 const io=()=>mode==='online';
 const c=()=>io()?'o':'p';
 
@@ -458,8 +460,9 @@ function fmtFone(el){
   el.value=v;
 }
 
-function startForm(m){
+async function startForm(m){
   alunoFone=document.getElementById('alunoFone').value||'';
+  _SOc=null;_SPc=null; // reseta config anterior
   mode=m;step=0;data={};chips={};toggles={};scales={};
   document.getElementById('landing').style.display='none';
   document.getElementById('formShell').style.display='block';
@@ -467,6 +470,7 @@ function startForm(m){
   n.textContent='LP';n.className='fhdr-name '+(io()?'online':'presencial');
   document.getElementById('fhMode').textContent=io()?'Consultoria Online':'Atendimento Presencial';
   document.getElementById('fbody').className='fbody '+(io()?'online-form':'presencial-form');
+  await loadAndApplyConfig(m);
   render();window.scrollTo({top:0,behavior:'instant'});
 }
 function goHome(){
@@ -1084,6 +1088,39 @@ function restart(){
   const fi=document.getElementById('alunoFone');if(fi)fi.value='';
   window.scrollTo({top:0,behavior:'instant'});
 }
+// ── CARREGA CONFIG DO FORMULÁRIO (quando link tem ?pid=) ──
+async function loadAndApplyConfig(m){
+  if(!_pid||!sb) return;
+  try{
+    const {data}=await sb.from('form_templates')
+      .select('*').eq('professional_id',_pid).maybeSingle();
+    if(!data) return;
+    const cfg=m==='online'?data.online_config:data.presencial_config;
+    if(!Array.isArray(cfg)||!cfg.length) return;
+    const base=m==='online'?SO:SP;
+    const out=[];
+    cfg.forEach(blkCfg=>{
+      if(!blkCfg.active) return;
+      if(!blkCfg.custom){
+        const def=base.find(b=>b.num===blkCfg.num);
+        if(!def) return;
+        const copy=JSON.parse(JSON.stringify(def));
+        if(blkCfg.title) copy.title=blkCfg.title;
+        (blkCfg.extraFields||[]).filter(f=>f.lbl).forEach(f=>{
+          copy.fields.push({t:f.t||'text',id:f.id,lbl:f.lbl});
+        });
+        out.push(copy);
+      } else {
+        const flds=(blkCfg.extraFields||[]).filter(f=>f.lbl);
+        if(!flds.length) return;
+        out.push({num:blkCfg.num,title:blkCfg.title||'Personalizado',
+          fields:flds.map(f=>({t:f.t||'text',id:f.id,lbl:f.lbl}))});
+      }
+    });
+    if(out.length){ if(m==='online') _SOc=out; else _SPc=out; }
+  }catch(e){ console.warn('[loadAndApplyConfig]',e); }
+}
+
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 </body>
