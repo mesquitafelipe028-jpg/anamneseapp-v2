@@ -379,6 +379,12 @@ tr:hover td{background:var(--cream);}
           </button>
         </div>
       </div>
+      <div class="filter-btns" id="statusFilterRow" style="margin-bottom:16px;">
+        <button class="filter-btn active" id="fsAll"        onclick="setStatusFilter('all')">Todos</button>
+        <button class="filter-btn"        id="fsNova"       onclick="setStatusFilter('nova')">Nova</button>
+        <button class="filter-btn"        id="fsLida"       onclick="setStatusFilter('lida')">Lida</button>
+        <button class="filter-btn"        id="fsArquivada"  onclick="setStatusFilter('arquivada')">Arquivada</button>
+      </div>
       <div class="table-wrap"><div id="tableContent"><div class="spinner-wrap"><div class="spin"></div>Carregando fichas…</div></div></div>
     </div>
 
@@ -528,6 +534,7 @@ let profId  = null;
 let profData = null;
 let currentModalId = null;
 let activeFilter = 'all';
+let activeStatusFilter = 'all';
 
 const STATUS_LABEL = {nova:'Nova', lida:'Lida', arquivada:'Arquivada'};
 const STATUS_CYCLE = {nova:'lida', lida:'arquivada', arquivada:'nova'};
@@ -1008,10 +1015,19 @@ function setFilter(f){
   document.getElementById('fPresencial').classList.toggle('active', f==='presencial');
   applyFilters();
 }
+function setStatusFilter(f){
+  activeStatusFilter = f;
+  document.getElementById('fsAll').classList.toggle('active',       f==='all');
+  document.getElementById('fsNova').classList.toggle('active',      f==='nova');
+  document.getElementById('fsLida').classList.toggle('active',      f==='lida');
+  document.getElementById('fsArquivada').classList.toggle('active', f==='arquivada');
+  applyFilters();
+}
 function applyFilters(){
   const q = document.getElementById('searchInput').value.toLowerCase();
   let rows = allRows;
   if(activeFilter!=='all') rows = rows.filter(r=>r.mode===activeFilter);
+  if(activeStatusFilter!=='all') rows = rows.filter(r=>(r.status||'nova')===activeStatusFilter);
   if(q) rows = rows.filter(r=>{
     const nm = (r.patient_name||r.data?.nome||'').toLowerCase();
     const ph = (r.patient_phone||r.data?.fone||'').toLowerCase();
@@ -1343,6 +1359,7 @@ function getFilteredRows(){
   const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
   let rows=allRows;
   if(activeFilter!=='all') rows=rows.filter(r=>r.mode===activeFilter);
+  if(activeStatusFilter!=='all') rows=rows.filter(r=>(r.status||'nova')===activeStatusFilter);
   if(q) rows=rows.filter(r=>{
     const nm=(r.patient_name||r.data?.nome||'').toLowerCase();
     const ph=(r.patient_phone||r.data?.fone||'').toLowerCase();
