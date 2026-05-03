@@ -378,6 +378,31 @@ body {
   background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.3);
   border-radius:8px;padding:10px 14px;font-size:13px;color:#c0392b;margin-bottom:14px;
 }
+#draftBanner{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:#1c1a15;color:#f5f2ec;
+  padding:14px 20px;display:flex;align-items:center;
+  justify-content:space-between;gap:12px;font-size:13px;
+  box-shadow:0 -4px 20px rgba(0,0,0,.22);
+}
+.draft-bnr-btns{display:flex;gap:8px;flex-shrink:0;}
+.draft-bnr-btn{
+  padding:9px 18px;border-radius:8px;border:none;
+  font-family:'Jost',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;
+}
+.draft-bnr-btn:hover{opacity:.85;}
+.draft-bnr-discard{background:rgba(255,255,255,.14);color:#f5f2ec;}
+.draft-bnr-resume{color:#fff;}
+#profBadge{
+  display:none;width:100%;max-width:460px;
+  background:#fff;border:1.5px solid #e0dbd0;border-radius:14px;
+  padding:18px 20px 16px;margin-bottom:18px;text-align:center;
+  animation:fIn .28s ease forwards;
+}
+.prof-badge-tag{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#6b7a42;font-weight:600;margin-bottom:8px;}
+.prof-badge-name{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:500;color:#1c1a15;margin-bottom:3px;}
+.prof-badge-spec{font-size:12px;color:#7a7668;letter-spacing:.3px;}
 </style>
 </head>
 <body>
@@ -399,6 +424,8 @@ body {
     <input type="tel" id="alunoFone" placeholder="(85) 99999-9999" maxlength="15" autocomplete="tel" inputmode="tel" oninput="fmtFone(this)">
     <div class="land-phone-hint">Seus dados serão enviados para este número também.</div>
   </div>
+
+  <div id="profBadge"></div>
 
   <div class="mode-cards">
     <div class="mcard online" onclick="startForm('online')">
@@ -450,11 +477,76 @@ const sb = (_SBU && _SBA && _SBU !== 'COLE_SUA_URL_AQUI')
   ? supabase.createClient(_SBU, _SBA) : null;
 
 let mode=null,step=0,data={},chips={},toggles={},scales={},alunoFone='';
+let _pendingDraft=null;
 let _SOc=null,_SPc=null; // versões customizadas pelo profissional
 const _pid=new URLSearchParams(window.location.search).get('pid')||null;
 const ss=()=>mode==='online'?(_SOc||SO):(_SPc||SP);
 const io=()=>mode==='online';
 const c=()=>io()?'o':'p';
+
+// ── LOCAL STORAGE AUTOSAVE ──
+const _LS_KEY=m=>'anamnese_draft_'+m;
+const _LS_TTL=24*60*60*1000; // 24 h
+
+function saveLocal(){
+  if(!mode)return;
+  try{
+    localStorage.setItem(_LS_KEY(mode),JSON.stringify({
+      data:JSON.parse(JSON.stringify(data)),
+      chips:JSON.parse(JSON.stringify(chips)),
+      toggles:JSON.parse(JSON.stringify(toggles)),
+      scales:JSON.parse(JSON.stringify(scales)),
+      alunoFone:alunoFone,
+      mode:mode,
+      step:step,
+      timestamp:Date.now()
+    }));
+  }catch(e){}
+}
+function loadLocal(m){
+  try{
+    const raw=localStorage.getItem(_LS_KEY(m));
+    if(!raw)return false;
+    const d=JSON.parse(raw);
+    if(Date.now()-d.timestamp>_LS_TTL){localStorage.removeItem(_LS_KEY(m));return false;}
+    return d;
+  }catch(e){return false;}
+}
+function clearLocal(){
+  if(!mode)return;
+  try{localStorage.removeItem(_LS_KEY(mode));}catch(e){}
+}
+
+function showDraftBanner(){
+  removeDraftBanner();
+  const acc=io()?'#6b7a42':'#a8893a';
+  const el=document.createElement('div');
+  el.id='draftBanner';
+  el.innerHTML=`<span>Rascunho salvo — deseja continuar de onde parou?</span>
+    <div class="draft-bnr-btns">
+      <button class="draft-bnr-btn draft-bnr-discard" onclick="discardDraft()">Descartar</button>
+      <button class="draft-bnr-btn draft-bnr-resume" style="background:${acc}" onclick="restoreDraft()">Continuar</button>
+    </div>`;
+  document.body.appendChild(el);
+}
+function removeDraftBanner(){
+  const el=document.getElementById('draftBanner');if(el)el.remove();
+}
+function restoreDraft(){
+  const d=_pendingDraft;if(!d)return;
+  data=d.data||{};chips=d.chips||{};toggles=d.toggles||{};scales=d.scales||{};
+  if(d.alunoFone)alunoFone=d.alunoFone;
+  step=d.step||0;
+  _pendingDraft=null;
+  removeDraftBanner();
+  render();
+}
+function discardDraft(){
+  clearLocal();
+  _pendingDraft=null;
+  removeDraftBanner();
+  render();
+}
 
 function fmtFone(el){
   let v=el.value.replace(/\D/g,'');
@@ -476,7 +568,10 @@ async function startForm(m){
   document.getElementById('fhMode').textContent=io()?'Consultoria Online':'Atendimento Presencial';
   document.getElementById('fbody').className='fbody '+(io()?'online-form':'presencial-form');
   await loadAndApplyConfig(m);
-  render();window.scrollTo({top:0,behavior:'instant'});
+  const _draft=loadLocal(m);
+  if(_draft){_pendingDraft=_draft;render();showDraftBanner();}
+  else{render();}
+  window.scrollTo({top:0,behavior:'instant'});
 }
 function goHome(){
   document.getElementById('landing').style.display='flex';
@@ -577,6 +672,7 @@ function updD(full){
 
 function backToForm(){ step=ss().length-1; render(); }
 function confirmSend(){
+  clearLocal();
   if(sb){
     const pid = _pid;
     sb.from('anamneses').insert({
@@ -748,19 +844,23 @@ function tChip(id,val,multi){
   data[id]=chips[id].join(', ');
   const w=document.getElementById('cw-'+id);
   if(w)w.querySelectorAll('.chip').forEach(el=>el.classList.toggle('sel',chips[id].includes(el.textContent)));
+  saveLocal();
 }
 function tSw(id){
   toggles[id]=!toggles[id];data[id]=toggles[id]?'Sim':'Não';
   const sw=document.getElementById('sw-'+id);if(sw)sw.classList.toggle('on',toggles[id]);
+  saveLocal();
 }
 function sSc(id,val){
   scales[id]=val;data[id]=val;
   document.querySelectorAll('.scale-row .scn').forEach(btn=>btn.classList.toggle('sel',parseInt(btn.textContent)===val));
+  saveLocal();
 }
 function save(){
   if(step>=ss().length)return;
   function sf(f){if(f.t==='row'){f.cols.forEach(sf);return;}if(['text','date','textarea','select'].includes(f.t)){const el=document.getElementById(f.id);if(el)data[f.id]=el.value;}}
   ss()[step].fields.forEach(sf);
+  saveLocal();
 }
 function nextStep(){
   save();
@@ -1110,6 +1210,7 @@ function renderSuccess(){
 }
 
 function restart(){
+  clearLocal();
   mode=null;step=0;data={};chips={};toggles={};scales={};alunoFone='';
   document.getElementById('landing').style.display='flex';
   document.getElementById('formShell').style.display='none';
@@ -1171,6 +1272,24 @@ async function loadAndApplyConfig(m){
     if(out.length){ if(m==='online') _SOc=out; else _SPc=out; }
   }catch(e){ console.warn('[loadAndApplyConfig]',e); }
 }
+
+// ── PROFESSIONAL BADGE ──
+async function loadProfBadge(){
+  if(!_pid||!sb)return;
+  try{
+    const {data:prof}=await sb.from('professionals')
+      .select('name,specialty').eq('id',_pid).maybeSingle();
+    if(!prof)return;
+    const el=document.getElementById('profBadge');
+    if(!el)return;
+    el.innerHTML=`<div class="prof-badge-tag">Seu Personal</div>
+      <div class="prof-badge-name">${prof.name||''}</div>
+      ${prof.specialty?`<div class="prof-badge-spec">${prof.specialty}</div>`:''}`;
+    el.style.display='block';
+    if(prof.name) document.title=`Anamnese — ${prof.name}`;
+  }catch(e){console.warn('[loadProfBadge]',e);}
+}
+if(_pid) loadProfBadge();
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
