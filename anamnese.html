@@ -1102,19 +1102,40 @@ async function loadAndApplyConfig(m){
     cfg.forEach(blkCfg=>{
       if(!blkCfg.active) return;
       if(!blkCfg.custom){
-        const def=base.find(b=>b.num===blkCfg.num);
-        if(!def) return;
-        const copy=JSON.parse(JSON.stringify(def));
-        if(blkCfg.title) copy.title=blkCfg.title;
-        (blkCfg.extraFields||[]).filter(f=>f.lbl).forEach(f=>{
-          copy.fields.push({t:f.t||'text',id:f.id,lbl:f.lbl});
-        });
-        out.push(copy);
+        if(blkCfg.fields&&blkCfg.fields.length){
+          // Novo formato: campos completos salvos no dashboard
+          const activeFields=blkCfg.fields.filter(f=>f.active!==false&&f.lbl);
+          if(!activeFields.length) return;
+          out.push({num:blkCfg.num,title:blkCfg.title,
+            fields:activeFields.map(f=>({
+              t:f.t,id:f.id,lbl:f.lbl,
+              ...(f.req&&{req:true}),
+              ...(f.multi!==undefined&&{multi:f.multi}),
+              ...(f.opts&&{opts:f.opts}),
+              ...(f.min!==undefined&&{min:f.min,max:f.max})
+            }))
+          });
+        } else {
+          // Formato legado: apenas extraFields
+          const def=base.find(b=>b.num===blkCfg.num);
+          if(!def) return;
+          const copy=JSON.parse(JSON.stringify(def));
+          if(blkCfg.title) copy.title=blkCfg.title;
+          (blkCfg.extraFields||[]).filter(f=>f.lbl).forEach(f=>{
+            copy.fields.push({t:f.t||'text',id:f.id,lbl:f.lbl});
+          });
+          out.push(copy);
+        }
       } else {
-        const flds=(blkCfg.extraFields||[]).filter(f=>f.lbl);
+        // Bloco personalizado
+        const flds=(blkCfg.fields||blkCfg.extraFields||[]).filter(f=>f.lbl&&f.active!==false);
         if(!flds.length) return;
         out.push({num:blkCfg.num,title:blkCfg.title||'Personalizado',
-          fields:flds.map(f=>({t:f.t||'text',id:f.id,lbl:f.lbl}))});
+          fields:flds.map(f=>({t:f.t||'text',id:f.id,lbl:f.lbl,
+            ...(f.multi!==undefined&&{multi:f.multi}),
+            ...(f.opts&&{opts:f.opts})
+          }))
+        });
       }
     });
     if(out.length){ if(m==='online') _SOc=out; else _SPc=out; }

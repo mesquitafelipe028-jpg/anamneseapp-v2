@@ -210,9 +210,9 @@ tr:hover td{background:var(--cream);}
 .btn-fe-reset{padding:10px 14px;background:none;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;min-height:44px;transition:all .2s;}
 .btn-fe-reset:hover{border-color:var(--ink);color:var(--ink);}
 .fe-tip{font-size:12px;color:var(--muted);background:var(--cream);border-radius:8px;padding:10px 14px;margin-bottom:16px;line-height:1.6;}
-.fe-block{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:opacity .2s;}
+.fe-block{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .2s;}
 .fe-block.inactive{opacity:.45;}
-.fe-block-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;}
+.fe-block-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;}
 .fe-block-num{width:30px;height:30px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;}
 .fe-block-title{flex:1;font-size:14px;font-weight:500;color:var(--ink);border:none;background:none;font-family:'DM Sans',sans-serif;outline:none;padding:4px 6px;border-radius:4px;min-height:36px;transition:background .15s;}
 .fe-block-title:focus{background:var(--cream);}
@@ -222,25 +222,41 @@ tr:hover td{background:var(--cream);}
 .fe-toggle.on::after{transform:translateX(18px);}
 .fe-expand{padding:0 6px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;min-height:36px;min-width:36px;line-height:1;transition:transform .2s;display:flex;align-items:center;justify-content:center;}
 .fe-expand.open{transform:rotate(180deg);}
-.fe-block-body{padding:12px 16px 16px;border-top:1px solid var(--border);display:none;}
+.fe-block-body{padding:8px 16px 14px;border-top:1px solid var(--border);display:none;}
 .fe-block-body.open{display:block;}
-.fe-field-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
-.fe-field-lbl{flex:1;padding:9px 12px;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;min-height:44px;transition:border-color .2s;}
-.fe-field-lbl:focus{border-color:var(--olive);}
-.fe-field-type{padding:9px 10px;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);outline:none;min-height:44px;appearance:none;cursor:pointer;}
-.fe-field-del{min-width:44px;min-height:44px;border:none;background:none;color:var(--muted);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;transition:color .2s;}
-.fe-field-del:hover{color:var(--danger);}
-.btn-fe-add-field{width:100%;padding:9px;background:none;border:1.5px dashed var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;min-height:44px;transition:all .2s;margin-top:4px;}
+/* field item */
+.fe-field{padding:10px 0;border-bottom:1px solid var(--cream);}
+.fe-field:last-of-type{border-bottom:none;}
+.fe-field.fe-off{opacity:.4;}
+.fe-field-top{display:flex;align-items:center;gap:6px;}
+.fe-chk{width:18px;height:18px;cursor:pointer;accent-color:var(--olive);flex-shrink:0;}
+.fe-field-label{flex:1;padding:7px 10px;background:transparent;border:1.5px solid transparent;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;min-height:40px;transition:all .15s;}
+.fe-field-label:hover{border-color:var(--border);}
+.fe-field-label:focus{background:var(--cream);border-color:var(--olive);}
+.fe-type-sel{padding:6px 8px;background:var(--cream);border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);outline:none;min-height:36px;appearance:none;cursor:pointer;max-width:130px;}
+.fe-req{min-width:36px;min-height:36px;border:none;background:none;cursor:pointer;font-size:15px;color:var(--border);transition:color .2s;flex-shrink:0;}
+.fe-req.on{color:var(--olive);}
+.fe-fdel{min-width:36px;min-height:36px;border:none;background:none;color:var(--border);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:17px;transition:color .2s;flex-shrink:0;}
+.fe-fdel:hover{color:var(--danger);}
+/* options */
+.fe-opts{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 4px 24px;}
+.fe-opt{display:flex;align-items:center;gap:3px;padding:4px 10px;background:var(--cream);border:1px solid var(--border);border-radius:20px;font-size:12px;}
+.fe-opt input{border:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none;min-width:50px;max-width:110px;}
+.fe-opt-del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;padding:0;transition:color .2s;}
+.fe-opt-del:hover{color:var(--danger);}
+.btn-fe-add-opt{padding:4px 12px;background:none;border:1px dashed var(--border);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;min-height:28px;}
+.btn-fe-add-opt:hover{border-color:var(--olive);color:var(--olive);}
+/* add field + block */
+.btn-fe-add-field{width:100%;padding:9px;background:none;border:1.5px dashed var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;min-height:44px;transition:all .2s;margin-top:8px;}
 .btn-fe-add-field:hover{border-color:var(--olive);color:var(--olive);}
-.fe-block-footer{display:flex;justify-content:flex-end;margin-top:10px;}
+.fe-block-footer{display:flex;justify-content:flex-end;margin-top:8px;}
 .btn-fe-del-block{padding:7px 14px;background:none;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);cursor:pointer;min-height:36px;transition:all .2s;}
 .btn-fe-del-block:hover{border-color:var(--danger);color:var(--danger);}
 .fe-add-block{width:100%;padding:14px;border:2px dashed var(--border);border-radius:12px;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;min-height:52px;transition:all .2s;margin-top:6px;}
 .fe-add-block:hover{border-color:var(--olive);color:var(--olive);}
-.fe-msg{font-size:12px;margin-top:12px;min-height:18px;}
+.fe-msg{font-size:12px;margin-top:12px;min-height:18px;line-height:1.5;}
 .fe-msg.ok{color:var(--olive);}
 .fe-msg.err{color:var(--danger);}
-.fe-default-note{font-size:11px;color:var(--muted);font-style:italic;padding:6px 0 4px;}
 
 /* ── CARDS MOBILE ── */
 .cards-list{padding:12px;display:flex;flex-direction:column;gap:10px;}
@@ -600,26 +616,140 @@ function setDashTab(t){
 }
 
 // ── FORM EDITOR ──
-const DEFAULT_BLOCKS = {
+// Definição completa de todos os blocos e campos padrão
+const DEFAULTS_FULL = {
   online:[
-    {num:'01',title:'Identificação'},
-    {num:'02',title:'Objetivo'},
-    {num:'03',title:'Histórico de Treino'},
-    {num:'04',title:'Disponibilidade'},
-    {num:'05',title:'Saúde & Histórico Médico'},
-    {num:'06',title:'Hábitos de Vida'},
-    {num:'07',title:'Dados Físicos'},
-    {num:'08',title:'Comunicação'},
+    {num:'01',title:'Identificação',active:true,custom:false,fields:[
+      {id:'nome',   t:'text',  lbl:'Nome completo',         req:true,  active:true},
+      {id:'nasc',   t:'date',  lbl:'Data de nascimento',    req:true,  active:true},
+      {id:'cidade', t:'text',  lbl:'Cidade / Fuso horário',            active:true},
+      {id:'sexo',   t:'chips', lbl:'Sexo biológico',        req:true,  active:true, multi:false, opts:['Masculino','Feminino','Prefiro não informar']},
+      {id:'profissao',t:'text',lbl:'Profissão',                        active:true},
+      {id:'carga',  t:'text',  lbl:'Carga horária/semana',             active:true},
+      {id:'origem', t:'chips', lbl:'Como nos encontrou?',              active:true, multi:false, opts:['Instagram','Indicação','Google','TikTok','YouTube','Outro']},
+    ]},
+    {num:'02',title:'Objetivo',active:true,custom:false,fields:[
+      {id:'obj',       t:'chips',   lbl:'Objetivo principal',  req:true, active:true, multi:true,  opts:['Emagrecimento','Hipertrofia','Condicionamento','Saúde','Estética','Performance','Reabilitação','Outro']},
+      {id:'tempo_obj', t:'text',    lbl:'Há quanto tempo tem esse objetivo?',                      active:true},
+      {id:'tentativas',t:'textarea',lbl:'Já tentou outras abordagens? O que funcionou ou não?',    active:true},
+      {id:'resultado', t:'textarea',lbl:'Qual resultado mínimo faria o investimento valer a pena?',active:true},
+    ]},
+    {num:'03',title:'Histórico de Treino',active:true,custom:false,fields:[
+      {id:'nivel',       t:'chips',lbl:'Nível atual',           req:true, active:true, multi:false, opts:['Iniciante','Intermediário','Avançado']},
+      {id:'treina_agora',t:'toggle',lbl:'Treina atualmente?',             active:true},
+      {id:'freq_atual',  t:'text',  lbl:'Frequência semanal atual',       active:true},
+      {id:'modalidades', t:'chips', lbl:'Modalidades praticadas',         active:true, multi:true,  opts:['Musculação','Funcional','Crossfit','HIIT','Corrida','Natação','Artes marciais','Pilates','Yoga','Outro']},
+      {id:'relacao',     t:'chips', lbl:'Sua relação com exercício',      active:true, multi:false, opts:['Prazer','Obrigação','Indiferença','Ansiedade','Descobrindo']},
+    ]},
+    {num:'04',title:'Disponibilidade',active:true,custom:false,fields:[
+      {id:'dias',   t:'chips',   lbl:'Dias disponíveis por semana', req:true, active:true, multi:true,  opts:['2 dias','3 dias','4 dias','5 dias','6 dias']},
+      {id:'duracao',t:'chips',   lbl:'Tempo por sessão',            req:true, active:true, multi:false, opts:['30 min','45 min','1 hora','1h30','+ de 1h30']},
+      {id:'local',  t:'chips',   lbl:'Local de treino',                       active:true, multi:true,  opts:['Academia','Casa — sem equipamentos','Casa — com equipamentos','Ao ar livre','Varia']},
+      {id:'equip',  t:'textarea',lbl:'Equipamentos disponíveis em casa',      active:true},
+      {id:'horario',t:'chips',   lbl:'Seus horários são',                     active:true, multi:false, opts:['Fixos','Flexíveis','Variam muito']},
+    ]},
+    {num:'05',title:'Saúde & Histórico Médico',active:true,custom:false,fields:[
+      {id:'diag',     t:'textarea',lbl:'Diagnósticos médicos relevantes',      active:true},
+      {id:'meds',     t:'textarea',lbl:'Medicamentos em uso contínuo',         active:true},
+      {id:'lesoes',   t:'textarea',lbl:'Lesões, dores ou limitações',          active:true},
+      {id:'cirurg',   t:'textarea',lbl:'Histórico de cirurgias',               active:true},
+      {id:'liberacao',t:'chips',   lbl:'Liberação médica para atividade física?',active:true,multi:false,opts:['Sim','Não','Nunca consultei']},
+      {id:'gestante', t:'toggle',  lbl:'Está grávida ou em pós-parto?',        active:true},
+    ]},
+    {num:'06',title:'Hábitos de Vida',active:true,custom:false,fields:[
+      {id:'sono_h',     t:'text',  lbl:'Horas de sono por noite',         active:true},
+      {id:'sono_q',     t:'select',lbl:'Qualidade do sono',               active:true, opts:['Ótima','Boa','Regular','Ruim','Péssima']},
+      {id:'estresse',   t:'chips', lbl:'Nível de estresse', req:true,     active:true, multi:false, opts:['Baixo','Médio','Alto','Muito alto']},
+      {id:'alcool',     t:'chips', lbl:'Consumo de álcool',               active:true, multi:false, opts:['Não bebo','Ocasional','Fins de semana','Frequente']},
+      {id:'fuma',       t:'toggle',lbl:'Fuma ou usa outras substâncias?', active:true},
+      {id:'nutri',      t:'toggle',lbl:'Acompanhamento nutricional?',     active:true},
+      {id:'alimentacao',t:'chips', lbl:'Como classifica sua alimentação', active:true, multi:false, opts:['Muito boa','Boa','Regular','Ruim','Péssima']},
+    ]},
+    {num:'07',title:'Dados Físicos',active:true,custom:false,fields:[
+      {id:'peso',         t:'text',  lbl:'Peso atual (kg)',                         active:true},
+      {id:'altura',       t:'text',  lbl:'Altura (cm)',                             active:true},
+      {id:'medidas',      t:'chips', lbl:'Tem em casa?',                            active:true, multi:true,  opts:['Balança','Fita métrica','Ambos','Nenhum']},
+      {id:'fotos',        t:'toggle',lbl:'Consegue enviar fotos de avaliação?',     active:true},
+      {id:'aval_anterior',t:'toggle',lbl:'Já realizou avaliação física anterior?',  active:true},
+      {id:'obs_fis',      t:'textarea',lbl:'Observações sobre seus dados físicos',  active:true},
+    ]},
+    {num:'08',title:'Comunicação',active:true,custom:false,fields:[
+      {id:'formato',       t:'chips',   lbl:'Prefere receber treinos em',        active:true, multi:true,  opts:['Planilha PDF','App de treino','Vídeo explicativo','WhatsApp']},
+      {id:'canal',         t:'chips',   lbl:'Canal de comunicação preferido',    active:true, multi:false, opts:['WhatsApp','E-mail','Plataforma da consultoria','Telegram']},
+      {id:'feedback',      t:'chips',   lbl:'Frequência de retorno',             active:true, multi:false, opts:['Diário','Semanal','Quinzenal','Mensal']},
+      {id:'obstaculos',    t:'textarea',lbl:'O que pode atrapalhar sua consistência?',active:true},
+      {id:'comprometimento',t:'scale',  lbl:'Nível de comprometimento hoje (1–10)',  active:true, min:1, max:10},
+    ]},
   ],
   presencial:[
-    {num:'01',title:'Identificação'},
-    {num:'02',title:'Objetivo'},
-    {num:'03',title:'Histórico de Treino'},
-    {num:'04',title:'Disponibilidade'},
-    {num:'05',title:'Saúde & Histórico Médico'},
-    {num:'06',title:'Avaliação Física'},
-    {num:'07',title:'Hábitos de Vida'},
-    {num:'08',title:'Aspectos Comportamentais'},
+    {num:'01',title:'Identificação',active:true,custom:false,fields:[
+      {id:'nome',     t:'text',  lbl:'Nome completo',         req:true, active:true},
+      {id:'nasc',     t:'date',  lbl:'Data de nascimento',    req:true, active:true},
+      {id:'fone',     t:'text',  lbl:'Telefone / WhatsApp',   req:true, active:true},
+      {id:'email',    t:'text',  lbl:'E-mail',                          active:true},
+      {id:'sexo',     t:'chips', lbl:'Sexo biológico',        req:true, active:true, multi:false, opts:['Masculino','Feminino','Prefiro não informar']},
+      {id:'profissao',t:'text',  lbl:'Profissão',                       active:true},
+      {id:'turno',    t:'chips', lbl:'Turno',                           active:true, multi:false, opts:['Manhã','Tarde','Noite','Home office','Variado']},
+      {id:'indicacao',t:'text',  lbl:'Indicação / Como nos encontrou?', active:true},
+    ]},
+    {num:'02',title:'Objetivo',active:true,custom:false,fields:[
+      {id:'obj',      t:'chips',   lbl:'Objetivo principal',  req:true, active:true, multi:true, opts:['Emagrecimento','Hipertrofia','Condicionamento','Saúde','Estética','Performance','Reabilitação','Outro']},
+      {id:'prazo',    t:'text',    lbl:'Prazo para ver resultados',      active:true},
+      {id:'motivacao',t:'chips',   lbl:'Motivação principal',            active:true, multi:true, opts:['Evento específico','Saúde','Autoestima','Estética','Médico indicou','Esporte','Qualidade de vida']},
+      {id:'metas',    t:'textarea',lbl:'Já estipulou metas antes? Conseguiu? Por quê?', active:true},
+    ]},
+    {num:'03',title:'Histórico de Treino',active:true,custom:false,fields:[
+      {id:'nivel',        t:'chips',   lbl:'Nível atual',                req:true, active:true, multi:false, opts:['Iniciante','Intermediário','Avançado']},
+      {id:'tempo_pratica',t:'text',    lbl:'Tempo total de prática na vida',       active:true},
+      {id:'modalidades',  t:'chips',   lbl:'Modalidades praticadas',               active:true, multi:true,  opts:['Musculação','Funcional','Crossfit','HIIT','Corrida','Natação','Artes marciais','Pilates','Yoga','Outro']},
+      {id:'pausa',        t:'textarea',lbl:'Motivo de pausa ou abandono',          active:true},
+    ]},
+    {num:'04',title:'Disponibilidade',active:true,custom:false,fields:[
+      {id:'dias',          t:'chips',lbl:'Dias disponíveis',            active:true, multi:true,  opts:['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo']},
+      {id:'horarios',      t:'chips',lbl:'Horários preferidos',         active:true, multi:true,  opts:['Manhã 6–9h','Manhã 9–12h','Tarde 12–15h','Tarde 15–18h','Noite 18–20h','Noite 20–22h']},
+      {id:'freq',          t:'chips',lbl:'Frequência semanal desejada', req:true, active:true, multi:false, opts:['2×','3×','4×','5×','6×']},
+      {id:'duracao',       t:'chips',lbl:'Duração ideal da sessão',     active:true, multi:false, opts:['45 min','1 hora','1h30','Flexível']},
+      {id:'formato_treino',t:'chips',lbl:'Prefere treinar',             active:true, multi:false, opts:['Só com o personal','Em dupla','Em grupo']},
+    ]},
+    {num:'05',title:'Saúde & Histórico Médico',active:true,custom:false,fields:[
+      {id:'diag',    t:'textarea',lbl:'Diagnósticos médicos relevantes',active:true},
+      {id:'meds',    t:'textarea',lbl:'Medicamentos em uso contínuo',   active:true},
+      {id:'lesoes',  t:'textarea',lbl:'Lesões, dores ou limitações',    active:true},
+      {id:'cirurg',  t:'textarea',lbl:'Histórico de cirurgias ou fraturas',active:true},
+      {id:'histo_cv',t:'toggle',  lbl:'Histórico cardiovascular na família?',active:true},
+      {id:'pressao', t:'text',    lbl:'Pressão arterial habitual',      active:true},
+      {id:'liberacao',t:'chips',  lbl:'Liberação médica?',              active:true, multi:false, opts:['Sim','Não','Não sei']},
+      {id:'sintomas', t:'chips',  lbl:'Durante exercício já sentiu',    active:true, multi:true,  opts:['Tontura','Falta de ar excessiva','Dor no peito','Mal-estar','Nenhum']},
+      {id:'parq',    t:'toggle',  lbl:'PAR-Q assinado e entregue?',     active:true},
+      {id:'fem',     t:'chips',   lbl:'Situação feminina (se aplicável)',active:true, multi:true,  opts:['Ciclo regular','Pós-parto','Menopausa','Gestante','N/A']},
+    ]},
+    {num:'06',title:'Avaliação Física',active:true,custom:false,fields:[
+      {id:'peso',    t:'text',    lbl:'Peso (kg)',                        active:true},
+      {id:'altura',  t:'text',    lbl:'Altura (cm)',                      active:true},
+      {id:'circunf', t:'textarea',lbl:'Circunferências registradas (cm)', active:true},
+      {id:'metodo',  t:'chips',   lbl:'Método de composição corporal',    active:true, multi:false, opts:['Dobras cutâneas','Bioimpedância','Perimetria','Não realizado']},
+      {id:'fotos_av',t:'toggle',  lbl:'Fotos de avaliação realizadas?',   active:true},
+      {id:'testes',  t:'chips',   lbl:'Testes funcionais realizados',     active:true, multi:true,  opts:['Flexibilidade','Força de preensão','Resistência aeróbica','Equilíbrio','Nenhum por ora']},
+      {id:'postura', t:'chips',   lbl:'Observações posturais',            active:true, multi:true,  opts:['Hipercifose','Hiperlordose','Escoliose','Anteversão pélvica','Joelhos valgo','Nenhum observado']},
+    ]},
+    {num:'07',title:'Hábitos de Vida',active:true,custom:false,fields:[
+      {id:'sono_h',  t:'text',  lbl:'Horas de sono por noite',         active:true},
+      {id:'sono_q',  t:'select',lbl:'Qualidade do sono',               active:true, opts:['Ótima','Boa','Regular','Ruim','Péssima']},
+      {id:'estresse',t:'chips', lbl:'Nível de estresse',               active:true, multi:false, opts:['Baixo','Médio','Alto','Muito alto']},
+      {id:'at_espon',t:'chips', lbl:'Atividade física espontânea',     active:true, multi:true,  opts:['Caminha bastante','Sobe escadas','Trabalho ativo','Sedentário','Outro']},
+      {id:'alcool',  t:'chips', lbl:'Consumo de álcool',               active:true, multi:false, opts:['Não bebo','Ocasional','Fins de semana','Frequente']},
+      {id:'fuma',    t:'toggle',lbl:'Fuma ou usa outras substâncias?', active:true},
+      {id:'hidrat',  t:'text',  lbl:'Hidratação diária estimada (L)',  active:true},
+      {id:'nutri',   t:'toggle',lbl:'Acompanhamento nutricional?',     active:true},
+    ]},
+    {num:'08',title:'Aspectos Comportamentais',active:true,custom:false,fields:[
+      {id:'nao_func',    t:'textarea',lbl:'O que já tentou e não funcionou?',  active:true},
+      {id:'barreiras',   t:'chips',   lbl:'Principais barreiras',              active:true, multi:true,  opts:['Tempo','Dinheiro','Motivação','Dor / lesão','Vergonha','Falta de apoio']},
+      {id:'expect',      t:'textarea',lbl:'Expectativas em relação ao personal',active:true},
+      {id:'autonomia',   t:'chips',   lbl:'Como você se vê',                   active:true, multi:false, opts:['Muito autônomo','Preciso de direcionamento','No meio-termo']},
+      {id:'motiv_est',   t:'chips',   lbl:'Responde melhor a',                 active:true, multi:false, opts:['Estímulo positivo','Desafio / Cobrança','Equilíbrio dos dois']},
+      {id:'comprometimento',t:'scale',lbl:'Nível de comprometimento hoje (1–10)',active:true,min:1,max:10},
+    ]},
   ]
 };
 
@@ -627,29 +757,37 @@ let formDraft  = {online:null, presencial:null};
 let feMode     = 'online';
 let feExpanded = {};
 
-function buildDefaultDraft(mode){
-  return DEFAULT_BLOCKS[mode].map(b=>({
-    num:b.num, title:b.title, active:true, custom:false, extraFields:[]
-  }));
-}
+function buildDefaultDraft(mode){ return JSON.parse(JSON.stringify(DEFAULTS_FULL[mode])); }
 function getDraft(){ return formDraft[feMode]; }
+function esc(s){ return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function typeKeyOf(f){ return f.t==='chips'?(f.multi?'chips_multi':'chips_single'):f.t; }
+function applyTypeKey(f,key){
+  if(key==='chips_single'){f.t='chips';f.multi=false;if(!f.opts||!f.opts.length)f.opts=['Opção 1','Opção 2'];}
+  else if(key==='chips_multi'){f.t='chips';f.multi=true;if(!f.opts||!f.opts.length)f.opts=['Opção 1','Opção 2'];}
+  else if(key==='select'){f.t='select';if(!f.opts||!f.opts.length)f.opts=['Opção 1','Opção 2'];}
+  else{f.t=key;delete f.multi;if(key!=='scale')delete f.opts;}
+}
+const TYPE_LABELS={text:'Resposta curta',textarea:'Parágrafo',date:'Data',
+  chips_single:'Múltipla escolha',chips_multi:'Caixas de seleção',
+  select:'Lista suspensa',scale:'Escala linear',toggle:'Sim / Não'};
+function typeOpts(cur){
+  return Object.entries(TYPE_LABELS).map(([v,l])=>
+    `<option value="${v}"${cur===v?' selected':''}>${l}</option>`).join('');
+}
 
 async function loadFormConfig(){
   if(!profId) return;
-  const {data} = await sb.from('form_templates')
-    .select('*').eq('professional_id',profId).maybeSingle();
+  const {data}=await sb.from('form_templates').select('*').eq('professional_id',profId).maybeSingle();
   formDraft.online     = data?.online_config     || buildDefaultDraft('online');
   formDraft.presencial = data?.presencial_config || buildDefaultDraft('presencial');
-  // Actualiza link de prévia
-  const lnk = document.getElementById('fePreviewLink');
-  if(lnk) lnk.href = window.location.origin+'/anamnese?pid='+(profId||'');
+  const lnk=document.getElementById('fePreviewLink');
+  if(lnk) lnk.href=window.location.origin+'/anamnese?pid='+(profId||'');
   renderFormEditor();
 }
-
 function setFeMode(mode){
   feMode=mode; feExpanded={};
-  document.getElementById('feModeOnline').classList.toggle('active', mode==='online');
-  document.getElementById('feModePresencial').classList.toggle('active', mode==='presencial');
+  document.getElementById('feModeOnline').classList.toggle('active',mode==='online');
+  document.getElementById('feModePresencial').classList.toggle('active',mode==='presencial');
   renderFormEditor();
 }
 
@@ -657,135 +795,106 @@ function renderFormEditor(){
   if(!formDraft[feMode]) formDraft[feMode]=buildDefaultDraft(feMode);
   const draft=getDraft();
   let html='';
-  draft.forEach((blk,idx)=>{
-    const exp=!!feExpanded[idx];
-    const extras=blk.extraFields||[];
-    let bodyHtml='';
-    if(!blk.custom){
-      bodyHtml+=`<p class="fe-default-note">Bloco padrão — adicione campos extras abaixo.</p>`;
-    }
-    extras.forEach((f,fi)=>{
-      bodyHtml+=`<div class="fe-field-row">
-        <input class="fe-field-lbl" type="text" value="${f.lbl.replace(/"/g,'&quot;')}"
-          onchange="feUpdateField(${idx},${fi},'lbl',this.value)" placeholder="Pergunta">
-        <select class="fe-field-type" onchange="feUpdateField(${idx},${fi},'t',this.value)">
-          <option value="text"${f.t==='text'?' selected':''}>Texto</option>
-          <option value="textarea"${f.t==='textarea'?' selected':''}>Parágrafo</option>
-          <option value="date"${f.t==='date'?' selected':''}>Data</option>
-        </select>
-        <button class="fe-field-del" onclick="feRemoveField(${idx},${fi})" title="Remover campo">×</button>
+  draft.forEach((blk,bi)=>{
+    const exp=!!feExpanded[bi];
+    const fields=blk.fields||[];
+    let body='';
+    fields.forEach((f,fi)=>{
+      const tk=typeKeyOf(f);
+      const hasOpts=['chips_single','chips_multi','select'].includes(tk);
+      const optsHtml=hasOpts?`<div class="fe-opts">
+        ${(f.opts||[]).map((o,oi)=>`<div class="fe-opt">
+          <input type="text" value="${esc(o)}" onchange="feUpdateOpt(${bi},${fi},${oi},this.value)" placeholder="Opção">
+          <button class="fe-opt-del" onclick="feRemoveOpt(${bi},${fi},${oi})">×</button>
+        </div>`).join('')}
+        <button class="btn-fe-add-opt" onclick="feAddOpt(${bi},${fi})">+ opção</button>
+      </div>`:'';
+      body+=`<div class="fe-field${f.active===false?' fe-off':''}">
+        <div class="fe-field-top">
+          <input type="checkbox" class="fe-chk" ${f.active!==false?'checked':''}
+            onchange="feToggleField(${bi},${fi})" title="Mostrar/ocultar">
+          <input class="fe-field-label" type="text" value="${esc(f.lbl)}"
+            onchange="feUpdateFieldLabel(${bi},${fi},this.value)" placeholder="Texto da pergunta">
+          <select class="fe-type-sel" onchange="feChangeFieldType(${bi},${fi},this.value)">${typeOpts(tk)}</select>
+          ${f.t!=='toggle'?`<button class="fe-req${f.req?' on':''}" onclick="feToggleReq(${bi},${fi})"
+            title="${f.req?'Obrigatório':'Opcional'}">★</button>`:''}
+          <button class="fe-fdel" onclick="feDeleteField(${bi},${fi})" title="Excluir pergunta">×</button>
+        </div>${optsHtml}
       </div>`;
     });
-    bodyHtml+=`<button class="btn-fe-add-field" onclick="feAddField(${idx})">+ Adicionar campo extra</button>`;
-    if(blk.custom){
-      bodyHtml+=`<div class="fe-block-footer">
-        <button class="btn-fe-del-block" onclick="feRemoveBlock(${idx})">Remover bloco</button>
-      </div>`;
-    }
+    body+=`<button class="btn-fe-add-field" onclick="feAddField(${bi})">+ Adicionar pergunta</button>`;
+    if(blk.custom) body+=`<div class="fe-block-footer">
+      <button class="btn-fe-del-block" onclick="feRemoveBlock(${bi})">Remover bloco</button></div>`;
     html+=`<div class="fe-block${blk.active?'':' inactive'}">
-      <div class="fe-block-hd">
+      <div class="fe-block-hd" onclick="feToggleExpand(${bi})">
         <div class="fe-block-num">${blk.num}</div>
-        <input class="fe-block-title" type="text" value="${blk.title.replace(/"/g,'&quot;')}"
-          onchange="feUpdateTitle(${idx},this.value)" placeholder="Título do bloco">
-        <button class="fe-toggle${blk.active?' on':''}" onclick="feToggle(${idx})"
-          title="${blk.active?'Desativar':'Ativar'}"></button>
-        <button class="fe-expand${exp?' open':''}" onclick="feToggleExpand(${idx})">⌄</button>
+        <input class="fe-block-title" type="text" value="${esc(blk.title)}"
+          onclick="event.stopPropagation()" onchange="feUpdateTitle(${bi},this.value)" placeholder="Título">
+        <button class="fe-toggle${blk.active?' on':''}"
+          onclick="event.stopPropagation();feToggle(${bi})"
+          title="${blk.active?'Desativar':'Ativar bloco'}"></button>
+        <button class="fe-expand${exp?' open':''}">⌄</button>
       </div>
-      <div class="fe-block-body${exp?' open':''}">
-        ${bodyHtml}
-      </div>
+      <div class="fe-block-body${exp?' open':''}">${body}</div>
     </div>`;
   });
   html+=`<button class="fe-add-block" onclick="feAddBlock()">+ Adicionar bloco personalizado</button>`;
   document.getElementById('feBlocks').innerHTML=html;
 }
 
-function feToggle(idx){
-  getDraft()[idx].active=!getDraft()[idx].active;
-  renderFormEditor();
+// Bloco
+function feToggle(bi){getDraft()[bi].active=!getDraft()[bi].active;renderFormEditor();}
+function feToggleExpand(bi){feExpanded[bi]=!feExpanded[bi];renderFormEditor();}
+function feUpdateTitle(bi,val){getDraft()[bi].title=val||getDraft()[bi].title;}
+function feRemoveBlock(bi){
+  if(!confirm('Remover este bloco?')) return;
+  getDraft().splice(bi,1);
+  const e2={};
+  Object.keys(feExpanded).forEach(k=>{const ki=parseInt(k);if(ki<bi)e2[ki]=feExpanded[k];else if(ki>bi)e2[ki-1]=feExpanded[k];});
+  feExpanded=e2;renderFormEditor();
 }
-function feToggleExpand(idx){
-  feExpanded[idx]=!feExpanded[idx];
-  renderFormEditor();
-}
-function feUpdateTitle(idx,val){ getDraft()[idx].title=val||getDraft()[idx].title; }
-function feUpdateField(bi,fi,key,val){ getDraft()[bi].extraFields[fi][key]=val; }
-
-function feAddField(blockIdx){
-  const blk=getDraft()[blockIdx];
-  if(!blk.extraFields) blk.extraFields=[];
-  blk.extraFields.push({id:'ef_'+Date.now(), t:'text', lbl:''});
-  feExpanded[blockIdx]=true;
-  renderFormEditor();
-  setTimeout(()=>{
-    const inputs=[...document.querySelectorAll('.fe-block-body.open .fe-field-lbl')];
-    if(inputs.length) inputs[inputs.length-1].focus();
-  },60);
-}
-
-function feRemoveField(bi,fi){
-  getDraft()[bi].extraFields.splice(fi,1);
-  renderFormEditor();
-}
-
 function feAddBlock(){
   const draft=getDraft();
-  const customCount=draft.filter(b=>b.custom).length;
-  draft.push({
-    num:'C'+(customCount+1), title:'Bloco personalizado',
-    active:true, custom:true,
-    extraFields:[{id:'ef_'+Date.now(), t:'text', lbl:''}]
-  });
-  const newIdx=draft.length-1;
-  feExpanded[newIdx]=true;
-  renderFormEditor();
-  setTimeout(()=>{
-    const inputs=[...document.querySelectorAll('.fe-block-body.open .fe-field-lbl')];
-    if(inputs.length) inputs[inputs.length-1].focus();
-  },60);
+  const cc=draft.filter(b=>b.custom).length;
+  draft.push({num:'C'+(cc+1),title:'Bloco personalizado',active:true,custom:true,
+    fields:[{id:'ef_'+Date.now(),t:'text',lbl:'',active:true}]});
+  feExpanded[draft.length-1]=true;renderFormEditor();
+  setTimeout(()=>{const ls=[...document.querySelectorAll('.fe-block-body.open .fe-field-label')];if(ls.length)ls[ls.length-1].focus();},60);
 }
-
-function feRemoveBlock(idx){
-  if(!confirm('Remover este bloco personalizado?')) return;
-  getDraft().splice(idx,1);
-  const newExp={};
-  Object.keys(feExpanded).forEach(k=>{
-    const ki=parseInt(k);
-    if(ki<idx) newExp[ki]=feExpanded[k];
-    else if(ki>idx) newExp[ki-1]=feExpanded[k];
-  });
-  feExpanded=newExp;
-  renderFormEditor();
+// Campo
+function feToggleField(bi,fi){const f=getDraft()[bi].fields[fi];f.active=f.active===false;renderFormEditor();}
+function feUpdateFieldLabel(bi,fi,val){getDraft()[bi].fields[fi].lbl=val;}
+function feChangeFieldType(bi,fi,key){applyTypeKey(getDraft()[bi].fields[fi],key);renderFormEditor();}
+function feToggleReq(bi,fi){const f=getDraft()[bi].fields[fi];f.req=!f.req;renderFormEditor();}
+function feDeleteField(bi,fi){if(!confirm('Excluir esta pergunta?'))return;getDraft()[bi].fields.splice(fi,1);renderFormEditor();}
+function feAddField(bi){
+  const blk=getDraft()[bi];if(!blk.fields)blk.fields=[];
+  blk.fields.push({id:'ef_'+Date.now(),t:'text',lbl:'',active:true});
+  feExpanded[bi]=true;renderFormEditor();
+  setTimeout(()=>{const bodies=[...document.querySelectorAll('.fe-block-body.open')];const t=bodies[bi]||bodies[bodies.length-1];if(!t)return;const ls=t.querySelectorAll('.fe-field-label');if(ls.length)ls[ls.length-1].focus();},60);
 }
+// Opções
+function feAddOpt(bi,fi){const f=getDraft()[bi].fields[fi];if(!f.opts)f.opts=[];f.opts.push('Nova opção');renderFormEditor();}
+function feRemoveOpt(bi,fi,oi){getDraft()[bi].fields[fi].opts.splice(oi,1);renderFormEditor();}
+function feUpdateOpt(bi,fi,oi,val){getDraft()[bi].fields[fi].opts[oi]=val;}
 
 async function saveFormConfig(){
-  if(!profId) return;
+  if(!profId)return;
   const msg=document.getElementById('feMsg');
-  // Sync any title inputs that weren't changed via onchange
-  getDraft().forEach((blk,i)=>{
-    const el=document.querySelector(`#feBlocks .fe-block:nth-child(${i+1}) .fe-block-title`);
-    if(el) blk.title=el.value.trim()||blk.title;
-  });
-  msg.textContent='Salvando…'; msg.className='fe-msg ok';
-  const payload={
+  msg.textContent='Salvando…';msg.className='fe-msg ok';
+  const {error}=await sb.from('form_templates').upsert({
     professional_id:profId,
-    online_config:    formDraft.online    || buildDefaultDraft('online'),
-    presencial_config:formDraft.presencial|| buildDefaultDraft('presencial'),
+    online_config:    formDraft.online    ||buildDefaultDraft('online'),
+    presencial_config:formDraft.presencial||buildDefaultDraft('presencial'),
     updated_at:new Date().toISOString()
-  };
-  const {error}=await sb.from('form_templates')
-    .upsert(payload,{onConflict:'professional_id'});
+  },{onConflict:'professional_id'});
   if(error){console.error('[saveFormConfig]',error);msg.textContent='Erro: '+error.message;msg.className='fe-msg err';return;}
-  msg.textContent='Formulário salvo! Pacientes verão as mudanças no próximo acesso ao link.';
-  msg.className='fe-msg ok';
+  msg.textContent='Salvo! O link de anamnese já reflete as mudanças.';msg.className='fe-msg ok';
   setTimeout(()=>msg.textContent='',5000);
 }
-
 function resetFormConfig(){
-  if(!confirm('Restaurar o formulário padrão para o modo '+feMode+'?')) return;
-  formDraft[feMode]=buildDefaultDraft(feMode);
-  feExpanded={};
-  renderFormEditor();
+  if(!confirm('Restaurar formulário padrão para o modo '+feMode+'?'))return;
+  formDraft[feMode]=buildDefaultDraft(feMode);feExpanded={};renderFormEditor();
 }
 
 // ── ANAMNESES ──
