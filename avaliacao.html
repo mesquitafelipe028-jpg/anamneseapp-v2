@@ -144,6 +144,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .spin{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:inline-block;}
 @keyframes sp{to{transform:rotate(360deg);}}
 
+/* ── PRE-FILL BANNER ── */
+.prefill-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(107,122,66,.1);border:1px solid rgba(107,122,66,.25);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--olive);}
+.prefill-banner button{background:none;border:none;font-size:18px;color:var(--olive);cursor:pointer;padding:0 4px;line-height:1;}
+.btn-conclude-av{background:none;color:var(--olive);border:2px solid var(--olive);}
+
 @media(max-width:480px){
   .grid2,.grid3,.summary-grid{grid-template-columns:1fr;}
   .av-patient{display:none;}
@@ -183,11 +188,13 @@ const _asmId       = params.get('assessment_id')   || null;
 const _patientName = params.get('patient_name')    || 'Paciente';
 const _profId      = params.get('professional_id') || null;
 const _modality    = params.get('modality')        || 'presencial';
+const _clientId    = params.get('client_id')       || null;
 
 document.getElementById('hdrPatient').textContent = _patientName;
 
 const MODULES = ['Biometria','Circunferências','Dobras Cutâneas','Postural','VO2 Máx','Força'];
 let currentMod = 1; // 1-indexed
+let _savedAsmId = _asmId; // atualizado após primeiro save
 
 // Persisted state
 let D = {
@@ -736,6 +743,10 @@ function renderFinal(){
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Gerar PDF
       </button>
+      <button class="btn-action btn-conclude-av" onclick="concluirAval()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Concluir avaliação
+      </button>
       <div style="padding-top:12px;border-top:1px solid var(--border);margin-top:4px;">
         <button class="btn-prev" onclick="prevMod()" style="width:100%;text-align:center;">← Voltar ao módulo 6</button>
       </div>
@@ -759,13 +770,15 @@ async function saveAll(){
       modality:        _modality,
       status:          'em_andamento'
     };
-    let asmId = _asmId;
+    if(_clientId) asmPayload.client_id = _clientId;
+    let asmId = _savedAsmId;
     if(asmId){
       await sb.from('assessments').update(asmPayload).eq('id', asmId);
     } else {
       const {data, error} = await sb.from('assessments').insert(asmPayload).select('id').single();
       if(error) throw error;
       asmId = data.id;
+      _savedAsmId = asmId;
     }
 
     // 2. helper upsert subtable
@@ -982,6 +995,102 @@ function gerarPDF(){
   } catch(e){ console.error(e); showToast('Erro ao gerar PDF.'); }
 }
 
+// ── PRÉ-PREENCHIMENTO DA ANAMNESE ────────────────────────────
+async function prefillFromAnamnese(){
+  if(!_clientId || !sb) return;
+  try{
+    const {data:anam} = await sb.from('anamneses')
+      .select('patient_name,patient_phone,data,created_at')
+      .eq('client_id', _clientId)
+      .order('created_at', {ascending:false})
+      .limit(1)
+      .maybeSingle();
+    if(!anam) return;
+    const ad = anam.data || {};
+    if(ad.nasc  && !D.patient_dob)  D.patient_dob  = ad.nasc;
+    if(ad.sexo  && !D.patient_sex){
+      const s = String(ad.sexo).toUpperCase();
+      D.patient_sex = s.startsWith('M') ? 'M' : s.startsWith('F') ? 'F' : '';
+    }
+    if(ad.peso   && !D.peso_kg)    D.peso_kg    = String(ad.peso).replace(',','.');
+    if(ad.altura && !D.altura_cm)  D.altura_cm  = String(ad.altura).replace(',','.');
+    saveLS();
+    render();
+    const dt = new Date(anam.created_at).toLocaleDateString('pt-BR');
+    const banner = document.createElement('div');
+    banner.className = 'prefill-banner'; banner.id = 'prefillBanner';
+    banner.innerHTML = `<span>Dados pré-preenchidos da anamnese de ${dt}</span>
+      <button onclick="document.getElementById('prefillBanner').remove()" title="Dispensar">✕</button>`;
+    document.getElementById('avBody').prepend(banner);
+  } catch(e){ console.warn('[prefillFromAnamnese]', e); }
+}
+
+// ── CARREGA DADOS EXISTENTES DAS SUBTABELAS ───────────────────
+async function loadExistingData(){
+  if(!_asmId || !sb) return;
+  try{
+    const [
+      {data:bio},{data:circ},{data:sf},{data:post},{data:vo2},{data:str},{data:asm}
+    ] = await Promise.all([
+      sb.from('assessment_biometrics').select('*').eq('assessment_id',_asmId).maybeSingle(),
+      sb.from('assessment_circumferences').select('*').eq('assessment_id',_asmId).maybeSingle(),
+      sb.from('assessment_skinfolds').select('*').eq('assessment_id',_asmId).maybeSingle(),
+      sb.from('assessment_posture').select('*').eq('assessment_id',_asmId).maybeSingle(),
+      sb.from('assessment_vo2').select('*').eq('assessment_id',_asmId).maybeSingle(),
+      sb.from('assessment_strength').select('*').eq('assessment_id',_asmId).maybeSingle(),
+      sb.from('assessments').select('patient_sex,patient_dob').eq('id',_asmId).maybeSingle()
+    ]);
+    const set=(k,v)=>{ if(v!==null&&v!==undefined&&String(v)!=='') D[k]=String(v); };
+    if(asm){ set('patient_sex',asm.patient_sex); set('patient_dob',asm.patient_dob); }
+    if(bio){
+      D._ids.biometrics=bio.id;
+      ['peso_kg','altura_cm','percentual_gordura_bio','massa_gorda_kg','massa_magra_kg','agua_corporal_pct','metabolismo_basal']
+        .forEach(k=>set(k,bio[k]));
+    }
+    if(circ){
+      D._ids.circumferences=circ.id;
+      ['pescoco_cm','ombro_cm','torax_cm','cintura_cm','abdomen_cm','quadril_cm',
+       'braco_d_cm','braco_e_cm','antebraco_d_cm','antebraco_e_cm',
+       'coxa_d_cm','coxa_e_cm','panturrilha_d_cm','panturrilha_e_cm']
+        .forEach(k=>set(k,circ[k]));
+    }
+    if(sf){
+      D._ids.skinfolds=sf.id;
+      if(sf.protocolo) D.protocolo_dobras=sf.protocolo;
+      ['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm']
+        .forEach(k=>set(k,sf[k]));
+    }
+    if(post){
+      D._ids.posture=post.id;
+      ['foto_anterior_url','foto_posterior_url','foto_lateral_d_url','foto_lateral_e_url']
+        .forEach(k=>{ if(post[k]) D[k]=post[k]; });
+      if(post.desvios?.length) D.desvios=post.desvios;
+      if(post.observacoes) D.observacoes_postural=post.observacoes;
+    }
+    if(vo2){
+      D._ids.vo2=vo2.id;
+      if(vo2.protocolo) D.protocolo_vo2=vo2.protocolo;
+      if(vo2.fc_repouso) D.fc_repouso=String(vo2.fc_repouso);
+    }
+    if(str){
+      D._ids.strength=str.id;
+      ['preensao_d_kg','preensao_e_kg','flexao_repeticoes','abdominal_repeticoes','agachamento_repeticoes']
+        .forEach(k=>set(k,str[k]));
+      if(str.observacoes) D.observacoes_forca=str.observacoes;
+    }
+    saveLS(); render();
+  } catch(e){ console.warn('[loadExistingData]', e); }
+}
+
+// ── CONCLUIR AVALIAÇÃO ───────────────────────────────────────
+async function concluirAval(){
+  if(!sb || !_savedAsmId){ showToast('Salve a avaliação primeiro.'); return; }
+  const {error} = await sb.from('assessments').update({status:'concluida'}).eq('id',_savedAsmId);
+  if(error){ showToast('Erro: '+error.message); return; }
+  showToast('Avaliação concluída!');
+  setTimeout(()=>location.href='/dashboard.html', 1800);
+}
+
 // ── TOAST ─────────────────────────────────────────────────────
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -993,6 +1102,8 @@ function showToast(msg){
 // ── INIT ──────────────────────────────────────────────────────
 loadLS();
 render();
+if(_asmId && sb) loadExistingData();
+else if(_clientId && sb) prefillFromAnamnese();
 </script>
 </body>
 </html>
