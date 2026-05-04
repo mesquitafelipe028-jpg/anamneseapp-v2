@@ -465,6 +465,7 @@ tr:hover td{background:var(--cream);}
           </button>
         </div>
       </div>
+    </div><!-- /pane-exportar -->
     <!-- TAB: Avaliações -->
     <div class="tab-pane" id="pane-avaliacoes">
       <div class="stats-row">
@@ -1097,7 +1098,9 @@ function renderEmpty(){
 
 // ── AVALIAÇÕES ───────────────────────────────────────────────
 async function loadAvaliacoes(){
+  console.log('carregando avaliacoes');
   if(!profId){ renderAvalEmpty(); return; }
+  console.log('profId:', profId);
   document.getElementById('avalTableContent').innerHTML =
     '<div class="spinner-wrap"><div class="spin"></div>Carregando avaliações…</div>';
   const {data, error} = await sb
