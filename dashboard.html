@@ -676,6 +676,7 @@ let profId   = null;
 let profData = null;
 let allAvals = [];
 let allClients = [];
+let _newAvalClientId = null;
 let currentModalId = null;
 let activeFilter = 'all';
 let activeStatusFilter = 'all';
@@ -1194,7 +1195,7 @@ async function loadAvaliacoes(){
     '<div class="spinner-wrap"><div class="spin"></div>Carregando avaliações…</div>';
   const {data, error} = await sb
     .from('assessments')
-    .select('id,patient_name,patient_phone,status,modality,created_at')
+    .select('id,patient_name,patient_phone,status,modality,created_at,client_id')
     .eq('professional_id', profId)
     .order('created_at', {ascending: false});
   if(error){
@@ -1299,28 +1300,32 @@ function renderAvalEmpty(){
     </div>`;
 }
 
-function openNewAval(){
-  // default date = today
+function openNewAval(clientId, clientName){
+  _newAvalClientId = clientId || null;
   const today = new Date().toISOString().slice(0,10);
-  document.getElementById('aval_data').value  = today;
-  document.getElementById('aval_nome').value  = '';
+  document.getElementById('aval_data').value = today;
+  document.getElementById('aval_nome').value = clientName || '';
   document.getElementById('newAvalOverlay').classList.add('open');
-  setTimeout(()=>document.getElementById('aval_nome').focus(), 100);
+  setTimeout(()=>{ if(!clientName) document.getElementById('aval_nome').focus(); }, 100);
 }
 function closeNewAval(e){
-  if(!e || e.target===document.getElementById('newAvalOverlay'))
+  if(!e || e.target===document.getElementById('newAvalOverlay')){
     document.getElementById('newAvalOverlay').classList.remove('open');
+    _newAvalClientId = null;
+  }
 }
 async function createAval(){
   const nome = document.getElementById('aval_nome').value.trim();
   if(!nome){ showToast('Nome do paciente obrigatório.'); return; }
   const modality = document.getElementById('aval_mode').value;
-  const {data, error} = await sb.from('assessments').insert({
+  const insert = {
     professional_id: profId,
     patient_name:    nome,
     modality:        modality,
     status:          'em_andamento'
-  }).select('id').single();
+  };
+  if(_newAvalClientId) insert.client_id = _newAvalClientId;
+  const {data, error} = await sb.from('assessments').insert(insert).select('id').single();
   if(error){ console.error('[createAval]', error); showToast('Erro: '+error.message); return; }
   closeNewAval();
   const url = `/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&modality=${modality}`;
@@ -1425,6 +1430,13 @@ function openModal(id){
     </div>
     <button onclick="saveEdit()" style="padding:9px 18px;background:var(--olive);color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;min-height:44px;">Salvar edição</button>
   </div>`;
+
+  // Link para perfil do cliente, se vinculado
+  if(row.client_id){
+    html += `<div style="margin-bottom:12px">
+      <button class="btn-view" onclick="closeModal();openClientProfile('${row.client_id}')">Ver perfil do cliente</button>
+    </div>`;
+  }
 
   // Metadata line
   html += `<div style="font-size:12px;color:#9a9588;margin-bottom:14px">${row.mode==='online'?'Consultoria Online':'Presencial'} · ${dt}</div>`;
@@ -1918,7 +1930,14 @@ async function saveClient(){
 }
 
 async function openClientProfile(clientId){
-  const client = allClients.find(c=>c.id===clientId);
+  let client = allClients.find(c=>c.id===clientId);
+  if(!client && profId){
+    const {data} = await sb.from('clients').select('*').eq('id',clientId).maybeSingle();
+    if(data){
+      client={...data, total_anamneses:0, total_avaliacoes:0, ultima_anamnese:null, ultima_avaliacao:null};
+      allClients.push(client);
+    }
+  }
   if(!client) return;
   const overlay = document.getElementById('clientProfileOverlay');
   overlay.dataset.clientId   = clientId;
@@ -2035,18 +2054,10 @@ function copyClientAnamneseLink(clientId){
   navigator.clipboard.writeText(link).then(()=>showToast('Link copiado!'));
 }
 
-async function createAvalForClient(clientId, clientName){
+function createAvalForClient(clientId, clientName){
   if(!clientId||!clientName){ showToast('Selecione um cliente.'); return; }
-  const {data, error} = await sb.from('assessments').insert({
-    professional_id: profId,
-    client_id:       clientId,
-    patient_name:    clientName,
-    modality:        'presencial',
-    status:          'em_andamento'
-  }).select('id').single();
-  if(error){ console.error('[createAvalForClient]', error); showToast('Erro: '+error.message); return; }
-  const url=`/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(clientName)}&professional_id=${profId||''}&modality=presencial`;
-  window.location.href=url;
+  closeClientProfile();
+  openNewAval(clientId, clientName);
 }
 
 // ── MISC ──

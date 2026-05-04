@@ -480,6 +480,8 @@ let mode=null,step=0,data={},chips={},toggles={},scales={},alunoFone='';
 let _pendingDraft=null;
 let _SOc=null,_SPc=null; // versões customizadas pelo profissional
 const _pid=new URLSearchParams(window.location.search).get('pid')||null;
+const _clientId=new URLSearchParams(window.location.search).get('client_id')||null;
+let _clientName=null;
 const ss=()=>mode==='online'?(_SOc||SO):(_SPc||SP);
 const io=()=>mode==='online';
 const c=()=>io()?'o':'p';
@@ -561,6 +563,7 @@ async function startForm(m){
   alunoFone=document.getElementById('alunoFone').value||'';
   _SOc=null;_SPc=null; // reseta config anterior
   mode=m;step=0;data={};chips={};toggles={};scales={};
+  if(_clientName) data['nome']=_clientName;
   document.getElementById('landing').style.display='none';
   document.getElementById('formShell').style.display='block';
   const n=document.getElementById('fhName');
@@ -677,11 +680,31 @@ function confirmSend(){
     const pid = _pid;
     sb.from('anamneses').insert({
       professional_id: pid,
+      client_id:       _clientId || null,
       mode: mode,
       patient_name:  data['nome']  || null,
       patient_phone: alunoFone || data['fone'] || null,
       data: data
-    }).then(({error})=>{ if(error) console.warn('Supabase save error:', error.message); });
+    }).then(({error})=>{
+      if(error){ console.warn('Supabase save error:', error.message); return; }
+      if(!pid) return;
+      const phone = alunoFone || data['fone'] || null;
+      const nome  = data['nome'] || null;
+      if(!phone || !nome) return;
+      if(_clientId){
+        // Atualiza telefone do cliente se ainda não tinha
+        sb.from('clients').update({phone}).eq('id',_clientId).is('phone',null)
+          .then(({error:e})=>{ if(e) console.warn('[update client phone]',e.message); });
+      } else {
+        // Cria cliente automaticamente se não existir com este telefone
+        sb.from('clients').select('id').eq('professional_id',pid).eq('phone',phone).maybeSingle()
+          .then(({data:existing})=>{
+            if(!existing)
+              sb.from('clients').insert({professional_id:pid, name:nome, phone})
+                .then(({error:e})=>{ if(e) console.warn('[auto-create client]',e.message); });
+          });
+      }
+    });
   }
   sendWpp();
   renderSuccess();
@@ -1277,8 +1300,12 @@ async function loadAndApplyConfig(m){
 async function loadProfBadge(){
   if(!_pid||!sb)return;
   try{
-    const {data:prof}=await sb.from('professionals')
-      .select('name,specialty').eq('id',_pid).maybeSingle();
+    const [profRes, cliRes] = await Promise.all([
+      sb.from('professionals').select('name,specialty').eq('id',_pid).maybeSingle(),
+      _clientId ? sb.from('clients').select('name,phone').eq('id',_clientId).maybeSingle()
+                : Promise.resolve({data:null})
+    ]);
+    const prof=profRes.data;
     if(!prof)return;
     const el=document.getElementById('profBadge');
     if(!el)return;
@@ -1287,6 +1314,16 @@ async function loadProfBadge(){
       ${prof.specialty?`<div class="prof-badge-spec">${prof.specialty}</div>`:''}`;
     el.style.display='block';
     if(prof.name) document.title=`Anamnese — ${prof.name}`;
+    // Pré-preenche dados do cliente se veio de link personalizado
+    if(cliRes.data){
+      const cli=cliRes.data;
+      _clientName=cli.name||null;
+      if(cli.phone){
+        alunoFone=cli.phone;
+        const fi=document.getElementById('alunoFone');
+        if(fi) fi.value=cli.phone;
+      }
+    }
   }catch(e){console.warn('[loadProfBadge]',e);}
 }
 if(_pid) loadProfBadge();
