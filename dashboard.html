@@ -1104,7 +1104,7 @@ async function loadAvaliacoes(){
     .select('id,patient_name,patient_phone,status,mode,created_at')
     .eq('professional_id', profId)
     .order('created_at', { ascending: false, nullsFirst: false });
-  if(error){ console.error('[loadAvaliacoes]', error); return; }
+  if(error){ console.error('[loadAvaliacoes]', error); renderAvalEmpty(); return; }
   allAvals = data || [];
   updateAvalStats();
   renderAvals(allAvals);

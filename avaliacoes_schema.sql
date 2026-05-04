@@ -11,12 +11,19 @@ CREATE TABLE IF NOT EXISTS assessments (
   patient_phone    text,
   patient_dob      date,
   patient_sex      char(1) CHECK (patient_sex IN ('M','F')),
+  mode             text NOT NULL DEFAULT 'presencial'
+                     CHECK (mode IN ('presencial','online')),
   status           text NOT NULL DEFAULT 'em_andamento'
                      CHECK (status IN ('em_andamento','concluida')),
   notes            text,
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now()
 );
+
+-- Migração para quem já criou a tabela sem a coluna mode:
+ALTER TABLE assessments ADD COLUMN IF NOT EXISTS
+  mode text NOT NULL DEFAULT 'presencial'
+    CHECK (mode IN ('presencial','online'));
 
 CREATE OR REPLACE FUNCTION _set_updated_at()
 RETURNS trigger LANGUAGE plpgsql AS $$
