@@ -179,9 +179,10 @@ const sb   = (_SBU && _SBA && _SBU !== 'COLE_SUA_URL_AQUI')
            ? supabase.createClient(_SBU, _SBA) : null;
 
 const params       = new URLSearchParams(window.location.search);
-const _asmId       = params.get('assessment_id') || null;
-const _patientName = params.get('patient_name')  || 'Paciente';
+const _asmId       = params.get('assessment_id')   || null;
+const _patientName = params.get('patient_name')    || 'Paciente';
 const _profId      = params.get('professional_id') || null;
+const _modality    = params.get('modality')        || 'presencial';
 
 document.getElementById('hdrPatient').textContent = _patientName;
 
@@ -755,6 +756,7 @@ async function saveAll(){
       patient_name:    _patientName,
       patient_sex:     D.patient_sex || null,
       patient_dob:     D.patient_dob || null,
+      modality:        _modality,
       status:          'em_andamento'
     };
     let asmId = _asmId;

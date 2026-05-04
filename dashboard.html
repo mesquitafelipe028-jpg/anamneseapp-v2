@@ -1102,7 +1102,7 @@ async function loadAvaliacoes(){
     '<div class="spinner-wrap"><div class="spin"></div>Carregando avaliações…</div>';
   const {data, error} = await sb
     .from('assessments')
-    .select('id,patient_name,patient_phone,status,mode,created_at')
+    .select('id,patient_name,patient_phone,status,modality,created_at')
     .eq('professional_id', profId)
     .order('created_at', {ascending: false});
   if(error){
@@ -1154,11 +1154,11 @@ function renderAvals(rows){
     const dt  = new Date(r.created_at).toLocaleDateString('pt-BR');
     const st  = r.status==='concluida'?'Concluída':'Em andamento';
     const stC = r.status==='concluida'?'s-lida':'s-nova';
-    const url = `/avaliacao?assessment_id=${r.id}&patient_name=${encodeURIComponent(r.patient_name||'')}&professional_id=${profId||''}`;
+    const url = `/avaliacao?assessment_id=${r.id}&patient_name=${encodeURIComponent(r.patient_name||'')}&professional_id=${profId||''}&modality=${r.modality||'presencial'}`;
     h += `<tr>
       <td><strong>${r.patient_name||'—'}</strong></td>
       <td style="color:#9a9588;white-space:nowrap">${dt}</td>
-      <td><span class="badge-mode ${r.mode==='online'?'badge-o':'badge-p'}">${r.mode==='online'?'Online':'Presencial'}</span></td>
+      <td><span class="badge-mode ${r.modality==='online'?'badge-o':'badge-p'}">${r.modality==='online'?'Online':'Presencial'}</span></td>
       <td><span class="badge-status ${stC}" style="cursor:default">${st}</span></td>
       <td style="display:flex;gap:6px">
         <button class="btn-view" onclick="location.href='${url}'">Ver / Editar</button>
@@ -1176,7 +1176,7 @@ function renderAvalCards(rows){
     const dt  = new Date(r.created_at).toLocaleDateString('pt-BR');
     const st  = r.status==='concluida'?'Concluída':'Em andamento';
     const stC = r.status==='concluida'?'s-lida':'s-nova';
-    const url = `/avaliacao?assessment_id=${r.id}&patient_name=${encodeURIComponent(r.patient_name||'')}&professional_id=${profId||''}`;
+    const url = `/avaliacao?assessment_id=${r.id}&patient_name=${encodeURIComponent(r.patient_name||'')}&professional_id=${profId||''}&modality=${r.modality||'presencial'}`;
     h += `<div class="ficha-card">
       <div class="ficha-card-top">
         <div>
@@ -1186,7 +1186,7 @@ function renderAvalCards(rows){
         <span class="badge-status ${stC}" style="cursor:default">${st}</span>
       </div>
       <div class="ficha-card-meta">
-        <span class="badge-mode ${r.mode==='online'?'badge-o':'badge-p'}">${r.mode==='online'?'Online':'Presencial'}</span>
+        <span class="badge-mode ${r.modality==='online'?'badge-o':'badge-p'}">${r.modality==='online'?'Online':'Presencial'}</span>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn-view" style="flex:1;text-align:center" onclick="location.href='${url}'">Ver / Editar</button>
@@ -1222,16 +1222,16 @@ function closeNewAval(e){
 async function createAval(){
   const nome = document.getElementById('aval_nome').value.trim();
   if(!nome){ showToast('Nome do paciente obrigatório.'); return; }
-  const mode = document.getElementById('aval_mode').value;
+  const modality = document.getElementById('aval_mode').value;
   const {data, error} = await sb.from('assessments').insert({
     professional_id: profId,
     patient_name:    nome,
-    mode:            mode,
+    modality:        modality,
     status:          'em_andamento'
   }).select('id').single();
   if(error){ console.error('[createAval]', error); showToast('Erro: '+error.message); return; }
   closeNewAval();
-  const url = `/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}`;
+  const url = `/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&modality=${modality}`;
   window.location.href = url;
 }
 
