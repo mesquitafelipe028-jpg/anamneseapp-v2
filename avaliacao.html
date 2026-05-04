@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avaliação Física — AnamneseApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/config.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0;--white:#fff;--ink:#1a1814;--muted:#9a9588;
+  --border:#e4e0d8;--olive:#6b7a42;--gold:#a8893a;--cream:#f0ece3;--danger:#c0392b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+
+/* ── HEADER ── */
+.av-header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(247,245,240,.96);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  height:58px;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.av-logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;color:var(--olive);white-space:nowrap;}
+.av-logo span{font-style:normal;color:var(--ink);}
+.av-patient{font-size:13px;color:var(--muted);flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.av-patient strong{color:var(--ink);}
+.btn-back{padding:7px 14px;border:1px solid var(--border);border-radius:6px;background:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .2s;}
+.btn-back:hover{border-color:var(--ink);color:var(--ink);}
+
+/* ── PROGRESS ── */
+.av-progress{background:var(--white);border-bottom:1px solid var(--border);padding:14px 24px 12px;}
+.progress-steps{display:flex;gap:6px;max-width:640px;margin:0 auto;}
+.ps{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;}
+.ps-dot{
+  width:28px;height:28px;border-radius:50%;border:2px solid var(--border);
+  background:var(--white);display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:var(--muted);transition:all .25s;
+}
+.ps.done .ps-dot{background:var(--olive);border-color:var(--olive);color:#fff;}
+.ps.active .ps-dot{border-color:var(--olive);color:var(--olive);box-shadow:0 0 0 3px rgba(107,122,66,.15);}
+.ps-label{font-size:10px;color:var(--muted);letter-spacing:.3px;text-align:center;line-height:1.3;}
+.ps.active .ps-label{color:var(--olive);font-weight:500;}
+.ps.done .ps-label{color:var(--olive);}
+.progress-bar-wrap{height:3px;background:var(--border);border-radius:2px;max-width:640px;margin:10px auto 0;}
+.progress-bar-fill{height:100%;background:var(--olive);border-radius:2px;transition:width .4s ease;}
+
+/* ── BODY ── */
+.av-body{max-width:640px;margin:0 auto;padding:24px 16px 100px;}
+
+/* ── CARDS ── */
+.av-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px 20px;margin-bottom:14px;animation:fIn .25s ease forwards;}
+@keyframes fIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.av-card-title{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;margin-bottom:4px;}
+.av-card-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
+
+/* ── FIELDS ── */
+.field{margin-bottom:16px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.field input,.field select,.field textarea{
+  width:100%;padding:12px 14px;background:var(--cream);border:1.5px solid var(--border);
+  border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);
+  outline:none;transition:border-color .2s;appearance:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--olive);background:var(--white);}
+.field textarea{resize:vertical;min-height:80px;line-height:1.6;}
+.field .hint{font-size:11px;color:var(--muted);margin-top:5px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+/* ── RESULT BOX ── */
+.result-box{background:rgba(107,122,66,.07);border:1px solid rgba(107,122,66,.2);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.result-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--olive);}
+.result-val{font-family:'Instrument Serif',serif;font-size:22px;color:var(--ink);}
+.result-class{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* ── SEX CHIPS ── */
+.sex-chips{display:flex;gap:8px;}
+.sex-chip{flex:1;padding:11px;border:1.5px solid var(--border);border-radius:8px;background:var(--cream);text-align:center;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;}
+.sex-chip.sel{border-color:var(--olive);background:rgba(107,122,66,.08);color:var(--olive);}
+
+/* ── PROTOCOL TABS ── */
+.proto-tabs{display:flex;gap:6px;margin-bottom:18px;}
+.proto-tab{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;text-align:center;}
+.proto-tab.active{background:var(--olive);border-color:var(--olive);color:#fff;}
+
+/* ── PHOTO UPLOAD ── */
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.photo-slot{border:2px dashed var(--border);border-radius:10px;aspect-ratio:3/4;position:relative;overflow:hidden;cursor:pointer;transition:border-color .2s;background:var(--cream);}
+.photo-slot:hover{border-color:var(--olive);}
+.photo-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.photo-slot-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;pointer-events:none;}
+.photo-slot-icon{font-size:24px;color:var(--muted);}
+.photo-slot-text{font-size:11px;color:var(--muted);text-align:center;padding:0 8px;}
+.photo-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.photo-slot .photo-del{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;cursor:pointer;font-size:12px;display:none;align-items:center;justify-content:center;z-index:2;}
+.photo-slot.has-img .photo-del{display:flex;}
+.photo-slot.uploading::after{content:'Enviando…';position:absolute;inset:0;background:rgba(255,255,255,.8);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);}
+
+/* ── CHECKLIST ── */
+.check-section{margin-bottom:14px;}
+.check-section-title{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.check-items{display:flex;flex-wrap:wrap;gap:6px;}
+.check-item{display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--cream);border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:12px;color:var(--ink);transition:all .2s;user-select:none;}
+.check-item input{width:14px;height:14px;accent-color:var(--olive);cursor:pointer;flex-shrink:0;}
+.check-item.checked{background:rgba(107,122,66,.08);border-color:var(--olive);color:var(--olive);}
+
+/* ── NAV ── */
+.av-nav{display:flex;gap:10px;padding-top:20px;border-top:1px solid var(--border);margin-top:20px;}
+.btn-prev{padding:13px 18px;background:none;border:1.5px solid var(--border);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase;border-radius:8px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.btn-prev:hover{border-color:var(--ink);color:var(--ink);}
+.btn-next{flex:1;padding:14px;border:none;border-radius:8px;background:var(--olive);color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;}
+.btn-next:hover{opacity:.88;}
+
+/* ── FINAL SCREEN ── */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.sum-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.sum-card-title{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--olive);margin-bottom:10px;}
+.sum-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px;}
+.sum-row:last-child{border:none;padding-bottom:0;}
+.sum-k{color:var(--muted);flex-shrink:0;}
+.sum-v{color:var(--ink);text-align:right;font-weight:500;}
+.btn-action{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:16px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:.5px;cursor:pointer;margin-bottom:10px;transition:opacity .2s;}
+.btn-action:hover{opacity:.88;}
+.btn-save-av{background:var(--olive);color:#fff;}
+.btn-pdf-av{background:var(--ink);color:#fff;}
+.save-msg{font-size:13px;text-align:center;min-height:20px;margin-bottom:12px;}
+.save-msg.ok{color:var(--olive);}
+.save-msg.err{color:var(--danger);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;z-index:500;background:var(--ink);color:#fff;border-radius:10px;padding:13px 18px;font-size:13px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast-dot{width:8px;height:8px;border-radius:50%;background:#6bcb77;flex-shrink:0;}
+
+/* ── SPINNER ── */
+.spin{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:inline-block;}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+@media(max-width:480px){
+  .grid2,.grid3,.summary-grid{grid-template-columns:1fr;}
+  .av-patient{display:none;}
+  .photo-grid{grid-template-columns:1fr 1fr;}
+  .proto-tabs{flex-wrap:wrap;}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important;}
+}
+</style>
+</head>
+<body>
+
+<header class="av-header">
+  <div class="av-logo">Anamnese<span>App</span></div>
+  <div class="av-patient">Avaliação — <strong id="hdrPatient">—</strong></div>
+  <button class="btn-back" onclick="location.href='/dashboard.html'">← Voltar</button>
+</header>
+
+<div class="av-progress">
+  <div class="progress-steps" id="progressSteps"></div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+</div>
+
+<div class="av-body" id="avBody"></div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg"></span></div>
+
+<script>
+const _SBU = window.SUPABASE_URL  || '';
+const _SBA = window.SUPABASE_ANON || '';
+const sb   = (_SBU && _SBA && _SBU !== 'COLE_SUA_URL_AQUI')
+           ? supabase.createClient(_SBU, _SBA) : null;
+
+const params       = new URLSearchParams(window.location.search);
+const _asmId       = params.get('assessment_id') || null;
+const _patientName = params.get('patient_name')  || 'Paciente';
+const _profId      = params.get('professional_id') || null;
+
+document.getElementById('hdrPatient').textContent = _patientName;
+
+const MODULES = ['Biometria','Circunferências','Dobras Cutâneas','Postural','VO2 Máx','Força'];
+let currentMod = 1; // 1-indexed
+
+// Persisted state
+let D = {
+  patient_sex:'', patient_dob:'',
+  // mod1 biometrics
+  peso_kg:'', altura_cm:'', percentual_gordura_bio:'', massa_gorda_kg:'',
+  massa_magra_kg:'', agua_corporal_pct:'', metabolismo_basal:'',
+  // mod2 circumferences
+  pescoco_cm:'', ombro_cm:'', torax_cm:'', cintura_cm:'', abdomen_cm:'',
+  quadril_cm:'', braco_d_cm:'', braco_e_cm:'', antebraco_d_cm:'', antebraco_e_cm:'',
+  coxa_d_cm:'', coxa_e_cm:'', panturrilha_d_cm:'', panturrilha_e_cm:'',
+  // mod3 skinfolds
+  protocolo_dobras:'jp7',
+  triceps_mm:'', subescapular_mm:'', peitoral_mm:'', axilar_mm:'',
+  suprailiaca_mm:'', abdominal_mm:'', coxa_mm:'',
+  // mod4 posture
+  foto_anterior_url:'', foto_posterior_url:'', foto_lateral_d_url:'', foto_lateral_e_url:'',
+  desvios:[], observacoes_postural:'',
+  // mod5 vo2
+  protocolo_vo2:'cooper',
+  cooper_distancia:'',
+  rockport_tempo_min:'', rockport_tempo_sec:'', rockport_fc:'',
+  harvard_fc1:'', harvard_fc2:'', harvard_fc3:'',
+  fc_repouso:'',
+  // mod6 strength
+  preensao_d_kg:'', preensao_e_kg:'',
+  flexao_repeticoes:'', abdominal_repeticoes:'', agachamento_repeticoes:'',
+  supino_peso:'', supino_reps:'',
+  leg_peso:'',    leg_reps:'',
+  observacoes_forca:'',
+  // record IDs for upsert
+  _ids:{ biometrics:null, circumferences:null, skinfolds:null, posture:null, vo2:null, strength:null }
+};
+
+const LS_KEY = 'avaliacao_' + (_asmId || 'new');
+
+function saveLS(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(D)); }catch(e){} }
+function loadLS(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    Object.assign(D, saved);
+  }catch(e){}
+}
+
+// ── PROGRESS ────────────────────────────────────────────────
+function renderProgress(){
+  const steps = document.getElementById('progressSteps');
+  steps.innerHTML = MODULES.map((lbl,i)=>{
+    const n = i+1;
+    let cls = 'ps';
+    if(n < currentMod) cls += ' done';
+    else if(n === currentMod) cls += ' active';
+    return `<div class="${cls}" onclick="jumpMod(${n})">
+      <div class="ps-dot">${n < currentMod ? '✓' : n}</div>
+      <div class="ps-label">${lbl}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('progressFill').style.width =
+    ((currentMod-1)/(MODULES.length-1)*100) + '%';
+}
+function jumpMod(n){ if(n <= currentMod){ saveCurrentFields(); currentMod=n; render(); } }
+
+// ── FIELD BINDING ────────────────────────────────────────────
+function bind(){
+  document.querySelectorAll('[data-f]').forEach(el=>{
+    const k = el.dataset.f;
+    if(el.type === 'checkbox'){
+      el.checked = Array.isArray(D.desvios) && D.desvios.includes(k);
+      el.addEventListener('change', ()=>{
+        if(el.checked){ if(!D.desvios.includes(k)) D.desvios.push(k); }
+        else { D.desvios = D.desvios.filter(x=>x!==k); }
+        el.closest('.check-item').classList.toggle('checked', el.checked);
+        saveLS();
+      });
+    } else {
+      el.value = D[k] || '';
+      el.addEventListener('input', ()=>{ D[k]=el.value; saveLS(); onFieldChange(k); });
+      el.addEventListener('change', ()=>{ D[k]=el.value; saveLS(); onFieldChange(k); });
+    }
+  });
+}
+
+function saveCurrentFields(){
+  document.querySelectorAll('[data-f]').forEach(el=>{
+    const k = el.dataset.f;
+    if(el.type !== 'checkbox') D[k] = el.value;
+  });
+}
+
+function onFieldChange(k){
+  if(['peso_kg','altura_cm'].includes(k)) calcIMC();
+  if(['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm',
+      'suprailiaca_mm','abdominal_mm','coxa_mm','protocolo_dobras'].includes(k)) calcDobras();
+  if(['cooper_distancia','rockport_tempo_min','rockport_tempo_sec','rockport_fc',
+      'harvard_fc1','harvard_fc2','harvard_fc3','protocolo_vo2'].includes(k)) calcVO2();
+  if(['supino_peso','supino_reps','leg_peso','leg_reps'].includes(k)) calcRM();
+}
+
+// ── IMC ─────────────────────────────────────────────────────
+function calcIMC(){
+  const p = parseFloat(D.peso_kg), h = parseFloat(D.altura_cm);
+  const box = document.getElementById('imcBox');
+  if(!box) return;
+  if(p>0 && h>0){
+    const imc = p/((h/100)**2);
+    const cls = imc<18.5?'Abaixo do peso':imc<25?'Peso normal':imc<30?'Sobrepeso':imc<35?'Obesidade I':imc<40?'Obesidade II':'Obesidade III';
+    box.innerHTML = `<span class="result-label">IMC</span><div><div class="result-val">${imc.toFixed(1)} kg/m²</div><div class="result-class">${cls}</div></div>`;
+    box.style.display='flex';
+  } else { box.style.display='none'; }
+}
+
+// ── DOBRAS ───────────────────────────────────────────────────
+function calcDobras(){
+  saveCurrentFields();
+  const box = document.getElementById('dobrasBox');
+  if(!box) return;
+  const sex = D.patient_sex || 'M';
+  const age = calcAge() || 30;
+  const proto = D.protocolo_dobras;
+  let soma, dens, pct;
+  if(proto === 'jp7'){
+    const vals = ['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm']
+      .map(k=>parseFloat(D[k])||0);
+    soma = vals.reduce((a,b)=>a+b,0);
+    if(soma > 0){
+      if(sex==='M') dens = 1.112 - (0.00043499*soma) + (0.00000055*soma*soma) - (0.00028826*age);
+      else          dens = 1.097  - (0.00046971*soma) + (0.00000056*soma*soma) - (0.00012828*age);
+      pct = (495/dens) - 450;
+    }
+  } else {
+    // JP3: M=peitoral+abdominal+coxa  F=triceps+suprailiaca+coxa
+    let v1,v2,v3;
+    if(sex==='M'){
+      v1=parseFloat(D.peitoral_mm)||0; v2=parseFloat(D.abdominal_mm)||0; v3=parseFloat(D.coxa_mm)||0;
+      soma=v1+v2+v3;
+      if(soma>0){ dens=1.10938-(0.0008267*soma)+(0.0000016*soma*soma)-(0.0002574*age); pct=(495/dens)-450; }
+    } else {
+      v1=parseFloat(D.triceps_mm)||0; v2=parseFloat(D.suprailiaca_mm)||0; v3=parseFloat(D.coxa_mm)||0;
+      soma=v1+v2+v3;
+      if(soma>0){ dens=1.0994921-(0.0009929*soma)+(0.0000023*soma*soma)-(0.0001392*age); pct=(495/dens)-450; }
+    }
+  }
+  if(pct!=null && soma>0){
+    box.innerHTML=`<span class="result-label">Resultado</span><div>
+      <div class="result-val">${pct.toFixed(1)}% gordura</div>
+      <div class="result-class">Σ dobras: ${soma.toFixed(1)} mm · Densidade: ${dens.toFixed(4)}</div>
+    </div>`;
+    box.style.display='flex';
+  } else { box.style.display='none'; }
+}
+
+// ── VO2 ──────────────────────────────────────────────────────
+function calcVO2(){
+  saveCurrentFields();
+  const box = document.getElementById('vo2Box');
+  if(!box) return;
+  const proto = D.protocolo_vo2;
+  let vo2 = null;
+  if(proto==='cooper'){
+    const dist = parseFloat(D.cooper_distancia);
+    if(dist>0) vo2 = (dist-504.9)/44.73;
+  } else if(proto==='rockport'){
+    const tMin = parseFloat(D.rockport_tempo_min)||0;
+    const tSec = parseFloat(D.rockport_tempo_sec)||0;
+    const hr   = parseFloat(D.rockport_fc);
+    const peso = parseFloat(D.peso_kg);
+    const age  = calcAge()||30;
+    const sex  = D.patient_sex==='F'?0:1;
+    const time = tMin + tSec/60;
+    const wLbs = (peso||70)*2.20462;
+    if(hr>0 && time>0) vo2 = 132.853-(0.0769*wLbs)-(0.3877*age)+(6.315*sex)-(3.2649*time)-(0.1565*hr);
+  } else if(proto==='harvard'){
+    const fc1=parseFloat(D.harvard_fc1)||0, fc2=parseFloat(D.harvard_fc2)||0, fc3=parseFloat(D.harvard_fc3)||0;
+    if(fc1>0&&fc2>0&&fc3>0){
+      const idx = (300*100)/(2*(fc1+fc2+fc3));
+      const cls = idx<55?'Fraco':idx<65?'Regular':idx<80?'Médio':idx<90?'Bom':'Excelente';
+      box.innerHTML=`<span class="result-label">Índice Harvard</span><div>
+        <div class="result-val">${idx.toFixed(0)}</div>
+        <div class="result-class">${cls}</div></div>`;
+      box.style.display='flex'; return;
+    }
+  }
+  if(vo2!=null){
+    const cls = classifyVO2(vo2);
+    box.innerHTML=`<span class="result-label">VO2 Máx Estimado</span><div>
+      <div class="result-val">${vo2.toFixed(1)} ml/kg/min</div>
+      <div class="result-class">${cls}</div></div>`;
+    box.style.display='flex';
+  } else { box.style.display='none'; }
+}
+
+function classifyVO2(vo2){
+  const sex = D.patient_sex==='F'?'F':'M';
+  const age = calcAge()||25;
+  // ACSM tables [ageMin, Superior, Excellent, Good, Fair, Poor]
+  const maleRanges  = [[20,55.9,51.0,45.2,38.4,35.0],[30,54.0,48.7,43.0,35.7,30.2],[40,52.5,46.1,39.9,35.1,29.1],[50,48.9,43.1,36.5,30.2,25.1],[60,45.7,39.5,32.3,26.1,20.5]];
+  const femaleRanges= [[20,49.7,43.9,36.1,32.3,26.5],[30,47.4,42.4,35.7,29.5,23.4],[40,45.3,39.7,34.3,28.9,22.8],[50,41.1,36.7,31.1,25.5,18.0],[60,37.8,33.0,28.0,23.9,16.5]];
+  const tbl = sex==='F'?femaleRanges:maleRanges;
+  const row = tbl.reduce((best,r)=>age>=r[0]?r:best, tbl[0]);
+  if(vo2>=row[1]) return 'Superior';
+  if(vo2>=row[2]) return 'Excelente';
+  if(vo2>=row[3]) return 'Bom';
+  if(vo2>=row[4]) return 'Regular';
+  if(vo2>=row[5]) return 'Fraco';
+  return 'Muito Fraco';
+}
+
+// ── 1RM BRZYCKI ──────────────────────────────────────────────
+function calcRM(){
+  saveCurrentFields();
+  const rmS = document.getElementById('rmSupino');
+  const rmL = document.getElementById('rmLeg');
+  const calcOne = (peso,reps)=>{
+    const p=parseFloat(peso), r=parseInt(reps);
+    if(p>0&&r>0&&r<=30) return (p/(1.0278-0.0278*r)).toFixed(1)+' kg';
+    return '—';
+  };
+  if(rmS) rmS.textContent = calcOne(D.supino_peso, D.supino_reps);
+  if(rmL) rmL.textContent = calcOne(D.leg_peso,    D.leg_reps);
+}
+
+function calcAge(){
+  if(!D.patient_dob) return null;
+  const dob = new Date(D.patient_dob);
+  const diff = Date.now()-dob.getTime();
+  return Math.floor(diff/31557600000);
+}
+
+// ── MODULES RENDER ───────────────────────────────────────────
+function render(){
+  renderProgress();
+  const body = document.getElementById('avBody');
+  if(currentMod === 7){ renderFinal(); return; }
+  const fns = [null, mod1, mod2, mod3, mod4, mod5, mod6];
+  body.innerHTML = fns[currentMod]();
+  bind();
+  // run calcs after render
+  if(currentMod===1) calcIMC();
+  if(currentMod===3) calcDobras();
+  if(currentMod===5) calcVO2();
+  if(currentMod===6) calcRM();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function navHTML(showPrev){
+  const isLast = currentMod===MODULES.length;
+  return `<div class="av-nav">
+    ${showPrev?`<button class="btn-prev" onclick="prevMod()">← Anterior</button>`:''}
+    <button class="btn-next" onclick="nextMod()">${isLast?'Revisar e Salvar →':'Próximo →'}</button>
+  </div>`;
+}
+function nextMod(){ saveCurrentFields(); currentMod++; render(); }
+function prevMod(){ saveCurrentFields(); currentMod--; render(); }
+
+// ── MODULE 1 ─────────────────────────────────────────────────
+function mod1(){
+  return `<div class="av-card">
+    <div class="av-card-title">Biometria</div>
+    <div class="av-card-sub">Dados corporais básicos e composição</div>
+    <div class="field"><label>Sexo biológico</label>
+      <div class="sex-chips">
+        <div class="sex-chip${D.patient_sex==='M'?' sel':''}" onclick="setSex('M')">Masculino</div>
+        <div class="sex-chip${D.patient_sex==='F'?' sel':''}" onclick="setSex('F')">Feminino</div>
+      </div>
+    </div>
+    <div class="field"><label>Data de nascimento</label><input type="date" data-f="patient_dob"></div>
+    <div class="grid2">
+      <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="peso_kg"></div>
+      <div class="field"><label>Altura (cm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="altura_cm"></div>
+    </div>
+    <div class="result-box" id="imcBox" style="display:none"></div>
+    <div class="field"><label>% Gordura (bioimpedância)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="percentual_gordura_bio"></div>
+    <div class="grid2">
+      <div class="field"><label>Massa gorda (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="massa_gorda_kg"></div>
+      <div class="field"><label>Massa magra (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="massa_magra_kg"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Água corporal (%)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="agua_corporal_pct"></div>
+      <div class="field"><label>Metabolismo basal (kcal)</label><input type="number" inputmode="numeric" placeholder="0" data-f="metabolismo_basal"></div>
+    </div>
+    ${navHTML(false)}
+  </div>`;
+}
+function setSex(s){
+  D.patient_sex = s; saveLS();
+  document.querySelectorAll('.sex-chip').forEach(el=>el.classList.toggle('sel', el.textContent.startsWith(s==='M'?'Masc':'Fem')));
+  calcDobras(); calcVO2();
+}
+
+// ── MODULE 2 ─────────────────────────────────────────────────
+function mod2(){
+  const f=(lbl,k)=>`<div class="field"><label>${lbl} (cm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
+  return `<div class="av-card">
+    <div class="av-card-title">Circunferências</div>
+    <div class="av-card-sub">Perimetria em centímetros</div>
+    <div class="grid2">
+      ${f('Pescoço','pescoco_cm')}${f('Ombro','ombro_cm')}
+      ${f('Tórax','torax_cm')}${f('Cintura','cintura_cm')}
+      ${f('Abdômen','abdomen_cm')}${f('Quadril','quadril_cm')}
+      ${f('Braço D','braco_d_cm')}${f('Braço E','braco_e_cm')}
+      ${f('Antebraço D','antebraco_d_cm')}${f('Antebraço E','antebraco_e_cm')}
+      ${f('Coxa D','coxa_d_cm')}${f('Coxa E','coxa_e_cm')}
+      ${f('Panturrilha D','panturrilha_d_cm')}${f('Panturrilha E','panturrilha_e_cm')}
+    </div>
+    ${navHTML(true)}
+  </div>`;
+}
+
+// ── MODULE 3 ─────────────────────────────────────────────────
+function mod3(){
+  const p = D.protocolo_dobras || 'jp7';
+  const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
+  const jp7Fields = `<div class="grid2">
+    ${f('Tríceps','triceps_mm')}${f('Subescapular','subescapular_mm')}
+    ${f('Peitoral','peitoral_mm')}${f('Axilar Média','axilar_mm')}
+    ${f('Suprailíaca','suprailiaca_mm')}${f('Abdominal','abdominal_mm')}
+    ${f('Coxa','coxa_mm')}
+  </div>`;
+  const jp3SexHint = D.patient_sex==='F'?'Tríceps + Suprailíaca + Coxa':'Peitoral + Abdominal + Coxa';
+  const jp3Fields = `<div class="av-card-sub" style="margin-bottom:12px">Pontos: ${jp3SexHint}</div>
+  <div class="grid2">
+    ${D.patient_sex==='F'?
+      f('Tríceps','triceps_mm')+f('Suprailíaca','suprailiaca_mm')+f('Coxa','coxa_mm'):
+      f('Peitoral','peitoral_mm')+f('Abdominal','abdominal_mm')+f('Coxa','coxa_mm')
+    }
+  </div>`;
+  return `<div class="av-card">
+    <div class="av-card-title">Dobras Cutâneas</div>
+    <div class="av-card-sub">Protocolo e pontos de medição</div>
+    <div class="proto-tabs">
+      <div class="proto-tab${p==='jp7'?' active':''}" onclick="setProto('jp7')">Jackson-Pollock 7</div>
+      <div class="proto-tab${p==='jp3'?' active':''}" onclick="setProto('jp3')">Jackson-Pollock 3</div>
+    </div>
+    ${p==='jp7'?jp7Fields:jp3Fields}
+    <div class="result-box" id="dobrasBox" style="display:none;margin-top:14px"></div>
+    ${navHTML(true)}
+  </div>`;
+}
+function setProto(p){ D.protocolo_dobras=p; saveLS(); render(); }
+
+// ── MODULE 4 ─────────────────────────────────────────────────
+const DESVIOS = {
+  'Cabeça':['cabeca_anterorizacao','cabeca_inclinacao','cabeca_rotacao'],
+  'Ombros':['ombros_elevacao_d','ombros_elevacao_e','ombros_protracao','ombros_rot_interna'],
+  'Coluna':['coluna_hipercifose','coluna_hiperlordose','coluna_escoliose','coluna_retificacao'],
+  'Pelve':['pelve_anteroversao','pelve_retroversao','pelve_inclinacao'],
+  'Joelhos':['joelho_valgo_d','joelho_valgo_e','joelho_varo_d','joelho_varo_e'],
+  'Pés':['pe_pronacao_d','pe_pronacao_e','pe_supinacao_d','pe_supinacao_e']
+};
+const DESVIOS_LABEL = {
+  cabeca_anterorizacao:'Anteriorização',cabeca_inclinacao:'Inclinação',cabeca_rotacao:'Rotação',
+  ombros_elevacao_d:'Elevação D',ombros_elevacao_e:'Elevação E',ombros_protracao:'Protração',ombros_rot_interna:'Rot. Interna',
+  coluna_hipercifose:'Hipercifose',coluna_hiperlordose:'Hiperlordose',coluna_escoliose:'Escoliose',coluna_retificacao:'Retificação',
+  pelve_anteroversao:'Anteversão',pelve_retroversao:'Retroversão',pelve_inclinacao:'Inclinação',
+  joelho_valgo_d:'Valgo D',joelho_valgo_e:'Valgo E',joelho_varo_d:'Varo D',joelho_varo_e:'Varo E',
+  pe_pronacao_d:'Pronação D',pe_pronacao_e:'Pronação E',pe_supinacao_d:'Supinação D',pe_supinacao_e:'Supinação E'
+};
+function mod4(){
+  const photos = [
+    {key:'foto_anterior_url', lbl:'Anterior'},
+    {key:'foto_posterior_url', lbl:'Posterior'},
+    {key:'foto_lateral_d_url', lbl:'Lateral D'},
+    {key:'foto_lateral_e_url', lbl:'Lateral E'}
+  ];
+  const photoHTML = photos.map(ph=>{
+    const hasImg = !!D[ph.key];
+    return `<div class="photo-slot${hasImg?' has-img':''}" id="slot_${ph.key}">
+      <input type="file" accept="image/*" onchange="uploadPhoto('${ph.key}',this)">
+      <div class="photo-slot-label">
+        <span class="photo-slot-icon">📷</span>
+        <span class="photo-slot-text">${ph.lbl}</span>
+      </div>
+      ${hasImg?`<img src="${D[ph.key]}" alt="${ph.lbl}"><button class="photo-del" onclick="removePhoto('${ph.key}',event)">×</button>`:''}
+    </div>`;
+  }).join('');
+
+  const checkHTML = Object.entries(DESVIOS).map(([region, keys])=>`
+    <div class="check-section">
+      <div class="check-section-title">${region}</div>
+      <div class="check-items">
+        ${keys.map(k=>`<label class="check-item${D.desvios.includes(k)?' checked':''}">
+          <input type="checkbox" data-f="${k}">${DESVIOS_LABEL[k]}
+        </label>`).join('')}
+      </div>
+    </div>`).join('');
+
+  return `<div class="av-card">
+    <div class="av-card-title">Avaliação Postural</div>
+    <div class="av-card-sub">Fotos e desvios posturais identificados</div>
+    <div class="photo-grid">${photoHTML}</div>
+    ${checkHTML}
+    <div class="field" style="margin-top:14px"><label>Observações posturais</label>
+      <textarea data-f="observacoes_postural" placeholder="Observações adicionais…"></textarea>
+    </div>
+    ${navHTML(true)}
+  </div>`;
+}
+
+async function uploadPhoto(key, input){
+  if(!input.files[0]) return;
+  const file = input.files[0];
+  const slot = document.getElementById('slot_'+key);
+  slot.classList.add('uploading');
+  if(sb && _asmId){
+    const ext  = file.name.split('.').pop();
+    const path = `${_asmId}/posture/${key}.${ext}`;
+    const {data, error} = await sb.storage.from('assessment-photos').upload(path, file, {upsert:true});
+    if(!error){
+      const {data:{publicUrl}} = sb.storage.from('assessment-photos').getPublicUrl(path);
+      D[key] = publicUrl;
+    } else { showToast('Erro no upload: '+error.message); }
+  } else {
+    D[key] = URL.createObjectURL(file);
+  }
+  saveLS();
+  slot.classList.remove('uploading');
+  render();
+}
+function removePhoto(key, e){
+  e.preventDefault(); e.stopPropagation();
+  D[key]=''; saveLS(); render();
+}
+
+// ── MODULE 5 ─────────────────────────────────────────────────
+function mod5(){
+  const p = D.protocolo_vo2 || 'cooper';
+  const protoFields = {
+    cooper:`<div class="field"><label>Distância percorrida (m)</label>
+      <input type="number" inputmode="decimal" placeholder="Ex: 2200" data-f="cooper_distancia">
+      <div class="hint">Distância em metros no teste de 12 minutos</div></div>`,
+    rockport:`<div class="grid2">
+      <div class="field"><label>Tempo — minutos</label><input type="number" inputmode="numeric" placeholder="Min" data-f="rockport_tempo_min"></div>
+      <div class="field"><label>Tempo — segundos</label><input type="number" inputmode="numeric" placeholder="Seg" data-f="rockport_tempo_sec"></div>
+    </div>
+    <div class="field"><label>FC ao final (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 160" data-f="rockport_fc"></div>`,
+    harvard:`<div class="field"><label>FC após 1 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 92" data-f="harvard_fc1"></div>
+    <div class="field"><label>FC após 2 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 80" data-f="harvard_fc2"></div>
+    <div class="field"><label>FC após 3 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 72" data-f="harvard_fc3"></div>`,
+    fc_repouso:`<div class="field"><label>FC de repouso (bpm)</label>
+      <input type="number" inputmode="numeric" placeholder="Ex: 62" data-f="fc_repouso">
+      <div class="hint">Protocolo apenas de registro — sem estimativa de VO2</div></div>`
+  };
+  return `<div class="av-card">
+    <div class="av-card-title">VO2 Máximo</div>
+    <div class="av-card-sub">Estimativa de capacidade aeróbica</div>
+    <div class="proto-tabs" style="flex-wrap:wrap;">
+      <div class="proto-tab${p==='cooper'?' active':''}"     onclick="setVO2Proto('cooper')">Cooper 12min</div>
+      <div class="proto-tab${p==='rockport'?' active':''}"   onclick="setVO2Proto('rockport')">Rockport 1mi</div>
+      <div class="proto-tab${p==='harvard'?' active':''}"    onclick="setVO2Proto('harvard')">Banco Harvard</div>
+      <div class="proto-tab${p==='fc_repouso'?' active':''}" onclick="setVO2Proto('fc_repouso')">FC Repouso</div>
+    </div>
+    ${protoFields[p] || ''}
+    <div class="result-box" id="vo2Box" style="display:none;margin-top:14px"></div>
+    ${navHTML(true)}
+  </div>`;
+}
+function setVO2Proto(p){ D.protocolo_vo2=p; saveLS(); render(); }
+
+// ── MODULE 6 ─────────────────────────────────────────────────
+function mod6(){
+  return `<div class="av-card">
+    <div class="av-card-title">Força</div>
+    <div class="av-card-sub">Testes de força e resistência muscular</div>
+    <div class="grid2">
+      <div class="field"><label>Preensão D (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="preensao_d_kg"></div>
+      <div class="field"><label>Preensão E (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="preensao_e_kg"></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>Flexão (reps)</label><input type="number" inputmode="numeric" placeholder="0" data-f="flexao_repeticoes"></div>
+      <div class="field"><label>Abdominal/min</label><input type="number" inputmode="numeric" placeholder="0" data-f="abdominal_repeticoes"></div>
+      <div class="field"><label>Agachamento/min</label><input type="number" inputmode="numeric" placeholder="0" data-f="agachamento_repeticoes"></div>
+    </div>
+    <div class="av-card-sub" style="margin:16px 0 10px">1RM Estimado — Fórmula Brzycki</div>
+    <div class="grid2">
+      <div class="field"><label>Supino — Peso (kg)</label><input type="number" step="0.5" inputmode="decimal" placeholder="0.0" data-f="supino_peso"></div>
+      <div class="field"><label>Supino — Reps</label><input type="number" inputmode="numeric" placeholder="0" data-f="supino_reps"></div>
+    </div>
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:14px">1RM Supino: <strong id="rmSupino">—</strong></div>
+    <div class="grid2">
+      <div class="field"><label>Leg Press — Peso (kg)</label><input type="number" step="0.5" inputmode="decimal" placeholder="0.0" data-f="leg_peso"></div>
+      <div class="field"><label>Leg Press — Reps</label><input type="number" inputmode="numeric" placeholder="0" data-f="leg_reps"></div>
+    </div>
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:14px">1RM Leg Press: <strong id="rmLeg">—</strong></div>
+    <div class="field"><label>Observações</label><textarea data-f="observacoes_forca" placeholder="Observações adicionais…"></textarea></div>
+    ${navHTML(true)}
+  </div>`;
+}
+
+// ── FINAL SCREEN ─────────────────────────────────────────────
+function renderFinal(){
+  renderProgress();
+  const imc = (D.peso_kg && D.altura_cm)
+    ? (parseFloat(D.peso_kg)/((parseFloat(D.altura_cm)/100)**2)).toFixed(1) : '—';
+
+  const circKeys=[['Cintura','cintura_cm'],['Abdômen','abdomen_cm'],['Quadril','quadril_cm'],['Coxa D','coxa_d_cm']];
+  const dobrasResult=(()=>{
+    const soma=['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm']
+      .reduce((s,k)=>s+(parseFloat(D[k])||0),0);
+    if(soma<=0) return '—';
+    const age=calcAge()||30, sex=D.patient_sex||'M';
+    let dens;
+    if(sex==='M') dens=1.112-(0.00043499*soma)+(0.00000055*soma*soma)-(0.00028826*age);
+    else          dens=1.097-(0.00046971*soma)+(0.00000056*soma*soma)-(0.00012828*age);
+    return ((495/dens)-450).toFixed(1)+'%';
+  })();
+
+  const vo2Result=(()=>{
+    if(D.protocolo_vo2==='cooper'&&D.cooper_distancia){
+      const v=((parseFloat(D.cooper_distancia)-504.9)/44.73);
+      return v.toFixed(1)+' ml/kg/min — '+classifyVO2(v);
+    }
+    return '—';
+  })();
+
+  const rmS=(()=>{const p=parseFloat(D.supino_peso),r=parseInt(D.supino_reps);return(p>0&&r>0&&r<=30)?(p/(1.0278-0.0278*r)).toFixed(1)+' kg':'—';})();
+  const rmL=(()=>{const p=parseFloat(D.leg_peso),  r=parseInt(D.leg_reps);  return(p>0&&r>0&&r<=30)?(p/(1.0278-0.0278*r)).toFixed(1)+' kg':'—';})();
+
+  function sumCard(title, rows){
+    return `<div class="sum-card"><div class="sum-card-title">${title}</div>
+      ${rows.map(([k,v])=>`<div class="sum-row"><span class="sum-k">${k}</span><span class="sum-v">${v||'—'}</span></div>`).join('')}
+    </div>`;
+  }
+
+  const desviosStr = D.desvios.length ? D.desvios.map(k=>DESVIOS_LABEL[k]||k).join(', ') : 'Nenhum registrado';
+
+  document.getElementById('avBody').innerHTML = `
+    <div class="av-card">
+      <div class="av-card-title">Resumo da Avaliação</div>
+      <div class="av-card-sub">Confira os dados antes de salvar</div>
+      <div class="summary-grid">
+        ${sumCard('Biometria',[['Peso',D.peso_kg?D.peso_kg+' kg':'—'],['Altura',D.altura_cm?D.altura_cm+' cm':'—'],['IMC',imc!=='—'?imc+' kg/m²':'—'],['% Gordura Bio',D.percentual_gordura_bio?D.percentual_gordura_bio+'%':'—']])}
+        ${sumCard('Circunferências',circKeys.map(([l,k])=>[l,D[k]?D[k]+' cm':'—']))}
+        ${sumCard('Dobras Cutâneas',[['Protocolo',D.protocolo_dobras.toUpperCase()],['% Gordura',dobrasResult]])}
+        ${sumCard('Postural',[['Fotos',[D.foto_anterior_url,D.foto_posterior_url,D.foto_lateral_d_url,D.foto_lateral_e_url].filter(Boolean).length+'/4'],['Desvios',D.desvios.length+' identificados']])}
+        ${sumCard('VO2 Máx',[['Protocolo',D.protocolo_vo2],['Resultado',vo2Result]])}
+        ${sumCard('Força',[['Preensão D',D.preensao_d_kg?D.preensao_d_kg+' kg':'—'],['1RM Supino',rmS],['1RM Leg',rmL]])}
+      </div>
+      <div class="save-msg" id="saveMsg"></div>
+      <button class="btn-action btn-save-av" onclick="saveAll()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salvar Avaliação
+      </button>
+      <button class="btn-action btn-pdf-av" onclick="gerarPDF()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Gerar PDF
+      </button>
+      <div style="padding-top:12px;border-top:1px solid var(--border);margin-top:4px;">
+        <button class="btn-prev" onclick="prevMod()" style="width:100%;text-align:center;">← Voltar ao módulo 6</button>
+      </div>
+    </div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── SAVE ─────────────────────────────────────────────────────
+async function saveAll(){
+  if(!sb){ showMsg('Supabase não configurado.','err'); return; }
+  const btn = document.querySelector('.btn-save-av');
+  btn.innerHTML = '<span class="spin"></span> Salvando…';
+  btn.disabled = true;
+  try{
+    // 1. assessments upsert
+    const asmPayload = {
+      professional_id: _profId,
+      patient_name:    _patientName,
+      patient_sex:     D.patient_sex || null,
+      patient_dob:     D.patient_dob || null,
+      status:          'em_andamento'
+    };
+    let asmId = _asmId;
+    if(asmId){
+      await sb.from('assessments').update(asmPayload).eq('id', asmId);
+    } else {
+      const {data, error} = await sb.from('assessments').insert(asmPayload).select('id').single();
+      if(error) throw error;
+      asmId = data.id;
+    }
+
+    // 2. helper upsert subtable
+    async function upsertSub(table, idKey, payload){
+      const existId = D._ids[idKey];
+      if(existId){
+        const {error} = await sb.from(table).update(payload).eq('id', existId);
+        if(error) console.warn(table, error);
+      } else {
+        const {data, error} = await sb.from(table).insert({assessment_id: asmId, ...payload}).select('id').single();
+        if(error) console.warn(table, error);
+        else D._ids[idKey] = data.id;
+      }
+    }
+
+    const num = k => parseFloat(D[k]) || null;
+    const int = k => parseInt(D[k])   || null;
+
+    await upsertSub('assessment_biometrics','biometrics',{
+      peso_kg:num('peso_kg'), altura_cm:num('altura_cm'),
+      percentual_gordura_bio:num('percentual_gordura_bio'),
+      massa_gorda_kg:num('massa_gorda_kg'), massa_magra_kg:num('massa_magra_kg'),
+      agua_corporal_pct:num('agua_corporal_pct'), metabolismo_basal:int('metabolismo_basal')
+    });
+
+    await upsertSub('assessment_circumferences','circumferences',{
+      pescoco_cm:num('pescoco_cm'), ombro_cm:num('ombro_cm'), torax_cm:num('torax_cm'),
+      cintura_cm:num('cintura_cm'), abdomen_cm:num('abdomen_cm'), quadril_cm:num('quadril_cm'),
+      braco_d_cm:num('braco_d_cm'), braco_e_cm:num('braco_e_cm'),
+      antebraco_d_cm:num('antebraco_d_cm'), antebraco_e_cm:num('antebraco_e_cm'),
+      coxa_d_cm:num('coxa_d_cm'), coxa_e_cm:num('coxa_e_cm'),
+      panturrilha_d_cm:num('panturrilha_d_cm'), panturrilha_e_cm:num('panturrilha_e_cm')
+    });
+
+    const soma7 = ['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm']
+      .reduce((s,k)=>s+(parseFloat(D[k])||0),0);
+    const age=calcAge()||30, sex=D.patient_sex||'M';
+    let dens=null, pctG=null;
+    if(soma7>0){
+      if(sex==='M') dens=1.112-(0.00043499*soma7)+(0.00000055*soma7*soma7)-(0.00028826*age);
+      else          dens=1.097-(0.00046971*soma7)+(0.00000056*soma7*soma7)-(0.00012828*age);
+      pctG=(495/dens)-450;
+    }
+    await upsertSub('assessment_skinfolds','skinfolds',{
+      protocolo: D.protocolo_dobras,
+      triceps_mm:num('triceps_mm'), subescapular_mm:num('subescapular_mm'),
+      peitoral_mm:num('peitoral_mm'), axilar_mm:num('axilar_mm'),
+      suprailiaca_mm:num('suprailiaca_mm'), abdominal_mm:num('abdominal_mm'),
+      coxa_mm:num('coxa_mm'),
+      soma_dobras: soma7 || null,
+      percentual_gordura: pctG ? parseFloat(pctG.toFixed(2)) : null,
+      densidade_corporal: dens ? parseFloat(dens.toFixed(5)) : null
+    });
+
+    await upsertSub('assessment_posture','posture',{
+      foto_anterior_url:   D.foto_anterior_url   || null,
+      foto_posterior_url:  D.foto_posterior_url  || null,
+      foto_lateral_d_url:  D.foto_lateral_d_url  || null,
+      foto_lateral_e_url:  D.foto_lateral_e_url  || null,
+      desvios:             D.desvios,
+      observacoes:         D.observacoes_postural || null
+    });
+
+    let vo2val=null;
+    if(D.protocolo_vo2==='cooper'&&D.cooper_distancia)
+      vo2val=parseFloat(((parseFloat(D.cooper_distancia)-504.9)/44.73).toFixed(2));
+    await upsertSub('assessment_vo2','vo2',{
+      protocolo: D.protocolo_vo2,
+      fc_repouso: int('fc_repouso'),
+      resultado_bruto: num('cooper_distancia') || num('rockport_fc') || null,
+      vo2max_estimado: vo2val,
+      classificacao: vo2val ? classifyVO2(vo2val) : null
+    });
+
+    const rm=(p,r)=>{const pv=parseFloat(p),rv=parseInt(r);return(pv>0&&rv>0&&rv<=30)?parseFloat((pv/(1.0278-0.0278*rv)).toFixed(1)):null;};
+    await upsertSub('assessment_strength','strength',{
+      preensao_d_kg:num('preensao_d_kg'), preensao_e_kg:num('preensao_e_kg'),
+      flexao_repeticoes:int('flexao_repeticoes'), abdominal_repeticoes:int('abdominal_repeticoes'),
+      agachamento_repeticoes:int('agachamento_repeticoes'),
+      rm_estimado_supino: rm(D.supino_peso, D.supino_reps),
+      rm_estimado_leg:    rm(D.leg_peso,    D.leg_reps),
+      observacoes: D.observacoes_forca || null
+    });
+
+    saveLS();
+    showMsg('Avaliação salva com sucesso!','ok');
+    showToast('Salvo!');
+  } catch(e){
+    console.error('[saveAll]', e);
+    showMsg('Erro ao salvar: '+e.message,'err');
+  } finally {
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvar Avaliação';
+    btn.disabled = false;
+  }
+}
+function showMsg(txt, type){ const el=document.getElementById('saveMsg'); if(el){el.textContent=txt;el.className='save-msg '+type;} }
+
+// ── PDF ───────────────────────────────────────────────────────
+function gerarPDF(){
+  try{
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const PW=210, PH=297, ML=16, MR=16, CW=PW-ML-MR;
+    const OLIVE=[107,122,66], DARK=[26,24,20], MID=[122,118,104], LIGHT=[228,224,216], BG=[247,245,240], WHITE=[255,255,255];
+    let y=0;
+
+    function newPage(){
+      doc.addPage(); y=16;
+      doc.setDrawColor(...LIGHT); doc.setLineWidth(0.3);
+      doc.line(ML,PH-12,PW-MR,PH-12);
+      doc.setFontSize(7); doc.setTextColor(...MID); doc.setFont('helvetica','normal');
+      doc.text('LP Consultoria & Treinamento  |  Avaliação Física', PW/2, PH-7, {align:'center'});
+    }
+    function checkY(n){ if(y+n>PH-18) newPage(); }
+
+    // Cover
+    doc.setFillColor(...BG); doc.rect(0,0,PW,PH,'F');
+    doc.setFillColor(...OLIVE); doc.rect(0,0,PW,3,'F');
+    doc.setFontSize(22); doc.setFont('helvetica','bold'); doc.setTextColor(...DARK);
+    doc.text('AVALIAÇÃO FÍSICA', PW/2, 50, {align:'center'});
+    doc.setFontSize(13); doc.setFont('helvetica','normal'); doc.setTextColor(...MID);
+    doc.text(_patientName.toUpperCase(), PW/2, 62, {align:'center', charSpace:1});
+    const hoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+    doc.text(hoje, PW/2, 72, {align:'center'});
+    doc.setFillColor(...OLIVE); doc.rect(0,PH-3,PW,3,'F');
+
+    newPage();
+
+    function section(title){
+      checkY(20);
+      doc.setFillColor(...OLIVE); doc.rect(ML,y,1.5,12,'F');
+      doc.setFontSize(7); doc.setFont('helvetica','bold'); doc.setTextColor(...OLIVE);
+      doc.text('MÓDULO', ML+4, y+5, {charSpace:1.5});
+      doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(...DARK);
+      doc.text(title.toUpperCase(), ML+4, y+11);
+      y+=17;
+    }
+
+    function row(lbl, val, alt){
+      checkY(10);
+      if(alt){ doc.setFillColor(250,248,244); doc.rect(ML,y,CW,9,'F'); }
+      doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(...MID);
+      doc.text(lbl.toUpperCase(), ML+3, y+5.5, {charSpace:.3});
+      doc.setFontSize(9); doc.setFont('helvetica','normal');
+      doc.setTextColor(...(val&&val!=='—'?DARK:LIGHT));
+      doc.text(String(val||'—'), PW-MR-3, y+5.5, {align:'right'});
+      doc.setDrawColor(...LIGHT); doc.setLineWidth(.2);
+      doc.line(ML,y+9,ML+CW,y+9);
+      y+=9;
+    }
+
+    const n=k=>D[k]||'—';
+    const imc=(D.peso_kg&&D.altura_cm)?(parseFloat(D.peso_kg)/((parseFloat(D.altura_cm)/100)**2)).toFixed(1)+' kg/m²':'—';
+
+    section('Biometria');
+    row('Peso', D.peso_kg?D.peso_kg+' kg':'—', false);
+    row('Altura', D.altura_cm?D.altura_cm+' cm':'—', true);
+    row('IMC', imc, false);
+    row('% Gordura (bio)', D.percentual_gordura_bio?D.percentual_gordura_bio+'%':'—', true);
+    row('Massa Gorda', D.massa_gorda_kg?D.massa_gorda_kg+' kg':'—', false);
+    row('Massa Magra', D.massa_magra_kg?D.massa_magra_kg+' kg':'—', true);
+    row('Água Corporal', D.agua_corporal_pct?D.agua_corporal_pct+'%':'—', false);
+    row('Metabolismo Basal', D.metabolismo_basal?D.metabolismo_basal+' kcal':'—', true);
+    y+=4;
+
+    section('Circunferências');
+    [['Pescoço','pescoco_cm'],['Ombro','ombro_cm'],['Tórax','torax_cm'],['Cintura','cintura_cm'],
+     ['Abdômen','abdomen_cm'],['Quadril','quadril_cm'],['Braço D','braco_d_cm'],['Braço E','braco_e_cm'],
+     ['Antebraço D','antebraco_d_cm'],['Antebraço E','antebraco_e_cm'],
+     ['Coxa D','coxa_d_cm'],['Coxa E','coxa_e_cm'],
+     ['Panturrilha D','panturrilha_d_cm'],['Panturrilha E','panturrilha_e_cm']
+    ].forEach(([l,k],i)=>row(l, D[k]?D[k]+' cm':'—', i%2===1));
+    y+=4;
+
+    section('Dobras Cutâneas');
+    row('Protocolo', D.protocolo_dobras.toUpperCase(), false);
+    ['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm']
+      .forEach((k,i)=>row(k.replace('_mm','').replace('_',' '), D[k]?D[k]+' mm':'—', i%2===1));
+    y+=4;
+
+    section('VO2 Máximo');
+    row('Protocolo', D.protocolo_vo2, false);
+    if(D.protocolo_vo2==='cooper'&&D.cooper_distancia){
+      const v=((parseFloat(D.cooper_distancia)-504.9)/44.73);
+      row('VO2 Estimado', v.toFixed(1)+' ml/kg/min', true);
+      row('Classificação ACSM', classifyVO2(v), false);
+    }
+    y+=4;
+
+    section('Força');
+    row('Preensão D', D.preensao_d_kg?D.preensao_d_kg+' kg':'—', false);
+    row('Preensão E', D.preensao_e_kg?D.preensao_e_kg+' kg':'—', true);
+    row('Flexão (reps)', n('flexao_repeticoes'), false);
+    row('Abdominal/min', n('abdominal_repeticoes'), true);
+    row('Agachamento/min', n('agachamento_repeticoes'), false);
+    const rmS=(()=>{const p=parseFloat(D.supino_peso),r=parseInt(D.supino_reps);return(p>0&&r>0&&r<=30)?(p/(1.0278-0.0278*r)).toFixed(1)+' kg':'—';})();
+    const rmL=(()=>{const p=parseFloat(D.leg_peso),  r=parseInt(D.leg_reps);  return(p>0&&r>0&&r<=30)?(p/(1.0278-0.0278*r)).toFixed(1)+' kg':'—';})();
+    row('1RM Supino', rmS, true);
+    row('1RM Leg Press', rmL, false);
+    if(D.observacoes_forca) row('Observações', D.observacoes_forca, true);
+
+    if(D.desvios.length){
+      y+=4; section('Desvios Posturais');
+      const txt = D.desvios.map(k=>DESVIOS_LABEL[k]||k).join(', ');
+      const lines = doc.splitTextToSize(txt, CW-6);
+      checkY(lines.length*6+4);
+      doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(...DARK);
+      doc.text(lines, ML+3, y+5); y+=lines.length*6+6;
+    }
+
+    const nome=(_patientName||'paciente').replace(/[^a-zA-Z0-9 ]/g,'').replace(/ +/g,'_');
+    doc.save(`Avaliacao_${nome}_${new Date().toISOString().slice(0,10)}.pdf`);
+    showToast('PDF gerado!');
+  } catch(e){ console.error(e); showToast('Erro ao gerar PDF.'); }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+loadLS();
+render();
+</script>
+</body>
+</html>
