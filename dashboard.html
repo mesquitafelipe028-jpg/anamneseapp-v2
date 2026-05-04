@@ -359,7 +359,8 @@ tr:hover td{background:var(--cream);}
       <button class="dash-tab active" id="dtFichas"     onclick="setDashTab('fichas')">Fichas</button>
       <button class="dash-tab"        id="dtFormulario" onclick="setDashTab('formulario')">Formulário</button>
       <button class="dash-tab"        id="dtPerfil"     onclick="setDashTab('perfil')">Perfil</button>
-      <button class="dash-tab"        id="dtExportar"   onclick="setDashTab('exportar')">Exportar</button>
+      <button class="dash-tab"        id="dtExportar"     onclick="setDashTab('exportar')">Exportar</button>
+      <button class="dash-tab"        id="dtAvaliacoes"  onclick="setDashTab('avaliacoes')">Avaliações</button>
     </div>
 
     <!-- TAB: Fichas -->
@@ -464,6 +465,21 @@ tr:hover td{background:var(--cream);}
           </button>
         </div>
       </div>
+    <!-- TAB: Avaliações -->
+    <div class="tab-pane" id="pane-avaliacoes">
+      <div class="stats-row">
+        <div class="stat-card highlight"><div class="stat-val" id="statAvalTotal">—</div><div class="stat-lbl">Total de avaliações</div></div>
+        <div class="stat-card"><div class="stat-val" id="statAvalMes">—</div><div class="stat-lbl">Este mês</div></div>
+        <div class="stat-card"><div class="stat-val" id="statAvalConcluidas">—</div><div class="stat-lbl">Concluídas</div></div>
+        <div class="stat-card"><div class="stat-val" id="statAvalMedia">—</div><div class="stat-lbl">Média de módulos</div></div>
+      </div>
+      <div class="section-hd">
+        <h2>Avaliações físicas</h2>
+        <button class="btn-new-ficha" onclick="openNewAval()">+ Nova avaliação</button>
+      </div>
+      <div class="table-wrap"><div id="avalTableContent"><div class="spinner-wrap"><div class="spin"></div>Carregando avaliações…</div></div></div>
+    </div>
+
     </div>
   </div>
 </div>
@@ -484,6 +500,36 @@ tr:hover td{background:var(--cream);}
     <div class="modal-footer">
       <button class="btn-delete" onclick="deleteAnamnese()">Excluir ficha</button>
       <button class="btn-save-notes" onclick="saveNotes()">Salvar nota</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOVA AVALIAÇÃO MODAL -->
+<div class="modal-overlay" id="newAvalOverlay" onclick="closeNewAval(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Nova avaliação</h3>
+      <div class="modal-hd-right"><button class="modal-close" onclick="closeNewAval()">✕</button></div>
+    </div>
+    <div class="modal-body">
+      <div class="pf">
+        <label>Nome do paciente <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="aval_nome" autocomplete="name" placeholder="Nome completo">
+      </div>
+      <div class="pf">
+        <label>Data da avaliação</label>
+        <input type="date" id="aval_data">
+      </div>
+      <div class="pf">
+        <label>Modalidade</label>
+        <select id="aval_mode">
+          <option value="presencial">Atendimento Presencial</option>
+          <option value="online">Consultoria Online</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end">
+      <button class="btn-save-profile" onclick="createAval()">Iniciar avaliação</button>
     </div>
   </div>
 </div>
@@ -538,8 +584,9 @@ if(!SB_URL || !SB_ANON || SB_URL === 'COLE_SUA_URL_AQUI'){
 const sb = supabase.createClient(SB_URL, SB_ANON);
 
 let allRows = [];
-let profId  = null;
+let profId   = null;
 let profData = null;
+let allAvals = [];
 let currentModalId = null;
 let activeFilter = 'all';
 let activeStatusFilter = 'all';
@@ -625,11 +672,12 @@ async function loadDashboard(){
 
 // ── TABS ──
 function setDashTab(t){
-  ['fichas','formulario','perfil','exportar'].forEach(id=>{
+  ['fichas','formulario','perfil','exportar','avaliacoes'].forEach(id=>{
     document.getElementById('pane-'+id).classList.toggle('active', id===t);
     document.getElementById('dt'+id.charAt(0).toUpperCase()+id.slice(1)).classList.toggle('active', id===t);
   });
-  if(t==='formulario' && !formDraft.online) loadFormConfig();
+  if(t==='formulario'  && !formDraft.online) loadFormConfig();
+  if(t==='avaliacoes'  && !allAvals.length)  loadAvaliacoes();
 }
 
 // ── FORM EDITOR ──
@@ -1045,6 +1093,132 @@ function renderEmpty(){
       <div class="empty-title">Nenhuma ficha ainda</div>
       <div class="empty-desc">Compartilhe seu link com pacientes para começar.</div>
     </div>`;
+}
+
+// ── AVALIAÇÕES ───────────────────────────────────────────────
+async function loadAvaliacoes(){
+  if(!profId){ renderAvalEmpty(); return; }
+  document.getElementById('avalTableContent').innerHTML =
+    '<div class="spinner-wrap"><div class="spin"></div>Carregando avaliações…</div>';
+  const {data, error} = await sb.from('assessments')
+    .select('id,patient_name,patient_phone,status,mode,created_at')
+    .eq('professional_id', profId)
+    .order('created_at', {ascending:false});
+  if(error){ console.error('[loadAvaliacoes]', error); return; }
+  allAvals = data || [];
+  updateAvalStats();
+  renderAvals(allAvals);
+}
+
+async function updateAvalStats(){
+  const now  = new Date();
+  const mes  = allAvals.filter(a=>{ const d=new Date(a.created_at); return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth(); }).length;
+  const conc = allAvals.filter(a=>a.status==='concluida').length;
+  document.getElementById('statAvalTotal').textContent      = allAvals.length;
+  document.getElementById('statAvalMes').textContent        = mes;
+  document.getElementById('statAvalConcluidas').textContent = conc;
+  document.getElementById('statAvalMedia').textContent      = '—';
+  if(allAvals.length && sb){
+    const ids = allAvals.map(a=>a.id);
+    const tables = ['assessment_biometrics','assessment_circumferences','assessment_skinfolds',
+                    'assessment_posture','assessment_vo2','assessment_strength'];
+    const results = await Promise.all(tables.map(t=>
+      sb.from(t).select('*',{count:'exact',head:true}).in('assessment_id', ids)
+    ));
+    const total = results.reduce((s,{count})=>s+(count||0), 0);
+    document.getElementById('statAvalMedia').textContent = (total/allAvals.length).toFixed(1);
+  }
+}
+
+function renderAvals(rows){
+  if(!rows.length){ renderAvalEmpty(); return; }
+  if(isMobile()){ renderAvalCards(rows); return; }
+  let h = `<table><thead><tr>
+    <th>Paciente</th><th>Data</th><th>Modalidade</th><th>Status</th><th></th>
+  </tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const dt  = new Date(r.created_at).toLocaleDateString('pt-BR');
+    const st  = r.status==='concluida'?'Concluída':'Em andamento';
+    const stC = r.status==='concluida'?'s-lida':'s-nova';
+    const url = `/avaliacao?assessment_id=${r.id}&patient_name=${encodeURIComponent(r.patient_name||'')}&professional_id=${profId||''}`;
+    h += `<tr>
+      <td><strong>${r.patient_name||'—'}</strong></td>
+      <td style="color:#9a9588;white-space:nowrap">${dt}</td>
+      <td><span class="badge-mode ${r.mode==='online'?'badge-o':'badge-p'}">${r.mode==='online'?'Online':'Presencial'}</span></td>
+      <td><span class="badge-status ${stC}" style="cursor:default">${st}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn-view" onclick="location.href='${url}'">Ver / Editar</button>
+        <button class="btn-view" onclick="location.href='${url}'" title="Abrir para gerar PDF">PDF</button>
+      </td>
+    </tr>`;
+  });
+  h += '</tbody></table>';
+  document.getElementById('avalTableContent').innerHTML = h;
+}
+
+function renderAvalCards(rows){
+  let h = '<div class="cards-list">';
+  rows.forEach(r=>{
+    const dt  = new Date(r.created_at).toLocaleDateString('pt-BR');
+    const st  = r.status==='concluida'?'Concluída':'Em andamento';
+    const stC = r.status==='concluida'?'s-lida':'s-nova';
+    const url = `/avaliacao?assessment_id=${r.id}&patient_name=${encodeURIComponent(r.patient_name||'')}&professional_id=${profId||''}`;
+    h += `<div class="ficha-card">
+      <div class="ficha-card-top">
+        <div>
+          <div class="ficha-card-name">${r.patient_name||'—'}</div>
+          <div class="ficha-card-phone">${dt}</div>
+        </div>
+        <span class="badge-status ${stC}" style="cursor:default">${st}</span>
+      </div>
+      <div class="ficha-card-meta">
+        <span class="badge-mode ${r.mode==='online'?'badge-o':'badge-p'}">${r.mode==='online'?'Online':'Presencial'}</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn-view" style="flex:1;text-align:center" onclick="location.href='${url}'">Ver / Editar</button>
+        <button class="btn-view" onclick="location.href='${url}'" title="Abrir para gerar PDF">PDF</button>
+      </div>
+    </div>`;
+  });
+  h += '</div>';
+  document.getElementById('avalTableContent').innerHTML = h;
+}
+
+function renderAvalEmpty(){
+  document.getElementById('avalTableContent').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Nenhuma avaliação</div>
+      <div class="empty-desc">Clique em "+ Nova avaliação" para começar.</div>
+    </div>`;
+}
+
+function openNewAval(){
+  // default date = today
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('aval_data').value  = today;
+  document.getElementById('aval_nome').value  = '';
+  document.getElementById('newAvalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('aval_nome').focus(), 100);
+}
+function closeNewAval(e){
+  if(!e || e.target===document.getElementById('newAvalOverlay'))
+    document.getElementById('newAvalOverlay').classList.remove('open');
+}
+async function createAval(){
+  const nome = document.getElementById('aval_nome').value.trim();
+  if(!nome){ showToast('Nome do paciente obrigatório.'); return; }
+  const mode = document.getElementById('aval_mode').value;
+  const {data, error} = await sb.from('assessments').insert({
+    professional_id: profId,
+    patient_name:    nome,
+    mode:            mode,
+    status:          'em_andamento'
+  }).select('id').single();
+  if(error){ console.error('[createAval]', error); showToast('Erro: '+error.message); return; }
+  closeNewAval();
+  const url = `/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}`;
+  window.location.href = url;
 }
 
 function setFilter(f){
