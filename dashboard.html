@@ -1100,11 +1100,25 @@ async function loadAvaliacoes(){
   if(!profId){ renderAvalEmpty(); return; }
   document.getElementById('avalTableContent').innerHTML =
     '<div class="spinner-wrap"><div class="spin"></div>Carregando avaliações…</div>';
-  const {data, error} = await sb.from('assessments')
+  const {data, error} = await sb
+    .from('assessments')
     .select('id,patient_name,patient_phone,status,mode,created_at')
     .eq('professional_id', profId)
-    .order('created_at', { ascending: false, nullsFirst: false });
-  if(error){ console.error('[loadAvaliacoes]', error); renderAvalEmpty(); return; }
+    .order('created_at', {ascending: false});
+  if(error){
+    console.error('[loadAvaliacoes]', error);
+    if(error.code === '42P01'){
+      document.getElementById('avalTableContent').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⚙️</div>
+          <div class="empty-title">Tabela não encontrada</div>
+          <div class="empty-desc">Execute o arquivo <code style="background:var(--cream);padding:2px 6px;border-radius:4px;font-size:12px">avaliacoes_schema.sql</code> no SQL Editor do seu projeto Supabase para criar as tabelas de avaliação.</div>
+        </div>`;
+    } else {
+      renderAvalEmpty();
+    }
+    return;
+  }
   allAvals = data || [];
   updateAvalStats();
   renderAvals(allAvals);
