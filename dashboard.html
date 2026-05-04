@@ -302,6 +302,14 @@ tr:hover td{background:var(--cream);}
 @media(prefers-reduced-motion:reduce){
   *{transition-duration:.01ms!important;animation-duration:.01ms!important;}
 }
+
+/* ── CLIENTES ── */
+.badge-cli{padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600;letter-spacing:.5px;}
+.badge-cli-a{background:rgba(107,122,66,.12);color:var(--olive);}
+.badge-cli-av{background:rgba(168,137,58,.12);color:var(--gold);}
+.cli-section-title{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--olive);margin-bottom:12px;margin-top:4px;}
+.cli-record{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px;font-size:13px;}
+.cli-record:last-child{border-bottom:none;}
 </style>
 </head>
 <body>
@@ -356,6 +364,7 @@ tr:hover td{background:var(--cream);}
 
     <!-- Tabs -->
     <div class="dash-tabs">
+      <button class="dash-tab"        id="dtClientes"   onclick="setDashTab('clientes')">Clientes</button>
       <button class="dash-tab active" id="dtFichas"     onclick="setDashTab('fichas')">Fichas</button>
       <button class="dash-tab"        id="dtFormulario" onclick="setDashTab('formulario')">Formulário</button>
       <button class="dash-tab"        id="dtPerfil"     onclick="setDashTab('perfil')">Perfil</button>
@@ -395,6 +404,23 @@ tr:hover td{background:var(--cream);}
         <button class="filter-btn"        id="fsArquivada"  onclick="setStatusFilter('arquivada')">Arquivada</button>
       </div>
       <div class="table-wrap"><div id="tableContent"><div class="spinner-wrap"><div class="spin"></div>Carregando fichas…</div></div></div>
+    </div>
+
+    <!-- TAB: Clientes -->
+    <div class="tab-pane" id="pane-clientes">
+      <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card highlight"><div class="stat-val" id="statCliTotal">—</div><div class="stat-lbl">Total de clientes</div></div>
+        <div class="stat-card"><div class="stat-val" id="statCliAnamnese">—</div><div class="stat-lbl">Com anamnese</div></div>
+        <div class="stat-card"><div class="stat-val" id="statCliAval">—</div><div class="stat-lbl">Com avaliação</div></div>
+      </div>
+      <div class="section-hd">
+        <h2>Clientes</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input class="search-input" id="clientSearch" placeholder="Buscar cliente…" oninput="filterClients()">
+          <button class="btn-new-ficha" onclick="openNewClient()">+ Novo cliente</button>
+        </div>
+      </div>
+      <div class="table-wrap"><div id="clientContent"><div class="spinner-wrap"><div class="spin"></div>Carregando clientes…</div></div></div>
     </div>
 
     <!-- TAB: Formulário -->
@@ -535,6 +561,67 @@ tr:hover td{background:var(--cream);}
   </div>
 </div>
 
+<!-- NOVO CLIENTE MODAL -->
+<div class="modal-overlay" id="newClientOverlay" onclick="closeNewClient(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Novo cliente</h3>
+      <div class="modal-hd-right"><button class="modal-close" onclick="closeNewClient()">✕</button></div>
+    </div>
+    <div class="modal-body">
+      <div class="pf">
+        <label>Nome <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="nc_name" autocomplete="name" placeholder="Nome completo">
+      </div>
+      <div class="pf">
+        <label>Telefone / WhatsApp</label>
+        <input type="tel" id="nc_phone" autocomplete="tel" inputmode="tel" placeholder="(85) 99999-9999">
+      </div>
+      <div class="pf">
+        <label>E-mail</label>
+        <input type="email" id="nc_email" autocomplete="email" inputmode="email" placeholder="cliente@email.com">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="pf">
+          <label>Data de nascimento</label>
+          <input type="date" id="nc_dob">
+        </div>
+        <div class="pf">
+          <label>Sexo</label>
+          <select id="nc_sex">
+            <option value="">—</option>
+            <option value="M">Masculino</option>
+            <option value="F">Feminino</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="pf">
+        <label>Objetivo</label>
+        <input type="text" id="nc_objetivo" placeholder="Ex: emagrecimento, hipertrofia…">
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end">
+      <button class="btn-save-profile" onclick="saveClient()">Salvar cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- PERFIL CLIENTE MODAL -->
+<div class="modal-overlay" id="clientProfileOverlay" onclick="closeClientProfile(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3 id="cpTitle">Perfil do cliente</h3>
+      <div class="modal-hd-right"><button class="modal-close" onclick="closeClientProfile()">✕</button></div>
+    </div>
+    <div class="modal-body" id="cpBody"></div>
+    <div class="modal-footer">
+      <button class="btn-export" style="width:auto;padding:10px 16px" onclick="copyClientAnamneseLink(document.getElementById('clientProfileOverlay').dataset.clientId)">Enviar link anamnese</button>
+      <button class="btn-new-ficha" onclick="createAvalForClient(document.getElementById('clientProfileOverlay').dataset.clientId, document.getElementById('clientProfileOverlay').dataset.clientName)">+ Nova avaliação</button>
+    </div>
+  </div>
+</div>
+
 <!-- NOVA FICHA MODAL -->
 <div class="modal-overlay" id="newOverlay" onclick="closeNew(event)">
   <div class="modal">
@@ -588,6 +675,7 @@ let allRows = [];
 let profId   = null;
 let profData = null;
 let allAvals = [];
+let allClients = [];
 let currentModalId = null;
 let activeFilter = 'all';
 let activeStatusFilter = 'all';
@@ -673,12 +761,13 @@ async function loadDashboard(){
 
 // ── TABS ──
 function setDashTab(t){
-  ['fichas','formulario','perfil','exportar','avaliacoes'].forEach(id=>{
+  ['clientes','fichas','formulario','perfil','exportar','avaliacoes'].forEach(id=>{
     document.getElementById('pane-'+id).classList.toggle('active', id===t);
     document.getElementById('dt'+id.charAt(0).toUpperCase()+id.slice(1)).classList.toggle('active', id===t);
   });
-  if(t==='formulario'  && !formDraft.online) loadFormConfig();
-  if(t==='avaliacoes'  && !allAvals.length)  loadAvaliacoes();
+  if(t==='formulario' && !formDraft.online) loadFormConfig();
+  if(t==='avaliacoes' && !allAvals.length)  loadAvaliacoes();
+  if(t==='clientes'   && !allClients.length) loadClients();
 }
 
 // ── FORM EDITOR ──
@@ -1695,6 +1784,269 @@ function showConfirm(msg, onOk){
   el.addEventListener('click',e=>{if(e.target===el)rm();});
   el.querySelector('#_cdlCancel').onclick=rm;
   el.querySelector('#_cdlOk').onclick=()=>{rm();onOk();};
+}
+
+// ── CLIENTES ─────────────────────────────────────────────────
+async function loadClients(){
+  if(!profId){ renderCliEmpty(); return; }
+  document.getElementById('clientContent').innerHTML =
+    '<div class="spinner-wrap"><div class="spin"></div>Carregando clientes…</div>';
+  // Tenta usar a view clients_summary; fallback para tabela clients
+  let {data, error} = await sb
+    .from('clients_summary')
+    .select('*')
+    .eq('professional_id', profId)
+    .order('name', {ascending: true});
+  if(error){
+    console.warn('[loadClients] clients_summary indisponível, usando clients:', error.message);
+    const res = await sb.from('clients').select('*').eq('professional_id', profId).order('name');
+    if(res.error){ console.error('[loadClients]', res.error); renderCliEmpty(); return; }
+    data = (res.data||[]).map(c=>({...c, total_anamneses:0, total_avaliacoes:0, ultima_anamnese:null, ultima_avaliacao:null}));
+  }
+  allClients = data || [];
+  updateCliStats();
+  renderClients(allClients);
+}
+
+function updateCliStats(){
+  document.getElementById('statCliTotal').textContent    = allClients.length;
+  document.getElementById('statCliAnamnese').textContent = allClients.filter(c=>c.total_anamneses>0).length;
+  document.getElementById('statCliAval').textContent     = allClients.filter(c=>c.total_avaliacoes>0).length;
+}
+
+function filterClients(){
+  const q = (document.getElementById('clientSearch').value||'').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const filtered = q
+    ? allClients.filter(c=>{
+        const n = (c.name||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+        const p = (c.phone||'').toLowerCase();
+        return n.includes(q)||p.includes(q);
+      })
+    : allClients;
+  renderClients(filtered);
+}
+
+function _lastContact(c){
+  const dates = [c.ultima_anamnese, c.ultima_avaliacao].filter(Boolean).map(d=>new Date(d));
+  if(!dates.length) return '—';
+  return new Date(Math.max(...dates)).toLocaleDateString('pt-BR');
+}
+
+function renderClients(rows){
+  if(!rows.length){ renderCliEmpty(); return; }
+  if(isMobile()){ renderCliCards(rows); return; }
+  let h = `<table><thead><tr>
+    <th>Cliente</th><th>Telefone</th><th>Registros</th><th>Último contato</th><th></th>
+  </tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const ba  = r.total_anamneses  > 0 ? `<span class="badge-cli badge-cli-a">Anamnese</span>` : '';
+    const bav = r.total_avaliacoes > 0 ? `<span class="badge-cli badge-cli-av">Avaliação</span>` : '';
+    h += `<tr>
+      <td><strong>${esc(r.name)}</strong></td>
+      <td>${esc(r.phone||'—')}</td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap">${ba}${bav}</div></td>
+      <td>${_lastContact(r)}</td>
+      <td><button class="btn-view" onclick="openClientProfile('${r.id}')">Ver perfil</button></td>
+    </tr>`;
+  });
+  h += '</tbody></table>';
+  document.getElementById('clientContent').innerHTML = h;
+}
+
+function renderCliCards(rows){
+  let h = '<div class="cards-list">';
+  rows.forEach(r=>{
+    const ba  = r.total_anamneses  > 0 ? `<span class="badge-cli badge-cli-a">Anamnese</span>` : '';
+    const bav = r.total_avaliacoes > 0 ? `<span class="badge-cli badge-cli-av">Avaliação</span>` : '';
+    h += `<div class="ficha-card">
+      <div class="ficha-card-top">
+        <div>
+          <div class="ficha-card-name">${esc(r.name)}</div>
+          <div class="ficha-card-phone">${esc(r.phone||'—')}</div>
+        </div>
+      </div>
+      <div class="ficha-card-meta">${ba}${bav}<span style="font-size:12px;color:var(--muted)">${_lastContact(r)}</span></div>
+      <button class="btn-view" onclick="openClientProfile('${r.id}')">Ver perfil</button>
+    </div>`;
+  });
+  h += '</div>';
+  document.getElementById('clientContent').innerHTML = h;
+}
+
+function renderCliEmpty(){
+  document.getElementById('clientContent').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">👤</div>
+      <div class="empty-title">Nenhum cliente</div>
+      <div class="empty-desc">Clique em "+ Novo cliente" para adicionar.</div>
+    </div>`;
+}
+
+function openNewClient(){
+  ['nc_name','nc_phone','nc_email','nc_objetivo'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('nc_dob').value='';
+  document.getElementById('nc_sex').value='';
+  document.getElementById('newClientOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('nc_name').focus(), 100);
+}
+function closeNewClient(e){
+  if(!e||e.target===document.getElementById('newClientOverlay'))
+    document.getElementById('newClientOverlay').classList.remove('open');
+}
+async function saveClient(){
+  const name = document.getElementById('nc_name').value.trim();
+  if(!name){ showToast('Nome é obrigatório.'); return; }
+  const {data, error} = await sb.from('clients').insert({
+    professional_id: profId,
+    name,
+    phone:    document.getElementById('nc_phone').value.trim()||null,
+    email:    document.getElementById('nc_email').value.trim()||null,
+    dob:      document.getElementById('nc_dob').value||null,
+    sex:      document.getElementById('nc_sex').value||null,
+    objetivo: document.getElementById('nc_objetivo').value.trim()||null
+  }).select().single();
+  if(error){ console.error('[saveClient]', error); showToast('Erro: '+error.message); return; }
+  allClients.push({...data, total_anamneses:0, total_avaliacoes:0, ultima_anamnese:null, ultima_avaliacao:null});
+  allClients.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+  updateCliStats();
+  renderClients(allClients);
+  closeNewClient();
+  showToast('Cliente criado!');
+}
+
+async function openClientProfile(clientId){
+  const client = allClients.find(c=>c.id===clientId);
+  if(!client) return;
+  const overlay = document.getElementById('clientProfileOverlay');
+  overlay.dataset.clientId   = clientId;
+  overlay.dataset.clientName = client.name;
+  document.getElementById('cpTitle').textContent = client.name;
+  document.getElementById('cpBody').innerHTML =
+    '<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
+  overlay.classList.add('open');
+
+  const [anamRes, avalRes] = await Promise.all([
+    sb.from('anamneses').select('id,patient_name,status,mode,created_at')
+      .eq('client_id', clientId).order('created_at', {ascending:false}),
+    sb.from('assessments').select('id,patient_name,status,modality,created_at')
+      .eq('client_id', clientId).order('created_at', {ascending:false})
+  ]);
+  const anams = anamRes.data || [];
+  const avals = avalRes.data || [];
+
+  let html = `
+    <div class="cli-section-title">Dados pessoais</div>
+    <div class="pf"><label>Nome</label>
+      <input type="text" id="cp_name" value="${esc(client.name)}" autocomplete="name"></div>
+    <div class="pf"><label>Telefone</label>
+      <input type="tel" id="cp_phone" value="${esc(client.phone||'')}" inputmode="tel"></div>
+    <div class="pf"><label>E-mail</label>
+      <input type="email" id="cp_email" value="${esc(client.email||'')}" inputmode="email"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="pf"><label>Data de nascimento</label>
+        <input type="date" id="cp_dob" value="${client.dob||''}"></div>
+      <div class="pf"><label>Sexo</label>
+        <select id="cp_sex">
+          <option value="">—</option>
+          <option value="M"${client.sex==='M'?' selected':''}>Masculino</option>
+          <option value="F"${client.sex==='F'?' selected':''}>Feminino</option>
+          <option value="outro"${client.sex==='outro'?' selected':''}>Outro</option>
+        </select></div>
+    </div>
+    <div class="pf"><label>Objetivo</label>
+      <input type="text" id="cp_objetivo" value="${esc(client.objetivo||'')}"></div>
+    <div class="pf"><label>Observações</label>
+      <textarea class="notes-area" id="cp_obs">${esc(client.observacoes||'')}</textarea></div>
+    <button class="btn-save-notes" onclick="saveClientProfile('${clientId}')">Salvar dados</button>
+    <div class="profile-msg" id="cpMsg"></div>
+
+    <div style="margin-top:24px">
+      <div class="cli-section-title">Anamneses (${anams.length})</div>`;
+  if(anams.length){
+    anams.forEach(a=>{
+      html+=`<div class="cli-record">
+        <span>${esc(a.patient_name||client.name)} · ${new Date(a.created_at).toLocaleDateString('pt-BR')}</span>
+        <button class="btn-view" onclick="openAnamneseFromClient('${a.id}')">Abrir</button>
+      </div>`;
+    });
+  } else {
+    html+=`<p style="font-size:13px;color:var(--muted)">Nenhuma anamnese vinculada.</p>`;
+  }
+  html+=`</div><div style="margin-top:24px">
+    <div class="cli-section-title">Avaliações físicas (${avals.length})</div>`;
+  if(avals.length){
+    avals.forEach(av=>{
+      const url=`/avaliacao?assessment_id=${av.id}&patient_name=${encodeURIComponent(av.patient_name||client.name)}&professional_id=${profId||''}&modality=${av.modality||'presencial'}`;
+      html+=`<div class="cli-record">
+        <span>${new Date(av.created_at).toLocaleDateString('pt-BR')} · ${av.modality||'presencial'}</span>
+        <button class="btn-view" onclick="location.href='${url}'">Abrir</button>
+      </div>`;
+    });
+  } else {
+    html+=`<p style="font-size:13px;color:var(--muted)">Nenhuma avaliação vinculada.</p>`;
+  }
+  html+=`</div>`;
+  document.getElementById('cpBody').innerHTML = html;
+}
+
+async function openAnamneseFromClient(id){
+  let row = allRows.find(r=>r.id===id);
+  if(!row){
+    const {data} = await sb.from('anamneses').select('*').eq('id',id).maybeSingle();
+    if(data){ allRows.push(data); row=data; }
+  }
+  if(!row){ showToast('Ficha não encontrada.'); return; }
+  closeClientProfile();
+  openModal(id);
+}
+
+async function saveClientProfile(clientId){
+  const name = document.getElementById('cp_name').value.trim();
+  const msg  = document.getElementById('cpMsg');
+  if(!name){ msg.textContent='Nome obrigatório.'; msg.className='profile-msg err'; return; }
+  const updates = {
+    name,
+    phone:       document.getElementById('cp_phone').value.trim()||null,
+    email:       document.getElementById('cp_email').value.trim()||null,
+    dob:         document.getElementById('cp_dob').value||null,
+    sex:         document.getElementById('cp_sex').value||null,
+    objetivo:    document.getElementById('cp_objetivo').value.trim()||null,
+    observacoes: document.getElementById('cp_obs').value.trim()||null
+  };
+  const {error} = await sb.from('clients').update(updates).eq('id',clientId);
+  if(error){ msg.textContent=error.message; msg.className='profile-msg err'; return; }
+  msg.textContent='Salvo!'; msg.className='profile-msg ok';
+  const idx=allClients.findIndex(c=>c.id===clientId);
+  if(idx>=0) Object.assign(allClients[idx], updates);
+  document.getElementById('clientProfileOverlay').dataset.clientName = name;
+  setTimeout(()=>msg.textContent='', 3000);
+}
+
+function closeClientProfile(e){
+  if(!e||e.target===document.getElementById('clientProfileOverlay'))
+    document.getElementById('clientProfileOverlay').classList.remove('open');
+}
+
+function copyClientAnamneseLink(clientId){
+  const link=`${window.location.origin}/anamnese?pid=${profId}&client_id=${clientId}`;
+  navigator.clipboard.writeText(link).then(()=>showToast('Link copiado!'));
+}
+
+async function createAvalForClient(clientId, clientName){
+  if(!clientId||!clientName){ showToast('Selecione um cliente.'); return; }
+  const {data, error} = await sb.from('assessments').insert({
+    professional_id: profId,
+    client_id:       clientId,
+    patient_name:    clientName,
+    modality:        'presencial',
+    status:          'em_andamento'
+  }).select('id').single();
+  if(error){ console.error('[createAvalForClient]', error); showToast('Erro: '+error.message); return; }
+  const url=`/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(clientName)}&professional_id=${profId||''}&modality=presencial`;
+  window.location.href=url;
 }
 
 // ── MISC ──
