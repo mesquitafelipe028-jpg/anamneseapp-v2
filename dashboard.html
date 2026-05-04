@@ -1103,7 +1103,7 @@ async function loadAvaliacoes(){
   const {data, error} = await sb.from('assessments')
     .select('id,patient_name,patient_phone,status,mode,created_at')
     .eq('professional_id', profId)
-    .order('created_at', {ascending:false});
+    .order('created_at', { ascending: false, nullsFirst: false });
   if(error){ console.error('[loadAvaliacoes]', error); return; }
   allAvals = data || [];
   updateAvalStats();
