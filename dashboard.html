@@ -2,8 +2,10 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#6b7a42">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon.svg">
 <title>Painel — AnamneseApp</title>
@@ -55,8 +57,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .dash-inner{max-width:1080px;margin:0 auto;padding:28px 24px;}
 
 /* ── TABS ── */
-.dash-tabs{display:flex;gap:2px;background:var(--cream);border-radius:10px;padding:4px;margin-bottom:28px;}
-.dash-tab{flex:1;padding:10px 16px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .2s;min-height:44px;}
+.dash-tabs{display:flex;gap:2px;background:var(--cream);border-radius:10px;padding:4px;margin-bottom:28px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.dash-tabs::-webkit-scrollbar{display:none;}
+.dash-tab{flex:0 0 auto;padding:10px 16px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .2s;min-height:44px;white-space:nowrap;}
 .dash-tab.active{background:var(--white);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08);}
 .tab-pane{display:none;}
 .tab-pane.active{display:block;}
@@ -67,7 +70,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .share-left h3{font-family:'Instrument Serif',serif;font-size:20px;font-weight:400;margin-bottom:4px;}
 .share-left p{font-size:13px;opacity:.8;}
 .share-link-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.share-link-box{padding:10px 14px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;font-size:13px;color:#fff;min-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.share-link-box{padding:10px 14px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;font-size:13px;color:#fff;min-width:260px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .btn-copy{padding:10px 18px;background:#fff;color:var(--olive);border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;white-space:nowrap;min-height:44px;}
 .btn-copy:hover{opacity:.88;}
 
@@ -277,7 +280,6 @@ tr:hover td{background:var(--cream);}
 .ficha-card .btn-view{width:100%;text-align:center;justify-content:center;display:flex;}
 
 @media(max-width:640px){
-  /* Global */
   .stats-row{grid-template-columns:1fr 1fr;}
   .topbar{padding:0 16px;}
   .dash-inner{padding:12px;}
@@ -286,18 +288,17 @@ tr:hover td{background:var(--cream);}
   .auth-card{padding:32px 24px;}
   .export-grid{grid-template-columns:1fr;}
   .dash-tabs .dash-tab{font-size:12px;padding:9px 10px;}
-  /* Section-hd empilha verticalmente */
   .section-hd{flex-direction:column;align-items:stretch;}
   .section-hd > div{width:100%;}
-  /* Search ocupa todo o espaço, refresh ao lado */
+  .btn-new-ficha{width:100%;}
   .search-input{width:auto;flex:1;}
 }
 
 @media(max-width:480px){
-  /* Email some, logo e Sair nas extremidades */
   .topbar-user{display:none;}
-  /* Stat numbers nunca cortam */
+  .topbar{padding:0 12px;}
   .stat-card{padding:14px 12px;}
+  .stat-val{font-size:clamp(22px,7vw,36px);}
 }
 @media(prefers-reduced-motion:reduce){
   *{transition-duration:.01ms!important;animation-duration:.01ms!important;}
