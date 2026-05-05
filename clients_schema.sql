@@ -33,21 +33,25 @@ CREATE TRIGGER trg_clients_updated_at
 -- ── 2. RLS ───────────────────────────────────────────────────
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "clients_select" ON clients;
 CREATE POLICY "clients_select" ON clients
   FOR SELECT USING (
     professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "clients_insert" ON clients;
 CREATE POLICY "clients_insert" ON clients
   FOR INSERT WITH CHECK (
     professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "clients_update" ON clients;
 CREATE POLICY "clients_update" ON clients
   FOR UPDATE USING (
     professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "clients_delete" ON clients;
 CREATE POLICY "clients_delete" ON clients
   FOR DELETE USING (
     professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid())
@@ -71,6 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_assessments_client
   ON assessments (client_id);
 
 -- Policy de update via client_id (complementa a policy existente em schema.sql)
+DROP POLICY IF EXISTS "anamneses_update_via_client" ON anamneses;
 CREATE POLICY "anamneses_update_via_client" ON anamneses
   FOR UPDATE USING (
     client_id IN (

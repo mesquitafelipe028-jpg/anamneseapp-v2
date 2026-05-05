@@ -168,126 +168,142 @@ CREATE INDEX IF NOT EXISTS idx_strength_assessment
 --  RLS
 -- ============================================================
 
-ALTER TABLE assessments            ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessment_biometrics  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assessments               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assessment_biometrics     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assessment_circumferences ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessment_skinfolds   ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessment_posture     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessment_vo2         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE assessment_strength    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assessment_skinfolds      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assessment_posture        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assessment_vo2            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assessment_strength       ENABLE ROW LEVEL SECURITY;
 
--- ── assessments: acesso restrito ao profissional dono ────────
+-- ── assessments ──────────────────────────────────────────────
+DROP POLICY IF EXISTS "assessments_select" ON assessments;
 CREATE POLICY "assessments_select" ON assessments
   FOR SELECT USING (
-    professional_id IN (
-      SELECT id FROM professionals WHERE user_id = auth.uid()
-    )
+    professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "assessments_insert" ON assessments;
 CREATE POLICY "assessments_insert" ON assessments
   FOR INSERT WITH CHECK (
-    professional_id IN (
-      SELECT id FROM professionals WHERE user_id = auth.uid()
-    )
+    professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "assessments_update" ON assessments;
 CREATE POLICY "assessments_update" ON assessments
   FOR UPDATE USING (
-    professional_id IN (
-      SELECT id FROM professionals WHERE user_id = auth.uid()
-    )
+    professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "assessments_delete" ON assessments;
 CREATE POLICY "assessments_delete" ON assessments
   FOR DELETE USING (
-    professional_id IN (
-      SELECT id FROM professionals WHERE user_id = auth.uid()
-    )
+    professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid())
   );
 
--- ── helper: macro para subtabelas ────────────────────────────
--- Subtabelas permitem acesso apenas quando o assessment pertence
--- ao profissional autenticado.
-
--- assessment_biometrics
+-- ── assessment_biometrics ────────────────────────────────────
+DROP POLICY IF EXISTS "biometrics_select" ON assessment_biometrics;
 CREATE POLICY "biometrics_select" ON assessment_biometrics FOR SELECT USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "biometrics_insert" ON assessment_biometrics;
 CREATE POLICY "biometrics_insert" ON assessment_biometrics FOR INSERT WITH CHECK (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "biometrics_update" ON assessment_biometrics;
 CREATE POLICY "biometrics_update" ON assessment_biometrics FOR UPDATE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "biometrics_delete" ON assessment_biometrics;
 CREATE POLICY "biometrics_delete" ON assessment_biometrics FOR DELETE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
 
--- assessment_circumferences
+-- ── assessment_circumferences ────────────────────────────────
+DROP POLICY IF EXISTS "circumferences_select" ON assessment_circumferences;
 CREATE POLICY "circumferences_select" ON assessment_circumferences FOR SELECT USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "circumferences_insert" ON assessment_circumferences;
 CREATE POLICY "circumferences_insert" ON assessment_circumferences FOR INSERT WITH CHECK (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "circumferences_update" ON assessment_circumferences;
 CREATE POLICY "circumferences_update" ON assessment_circumferences FOR UPDATE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "circumferences_delete" ON assessment_circumferences;
 CREATE POLICY "circumferences_delete" ON assessment_circumferences FOR DELETE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
 
--- assessment_skinfolds
+-- ── assessment_skinfolds ─────────────────────────────────────
+DROP POLICY IF EXISTS "skinfolds_select" ON assessment_skinfolds;
 CREATE POLICY "skinfolds_select" ON assessment_skinfolds FOR SELECT USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "skinfolds_insert" ON assessment_skinfolds;
 CREATE POLICY "skinfolds_insert" ON assessment_skinfolds FOR INSERT WITH CHECK (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "skinfolds_update" ON assessment_skinfolds;
 CREATE POLICY "skinfolds_update" ON assessment_skinfolds FOR UPDATE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "skinfolds_delete" ON assessment_skinfolds;
 CREATE POLICY "skinfolds_delete" ON assessment_skinfolds FOR DELETE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
 
--- assessment_posture: INSERT público + demais restrito ao dono
+-- ── assessment_posture ───────────────────────────────────────
+DROP POLICY IF EXISTS "posture_select" ON assessment_posture;
 CREATE POLICY "posture_select" ON assessment_posture FOR SELECT USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "posture_insert_public" ON assessment_posture;
 CREATE POLICY "posture_insert_public" ON assessment_posture
   FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "posture_update" ON assessment_posture;
 CREATE POLICY "posture_update" ON assessment_posture FOR UPDATE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "posture_delete" ON assessment_posture;
 CREATE POLICY "posture_delete" ON assessment_posture FOR DELETE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
 
--- assessment_vo2
+-- ── assessment_vo2 ───────────────────────────────────────────
+DROP POLICY IF EXISTS "vo2_select" ON assessment_vo2;
 CREATE POLICY "vo2_select" ON assessment_vo2 FOR SELECT USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "vo2_insert" ON assessment_vo2;
 CREATE POLICY "vo2_insert" ON assessment_vo2 FOR INSERT WITH CHECK (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "vo2_update" ON assessment_vo2;
 CREATE POLICY "vo2_update" ON assessment_vo2 FOR UPDATE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "vo2_delete" ON assessment_vo2;
 CREATE POLICY "vo2_delete" ON assessment_vo2 FOR DELETE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
 
--- assessment_strength
+-- ── assessment_strength ──────────────────────────────────────
+DROP POLICY IF EXISTS "strength_select" ON assessment_strength;
 CREATE POLICY "strength_select" ON assessment_strength FOR SELECT USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "strength_insert" ON assessment_strength;
 CREATE POLICY "strength_insert" ON assessment_strength FOR INSERT WITH CHECK (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "strength_update" ON assessment_strength;
 CREATE POLICY "strength_update" ON assessment_strength FOR UPDATE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
+DROP POLICY IF EXISTS "strength_delete" ON assessment_strength;
 CREATE POLICY "strength_delete" ON assessment_strength FOR DELETE USING (
   assessment_id IN (SELECT id FROM assessments WHERE professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid()))
 );
