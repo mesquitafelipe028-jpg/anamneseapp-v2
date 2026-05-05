@@ -1,4 +1,4 @@
-const CACHE = 'anamneseapp-v2';
+const CACHE = 'anamneseapp-v3'; // bump para forçar invalidação do cache antigo
 const SHELL = ['/', '/anamnese', '/dashboard', '/config.js', '/manifest.json', '/icon.svg'];
 const CDN = [
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
@@ -10,9 +10,7 @@ const CDN = [
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(async c => {
-      // App shell é obrigatório — falha se não conseguir
       await c.addAll(SHELL);
-      // CDN é best-effort — não falha o install se offline
       await Promise.all(CDN.map(url =>
         fetch(url).then(r => r.ok ? c.put(url, r) : null).catch(() => null)
       ));
@@ -31,22 +29,36 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  if (e.request.url.includes('supabase.co')) return; // Supabase sempre via rede
+  if (e.request.url.includes('supabase.co')) return;
 
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      const fromNetwork = fetch(e.request).then(res => {
+  const isHTML = e.request.headers.get('accept')?.includes('text/html');
+  const isLocal = e.request.url.startsWith(self.location.origin);
+  const isCDN   = CDN.some(u => e.request.url.startsWith(u.split('?')[0]));
+
+  if (isHTML || isLocal) {
+    // Network-first para HTML e arquivos locais — garante versão sempre atualizada
+    e.respondWith(
+      fetch(e.request).then(res => {
         if (res.ok) {
-          const isLocal = e.request.url.startsWith(self.location.origin);
-          const isCDN   = CDN.some(u => e.request.url.startsWith(u.split('?')[0]));
-          if (isLocal || isCDN) {
-            const clone = res.clone(); // clona ANTES de retornar res ao browser
-            caches.open(CACHE).then(c => c.put(e.request, clone));
-          }
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
-      }).catch(() => cached);
-      return cached || fromNetwork;
-    })
-  );
+      }).catch(() => caches.match(e.request))
+    );
+  } else if (isCDN) {
+    // Cache-first para CDN — evita re-download de libs pesadas
+    e.respondWith(
+      caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        return fetch(e.request).then(res => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return res;
+        }).catch(() => null);
+      })
+    );
+  }
 });

@@ -739,8 +739,10 @@ async function loadDashboard(){
   document.getElementById('dashboard').style.display  = 'block';
   document.getElementById('topUser').textContent = user.email;
 
-  let {data:prof, error:profErr} = await sb.from('professionals').select('*').eq('user_id', user.id).maybeSingle();
+  // .limit(1) evita PGRST116 quando existem registros duplicados
+  const {data:profRows, error:profErr} = await sb.from('professionals').select('*').eq('user_id', user.id).order('created_at').limit(1);
   if(profErr) console.error('[loadDashboard] professionals select:', profErr);
+  let prof = profRows && profRows.length > 0 ? profRows[0] : null;
   if(!prof){
     const {data:created, error:createErr} = await sb
       .from('professionals')
@@ -1347,13 +1349,10 @@ function closeNewAval(e){
   }
 }
 async function createAval(){
-  const nome = document.getElementById('aval_nome').value.trim();
-  const errEl = document.getElementById('avalErrMsg');
-  errEl.style.display = 'none';
-  if(!nome){ errEl.textContent='Nome do paciente é obrigatório.'; errEl.style.display='block'; return; }
-  if(!profId){
-    errEl.textContent='Erro: profissional não carregado — recarregue a página (F5).';
-    errEl.style.display='block'; return;
+  const nome = document.getElementById('aval_nome')?.value.trim()||'';
+  _hideErr('avalErrMsg');
+  if(!nome){ _showErr('avalErrMsg','Nome do paciente é obrigatório.'); return; }
+  if(!profId){ _showErr('avalErrMsg','Profissional não carregado — recarregue a página (F5).'); return;
   }
   const modality = document.getElementById('aval_mode').value;
   const insert = {
@@ -1377,8 +1376,7 @@ async function createAval(){
                : error.code==='42P01' ? ' — tabela ausente, rode avaliacoes_schema.sql'
                : error.code==='23502' ? ' — profissional nulo, recarregue a página'
                : '';
-    errEl.textContent = 'Erro ' + error.code + ': ' + error.message + hint;
-    errEl.style.display = 'block';
+    _showErr('avalErrMsg', 'Erro ' + error.code + ': ' + error.message + hint);
     return;
   }
   closeNewAval();
@@ -1962,23 +1960,21 @@ function closeNewClient(e){
   if(!e||e.target===document.getElementById('newClientOverlay'))
     document.getElementById('newClientOverlay').classList.remove('open');
 }
+function _showErr(id, msg){ const el=document.getElementById(id); if(el){el.textContent=msg;el.style.display='block';} else showToast(msg); }
+function _hideErr(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
 async function saveClient(){
-  const name = document.getElementById('nc_name').value.trim();
-  const errEl = document.getElementById('ncErrMsg');
-  errEl.style.display='none';
-  if(!name){ errEl.textContent='Nome é obrigatório.'; errEl.style.display='block'; return; }
-  if(!profId){
-    errEl.textContent='Erro: profissional não carregado — recarregue a página (F5).';
-    errEl.style.display='block'; return;
-  }
+  const name = document.getElementById('nc_name')?.value.trim()||'';
+  _hideErr('ncErrMsg');
+  if(!name){ _showErr('ncErrMsg','Nome é obrigatório.'); return; }
+  if(!profId){ _showErr('ncErrMsg','Profissional não carregado — recarregue a página (F5).'); return; }
   const payload = {
     professional_id: profId,
     name,
-    phone:    document.getElementById('nc_phone').value.trim()||null,
-    email:    document.getElementById('nc_email').value.trim()||null,
-    dob:      document.getElementById('nc_dob').value||null,
-    sex:      document.getElementById('nc_sex').value||null,
-    objetivo: document.getElementById('nc_objetivo').value.trim()||null
+    phone:    document.getElementById('nc_phone')?.value.trim()||null,
+    email:    document.getElementById('nc_email')?.value.trim()||null,
+    dob:      document.getElementById('nc_dob')?.value||null,
+    sex:      document.getElementById('nc_sex')?.value||null,
+    objetivo: document.getElementById('nc_objetivo')?.value.trim()||null
   };
   console.log('[saveClient] payload:', payload);
   const {data, error} = await sb.from('clients').insert(payload).select().single();
@@ -1988,8 +1984,7 @@ async function saveClient(){
                : error.code==='42703' ? ' — coluna ausente, rode clients_schema.sql'
                : error.code==='23502' ? ' — profissional nulo, recarregue a página'
                : '';
-    errEl.textContent = 'Erro ' + error.code + ': ' + error.message + hint;
-    errEl.style.display = 'block';
+    _showErr('ncErrMsg', 'Erro ' + error.code + ': ' + error.message + hint);
     return;
   }
   allClients.push({...data, total_anamneses:0, total_avaliacoes:0, ultima_anamnese:null, ultima_avaliacao:null});
