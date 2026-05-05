@@ -37,10 +37,11 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => {
       const fromNetwork = fetch(e.request).then(res => {
         if (res.ok) {
-          const isLocal  = e.request.url.startsWith(self.location.origin);
-          const isCDN    = CDN.some(u => e.request.url.startsWith(u.split('?')[0]));
+          const isLocal = e.request.url.startsWith(self.location.origin);
+          const isCDN   = CDN.some(u => e.request.url.startsWith(u.split('?')[0]));
           if (isLocal || isCDN) {
-            caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+            const clone = res.clone(); // clona ANTES de retornar res ao browser
+            caches.open(CACHE).then(c => c.put(e.request, clone));
           }
         }
         return res;
