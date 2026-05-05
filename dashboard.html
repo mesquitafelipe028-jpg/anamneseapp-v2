@@ -19,6 +19,7 @@
 :root{
   --bg:#f7f5f0;--white:#ffffff;--ink:#1a1814;--muted:#9a9588;
   --border:#e4e0d8;--olive:#6b7a42;--gold:#a8893a;--cream:#f0ece3;--danger:#c0392b;
+  --nav-bg:#1a1814;--nav-active:rgba(107,122,66,0.3);--nav-text:rgba(255,255,255,0.6);--nav-text-active:#6b7a42;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{overflow-x:hidden;max-width:100vw;touch-action:manipulation;-webkit-overflow-scrolling:touch;}
@@ -312,6 +313,92 @@ tr:hover td{background:var(--cream);}
 .cli-record{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px;font-size:13px;}
 .cli-record:last-child{border-bottom:none;}
 
+/* ── APP SHELL ── */
+#dashboard{display:none;}
+.app-header{position:fixed;top:0;left:0;right:0;height:calc(56px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 20px 0;background:var(--nav-bg);display:flex;align-items:center;justify-content:space-between;z-index:300;}
+.app-logo-header{font-family:'Instrument Serif',serif;font-style:italic;font-size:20px;color:#fff;}
+.app-logo-header .ao{font-style:normal;color:var(--olive);}
+.app-avatar{width:34px;height:34px;border-radius:50%;background:var(--olive);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;user-select:none;}
+
+/* sidebar */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:240px;background:var(--nav-bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);z-index:200;}
+.sidebar-logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;color:#fff;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;}
+.sidebar-logo span{font-style:normal;color:rgba(255,255,255,0.45);}
+.sidebar-menu{flex:1;padding:10px;overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:none;background:none;border-radius:8px;color:var(--nav-text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;cursor:pointer;transition:all .15s;margin-bottom:2px;text-align:left;white-space:nowrap;user-select:none;-webkit-user-select:none;border-left:3px solid transparent;}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:#fff;}
+.nav-item.active{background:var(--nav-active);color:var(--nav-text-active);border-left-color:var(--olive);}
+.nav-item svg{flex-shrink:0;width:18px;height:18px;}
+.sidebar-footer{padding:12px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;}
+.sidebar-prof{padding:12px;border-radius:8px;background:rgba(255,255,255,0.04);}
+.sidebar-prof-name{font-size:13px;font-weight:500;color:#fff;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sidebar-prof-email{font-size:11px;color:var(--nav-text);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.btn-sidebar-logout{width:100%;padding:7px;background:none;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--nav-text);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
+.btn-sidebar-logout:hover{border-color:var(--danger);color:var(--danger);}
+
+/* bottom nav */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--nav-bg);box-shadow:0 -1px 0 rgba(255,255,255,0.06);z-index:300;padding-bottom:env(safe-area-inset-bottom);}
+.bnav-items{display:flex;height:60px;}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif;font-size:10px;cursor:pointer;padding:0;position:relative;transition:color .15s;user-select:none;-webkit-user-select:none;}
+.bnav-item.active{color:var(--olive);}
+.bnav-item.active::after{content:'';position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--olive);}
+.bnav-item svg{width:22px;height:22px;}
+
+/* app main */
+.app-main{margin-left:240px;padding-top:calc(56px + env(safe-area-inset-top));min-height:100vh;}
+.section-pane{display:none;animation:fIn .2s ease;}
+.section-pane.active{display:block;}
+@keyframes fIn{from{opacity:0}to{opacity:1}}
+
+/* home section */
+.home-greeting{font-family:'Instrument Serif',serif;font-size:30px;font-weight:400;color:var(--ink);margin-bottom:4px;}
+.home-date{font-size:13px;color:var(--muted);margin-bottom:24px;text-transform:capitalize;}
+.home-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.home-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px 18px;cursor:pointer;transition:border-color .2s;}
+.home-card:hover{border-color:var(--olive);}
+.home-card.highlight{background:var(--olive);}
+.home-card-val{font-family:'Instrument Serif',serif;font-size:clamp(28px,6vw,40px);font-weight:400;color:var(--ink);line-height:1;}
+.home-card.highlight .home-card-val{color:#fff;}
+.home-card-lbl{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.5px;}
+.home-card.highlight .home-card-lbl{color:rgba(255,255,255,.75);}
+.home-link-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+.home-link-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.home-link-url{font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;}
+
+/* FAB */
+.fab-wrap{position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));right:20px;z-index:250;display:none;flex-direction:column-reverse;align-items:flex-end;gap:10px;}
+.fab{width:54px;height:54px;border-radius:50%;background:var(--olive);color:#fff;border:none;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 4px 16px rgba(107,122,66,.4);display:flex;align-items:center;justify-content:center;transition:transform .2s;user-select:none;}
+.fab.open{transform:rotate(45deg);}
+.fab-menu{display:none;flex-direction:column;gap:8px;align-items:flex-end;}
+.fab-menu.open{display:flex;}
+.fab-menu-btn{padding:10px 18px;background:var(--ink);color:#fff;border:none;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);white-space:nowrap;}
+
+/* config section */
+.config-group{margin-bottom:32px;}
+.config-group-title{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;margin-bottom:16px;color:var(--ink);}
+.config-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:12px;}
+.plan-badge-tag{display:inline-block;padding:4px 12px;background:rgba(107,122,66,.1);color:var(--olive);border-radius:20px;font-size:11px;font-weight:600;letter-spacing:1px;margin-bottom:10px;}
+.btn-upgrade{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:var(--olive);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px;}
+.btn-danger-logout{width:100%;padding:14px;background:none;border:1.5px solid var(--danger);border-radius:8px;color:var(--danger);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:4px;}
+.btn-danger-logout:hover{background:var(--danger);color:#fff;}
+
+/* responsive */
+@media(min-width:900px){
+  .sidebar{display:flex;}
+  .bottom-nav{display:none;}
+  .fab-wrap{display:none;}
+}
+@media(max-width:899px){
+  .sidebar{display:none;}
+  .bottom-nav{display:block;}
+  .fab-wrap{display:flex;}
+  .app-main{margin-left:0;padding-bottom:calc(72px + env(safe-area-inset-bottom));}
+  .app-header{display:flex;}
+}
+@media(min-width:900px){
+  .app-header{display:none;}
+}
+
 /* ── PWA / iOS ── */
 *{-webkit-tap-highlight-color:transparent;}
 .dash-tab,.btn-new-ficha,.btn-auth,.filter-btn,.btn-view,.btn-copy,
@@ -352,39 +439,77 @@ tr:hover td{background:var(--cream);}
 
 <!-- DASHBOARD -->
 <div id="dashboard">
-  <div class="topbar">
-    <div class="topbar-logo">Anamnese<span>App</span></div>
-    <div class="topbar-right">
-      <span class="topbar-user" id="topUser"></span>
-      <button class="btn-logout" onclick="doLogout()">Sair</button>
+
+<!-- HEADER MOBILE -->
+<header class="app-header">
+  <div class="app-logo-header">Anamnese<span class="ao">App</span></div>
+  <div class="app-avatar" id="headerAvatar" onclick="setSection('config')" title="Configurações">?</div>
+</header>
+
+<!-- SIDEBAR DESKTOP -->
+<nav class="sidebar">
+  <div class="sidebar-logo">Anamnese<span>App</span></div>
+  <div class="sidebar-menu">
+    <button class="nav-item active" id="navHome"      onclick="setSection('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+    <button class="nav-item"        id="navClientes"  onclick="setSection('clientes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</button>
+    <button class="nav-item"        id="navFichas"    onclick="setSection('fichas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Fichas</button>
+    <button class="nav-item"        id="navAvaliacoes" onclick="setSection('avaliacoes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Avaliações</button>
+    <button class="nav-item"        id="navFormulario" onclick="setSection('formulario')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Formulário</button>
+    <button class="nav-item"        id="navConfig"    onclick="setSection('config')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</button>
+  </div>
+  <div class="sidebar-footer">
+    <div class="sidebar-prof">
+      <div class="sidebar-prof-name"  id="sidebarProfName">—</div>
+      <div class="sidebar-prof-email" id="sidebarProfEmail">—</div>
+      <button class="btn-sidebar-logout" onclick="doLogout()">Sair da conta</button>
+    </div>
+  </div>
+</nav>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<main class="app-main">
+
+  <!-- HOME -->
+  <div class="section-pane active" id="pane-home">
+    <div class="dash-inner">
+      <div class="home-greeting" id="homeGreeting">Olá!</div>
+      <div class="home-date"     id="homeDate"></div>
+      <div class="home-cards">
+        <div class="home-card highlight" onclick="setSection('fichas')">
+          <div class="home-card-val" id="homeStatNovas">—</div>
+          <div class="home-card-lbl">Fichas novas hoje</div>
+        </div>
+        <div class="home-card" onclick="setSection('clientes')">
+          <div class="home-card-val" id="homeStatClientes">—</div>
+          <div class="home-card-lbl">Clientes ativos</div>
+        </div>
+        <div class="home-card" onclick="setSection('avaliacoes')">
+          <div class="home-card-val" id="homeStatAvals">—</div>
+          <div class="home-card-lbl">Avaliações este mês</div>
+        </div>
+        <div class="home-card" onclick="setSection('fichas')">
+          <div class="home-card-val" id="homeStatTotal">—</div>
+          <div class="home-card-lbl">Total de fichas</div>
+        </div>
+      </div>
+      <div class="home-link-card">
+        <div style="min-width:0;flex:1">
+          <div class="home-link-label">Seu link de anamnese</div>
+          <div class="home-link-url" id="shareLink">—</div>
+        </div>
+        <button class="btn-copy" onclick="copyLink()">Copiar link</button>
+      </div>
+      <div class="section-hd">
+        <h2>Fichas recentes</h2>
+        <button class="btn-new-ficha" onclick="setSection('fichas')">Ver todas →</button>
+      </div>
+      <div class="table-wrap"><div id="homeRecentContent"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div></div>
     </div>
   </div>
 
-  <div class="dash-inner">
-    <!-- Share banner -->
-    <div class="share-banner">
-      <div class="share-left">
-        <h3>Seu link de anamnese</h3>
-        <p>Compartilhe com seus pacientes pelo WhatsApp ou Instagram</p>
-      </div>
-      <div class="share-link-row">
-        <div class="share-link-box" id="shareLink">—</div>
-        <button class="btn-copy" onclick="copyLink()">Copiar link</button>
-      </div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="dash-tabs">
-      <button class="dash-tab"        id="dtClientes"   onclick="setDashTab('clientes')">Clientes</button>
-      <button class="dash-tab active" id="dtFichas"     onclick="setDashTab('fichas')">Fichas</button>
-      <button class="dash-tab"        id="dtFormulario" onclick="setDashTab('formulario')">Formulário</button>
-      <button class="dash-tab"        id="dtPerfil"     onclick="setDashTab('perfil')">Perfil</button>
-      <button class="dash-tab"        id="dtExportar"     onclick="setDashTab('exportar')">Exportar</button>
-      <button class="dash-tab"        id="dtAvaliacoes"  onclick="setDashTab('avaliacoes')">Avaliações</button>
-    </div>
-
-    <!-- TAB: Fichas -->
-    <div class="tab-pane active" id="pane-fichas">
+  <!-- FICHAS -->
+  <div class="section-pane" id="pane-fichas">
+    <div class="dash-inner">
       <div class="stats-row">
         <div class="stat-card highlight"><div class="stat-val" id="statTotal">—</div><div class="stat-lbl">Total de fichas</div></div>
         <div class="stat-card"><div class="stat-val" id="statOnline">—</div><div class="stat-lbl">Online</div></div>
@@ -409,16 +534,18 @@ tr:hover td{background:var(--cream);}
         </div>
       </div>
       <div class="filter-btns" id="statusFilterRow" style="margin-bottom:16px;">
-        <button class="filter-btn active" id="fsAll"        onclick="setStatusFilter('all')">Todos</button>
-        <button class="filter-btn"        id="fsNova"       onclick="setStatusFilter('nova')">Nova</button>
-        <button class="filter-btn"        id="fsLida"       onclick="setStatusFilter('lida')">Lida</button>
-        <button class="filter-btn"        id="fsArquivada"  onclick="setStatusFilter('arquivada')">Arquivada</button>
+        <button class="filter-btn active" id="fsAll"       onclick="setStatusFilter('all')">Todos</button>
+        <button class="filter-btn"        id="fsNova"      onclick="setStatusFilter('nova')">Nova</button>
+        <button class="filter-btn"        id="fsLida"      onclick="setStatusFilter('lida')">Lida</button>
+        <button class="filter-btn"        id="fsArquivada" onclick="setStatusFilter('arquivada')">Arquivada</button>
       </div>
       <div class="table-wrap"><div id="tableContent"><div class="spinner-wrap"><div class="spin"></div>Carregando fichas…</div></div></div>
     </div>
+  </div>
 
-    <!-- TAB: Clientes -->
-    <div class="tab-pane" id="pane-clientes">
+  <!-- CLIENTES -->
+  <div class="section-pane" id="pane-clientes">
+    <div class="dash-inner">
       <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat-card highlight"><div class="stat-val" id="statCliTotal">—</div><div class="stat-lbl">Total de clientes</div></div>
         <div class="stat-card"><div class="stat-val" id="statCliAnamnese">—</div><div class="stat-lbl">Com anamnese</div></div>
@@ -433,78 +560,11 @@ tr:hover td{background:var(--cream);}
       </div>
       <div class="table-wrap"><div id="clientContent"><div class="spinner-wrap"><div class="spin"></div>Carregando clientes…</div></div></div>
     </div>
+  </div>
 
-    <!-- TAB: Formulário -->
-    <div class="tab-pane" id="pane-formulario">
-      <div class="fe-header">
-        <h2>Editor de Formulário</h2>
-        <div class="fe-actions">
-          <button class="btn-fe-reset" onclick="resetFormConfig()">Restaurar padrão</button>
-          <button class="btn-fe-save"  onclick="saveFormConfig()">Salvar</button>
-        </div>
-      </div>
-      <p class="fe-tip">
-        Personalize o formulário que seus pacientes preenchem ao abrir seu link.
-        Ative/desative blocos, edite títulos, adicione campos extras e crie blocos personalizados.
-        <a id="fePreviewLink" href="#" target="_blank" style="color:var(--olive);text-decoration:none;font-weight:500"> Visualizar formulário →</a>
-      </p>
-      <div class="fe-mode-tabs">
-        <button class="fe-mode-tab active" id="feModeOnline"     onclick="setFeMode('online')">Consultoria Online</button>
-        <button class="fe-mode-tab"        id="feModePresencial" onclick="setFeMode('presencial')">Atendimento Presencial</button>
-      </div>
-      <div id="feBlocks"></div>
-      <div class="fe-msg" id="feMsg"></div>
-    </div>
-
-    <!-- TAB: Perfil -->
-    <div class="tab-pane" id="pane-perfil">
-      <div class="profile-card">
-        <h2>Seu Perfil</h2>
-        <div class="pf"><label>Nome completo</label><input type="text" id="pfName" autocomplete="name" placeholder="Dr. Lucas Ferreira"></div>
-        <div class="pf"><label>Especialidade</label>
-          <select id="pfSpecialty">
-            <option value="personal">Personal Trainer</option>
-            <option value="nutri">Nutricionista</option>
-            <option value="fisio">Fisioterapeuta</option>
-            <option value="pilates">Pilates</option>
-            <option value="psico">Psicólogo</option>
-            <option value="estetica">Esteticista</option>
-            <option value="medico">Médico</option>
-            <option value="outro">Outro</option>
-          </select>
-        </div>
-        <div class="pf"><label>Telefone / WhatsApp</label><input type="tel" id="pfPhone" autocomplete="tel" inputmode="tel" placeholder="(85) 99999-9999"></div>
-        <div class="pf"><label>Número para receber fichas (WhatsApp)</label><input type="tel" id="pfWa" autocomplete="tel" inputmode="tel" placeholder="5585999999999"></div>
-        <button class="btn-save-profile" onclick="saveProfile()">Salvar alterações</button>
-        <div class="profile-msg" id="profileMsg"></div>
-      </div>
-    </div>
-
-    <!-- TAB: Exportar -->
-    <div class="tab-pane" id="pane-exportar">
-      <div class="export-grid">
-        <div class="export-card">
-          <div class="export-icon">📊</div>
-          <div class="export-title">Exportar CSV</div>
-          <div class="export-desc">Planilha com todas as fichas visíveis. Abre no Excel, Google Sheets e Numbers.</div>
-          <button class="btn-export" onclick="exportCSV()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Baixar CSV
-          </button>
-        </div>
-        <div class="export-card">
-          <div class="export-icon">📄</div>
-          <div class="export-title">Exportar PDF</div>
-          <div class="export-desc">Relatório formatado com resumo de todas as fichas recebidas.</div>
-          <button class="btn-export" onclick="exportPDF()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Baixar PDF
-          </button>
-        </div>
-      </div>
-    </div><!-- /pane-exportar -->
-    <!-- TAB: Avaliações -->
-    <div class="tab-pane" id="pane-avaliacoes">
+  <!-- AVALIAÇÕES -->
+  <div class="section-pane" id="pane-avaliacoes">
+    <div class="dash-inner">
       <div class="stats-row">
         <div class="stat-card highlight"><div class="stat-val" id="statAvalTotal">—</div><div class="stat-lbl">Total de avaliações</div></div>
         <div class="stat-card"><div class="stat-val" id="statAvalMes">—</div><div class="stat-lbl">Este mês</div></div>
@@ -517,9 +577,150 @@ tr:hover td{background:var(--cream);}
       </div>
       <div class="table-wrap"><div id="avalTableContent"><div class="spinner-wrap"><div class="spin"></div>Carregando avaliações…</div></div></div>
     </div>
+  </div>
+
+  <!-- FORMULÁRIO -->
+  <div class="section-pane" id="pane-formulario">
+    <div class="dash-inner">
+      <div class="fe-header">
+        <h2>Editor de Formulário</h2>
+        <div class="fe-actions">
+          <button class="btn-fe-reset" onclick="resetFormConfig()">Restaurar padrão</button>
+          <button class="btn-fe-save"  onclick="saveFormConfig()">Salvar</button>
+        </div>
+      </div>
+      <p class="fe-tip">Personalize o formulário que seus pacientes preenchem ao abrir seu link. Ative/desative blocos, edite títulos e adicione campos extras.
+        <a id="fePreviewLink" href="#" target="_blank" style="color:var(--olive);text-decoration:none;font-weight:500"> Visualizar →</a>
+      </p>
+      <div class="fe-mode-tabs">
+        <button class="fe-mode-tab active" id="feModeOnline"     onclick="setFeMode('online')">Consultoria Online</button>
+        <button class="fe-mode-tab"        id="feModePresencial" onclick="setFeMode('presencial')">Atendimento Presencial</button>
+      </div>
+      <div id="feBlocks"></div>
+      <div class="fe-msg" id="feMsg"></div>
+    </div>
+  </div>
+
+  <!-- CONFIGURAÇÕES -->
+  <div class="section-pane" id="pane-config">
+    <div class="dash-inner">
+
+      <div class="config-group">
+        <div class="config-group-title">Meu perfil</div>
+        <div class="config-card">
+          <div class="pf"><label>Nome completo</label><input type="text" id="pfName" autocomplete="name" placeholder="Dr. Lucas Ferreira"></div>
+          <div class="pf"><label>Especialidade</label>
+            <select id="pfSpecialty">
+              <option value="personal">Personal Trainer</option>
+              <option value="nutri">Nutricionista</option>
+              <option value="fisio">Fisioterapeuta</option>
+              <option value="pilates">Pilates</option>
+              <option value="psico">Psicólogo</option>
+              <option value="estetica">Esteticista</option>
+              <option value="medico">Médico</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="pf"><label>Telefone / WhatsApp</label><input type="tel" id="pfPhone" autocomplete="tel" inputmode="tel" placeholder="(85) 99999-9999"></div>
+          <div class="pf"><label>Número para receber fichas (WhatsApp)</label><input type="tel" id="pfWa" autocomplete="tel" inputmode="tel" placeholder="5585999999999"></div>
+          <button class="btn-save-profile" onclick="saveProfile()">Salvar alterações</button>
+          <div class="profile-msg" id="profileMsg"></div>
+        </div>
+      </div>
+
+      <div class="config-group">
+        <div class="config-group-title">Personalizar formulário</div>
+        <div class="config-card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:4px">Editor de formulário</div>
+            <div style="font-size:13px;color:var(--muted)">Ative/desative campos e crie blocos personalizados</div>
+          </div>
+          <button class="btn-new-ficha" onclick="setSection('formulario')">Editar →</button>
+        </div>
+      </div>
+
+      <div class="config-group">
+        <div class="config-group-title">Exportar dados</div>
+        <div class="export-grid">
+          <div class="export-card">
+            <div class="export-icon">📊</div>
+            <div class="export-title">Exportar CSV</div>
+            <div class="export-desc">Planilha com todas as fichas. Abre no Excel, Google Sheets e Numbers.</div>
+            <button class="btn-export" onclick="exportCSV()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Baixar CSV
+            </button>
+          </div>
+          <div class="export-card">
+            <div class="export-icon">📄</div>
+            <div class="export-title">Exportar PDF</div>
+            <div class="export-desc">Relatório formatado com resumo de todas as fichas recebidas.</div>
+            <button class="btn-export" onclick="exportPDF()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Baixar PDF
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="config-group">
+        <div class="config-group-title">Plano atual</div>
+        <div class="config-card">
+          <div class="plan-badge-tag">STARTER GRATUITO</div>
+          <div style="font-size:14px;color:var(--muted);line-height:1.6">Fichas ilimitadas, PDF e exportação incluídos.</div>
+          <button class="btn-upgrade" disabled style="opacity:.5;cursor:default">Fazer upgrade — em breve</button>
+        </div>
+      </div>
+
+      <div class="config-group">
+        <div class="config-group-title">Conta</div>
+        <div class="config-card">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Você será desconectado de todos os dispositivos.</div>
+          <button class="btn-danger-logout" onclick="doLogout()">Sair da conta</button>
+        </div>
+      </div>
 
     </div>
   </div>
+
+</main>
+
+<!-- BOTTOM NAV MOBILE -->
+<nav class="bottom-nav">
+  <div class="bnav-items">
+    <button class="bnav-item active" id="bnavHome"      onclick="setSection('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="bnav-item" id="bnavClientes"  onclick="setSection('clientes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Clientes</span>
+    </button>
+    <button class="bnav-item" id="bnavFichas"    onclick="setSection('fichas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      <span>Fichas</span>
+    </button>
+    <button class="bnav-item" id="bnavAvaliacoes" onclick="setSection('avaliacoes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Avaliações</span>
+    </button>
+    <button class="bnav-item" id="bnavConfig"    onclick="setSection('config')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Config</span>
+    </button>
+  </div>
+</nav>
+
+<!-- FAB MOBILE -->
+<div class="fab-wrap" id="fabWrap">
+  <div class="fab-menu" id="fabMenu">
+    <button class="fab-menu-btn" onclick="closeFab();openNew()">+ Nova ficha</button>
+    <button class="fab-menu-btn" onclick="closeFab();openNewClient()">+ Novo cliente</button>
+    <button class="fab-menu-btn" onclick="closeFab();openNewAval()">+ Nova avaliação</button>
+  </div>
+  <button class="fab" id="fabBtn" onclick="toggleFab()">+</button>
+</div>
+
 </div>
 
 <!-- TOAST -->
@@ -750,7 +951,11 @@ async function loadDashboard(){
   if(!user) return;
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('dashboard').style.display  = 'block';
-  document.getElementById('topUser').textContent = user.email;
+  // Avatar: inicial do email
+  const initials = (user.email||'?')[0].toUpperCase();
+  document.getElementById('headerAvatar').textContent  = initials;
+  // Sidebar footer
+  document.getElementById('sidebarProfEmail').textContent = user.email;
 
   // .limit(1) evita PGRST116 quando existem registros duplicados
   const {data:profRows, error:profErr} = await sb.from('professionals').select('*').eq('user_id', user.id).order('created_at').limit(1);
@@ -766,7 +971,9 @@ async function loadDashboard(){
   }
   if(prof){ profId = prof.id; profData = prof; }
   console.log('[loadDashboard] profId=', profId, 'user=', user.email);
-
+  // Sidebar: nome do profissional
+  if(profData?.name) document.getElementById('sidebarProfName').textContent = profData.name;
+  // shareLink (home section)
   document.getElementById('shareLink').textContent =
     window.location.origin + '/anamnese?pid=' + (profId || '');
 
@@ -778,6 +985,7 @@ async function loadDashboard(){
   }
 
   await loadAnamneses();
+  loadHomeSection();
   checkSchema();
 }
 
@@ -804,19 +1012,24 @@ async function checkSchema(){
   banner.innerHTML = '<strong>⚠️ Schema incompleto detectado:</strong><ul style="margin:6px 0 0 18px">'
     + missing.map(m=>`<li>${m}</li>`).join('') + '</ul>'
     + '<button onclick="this.parentElement.remove()" style="margin-top:8px;background:none;border:none;font-size:12px;color:#856404;cursor:pointer;text-decoration:underline">Dispensar</button>';
-  document.querySelector('.dash-inner').prepend(banner);
+  (document.querySelector('#pane-home .dash-inner') || document.querySelector('.dash-inner')).prepend(banner);
 }
 
-// ── TABS ──
-function setDashTab(t){
-  ['clientes','fichas','formulario','perfil','exportar','avaliacoes'].forEach(id=>{
-    document.getElementById('pane-'+id).classList.toggle('active', id===t);
-    document.getElementById('dt'+id.charAt(0).toUpperCase()+id.slice(1)).classList.toggle('active', id===t);
+// ── NAVEGAÇÃO ──
+function _cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function setSection(s){
+  ['home','fichas','clientes','avaliacoes','formulario','config'].forEach(id=>{
+    document.getElementById('pane-'+id)?.classList.toggle('active', id===s);
+    document.getElementById('nav'+_cap(id))?.classList.toggle('active', id===s);
+    document.getElementById('bnav'+_cap(id))?.classList.toggle('active', id===s);
   });
-  if(t==='formulario' && !formDraft.online) loadFormConfig();
-  if(t==='avaliacoes' && !allAvals.length)  loadAvaliacoes();
-  if(t==='clientes'   && !allClients.length) loadClients();
+  if(s==='formulario' && !formDraft.online) loadFormConfig();
+  if(s==='avaliacoes' && !allAvals.length)  loadAvaliacoes();
+  if(s==='clientes'   && !allClients.length) loadClients();
+  if(s==='home')                             loadHomeSection();
 }
+// compat alias — algumas chamadas internas ainda podem usar o nome antigo
+function setDashTab(t){ setSection(t); }
 
 // ── FORM EDITOR ──
 // Definição completa de todos os blocos e campos padrão
@@ -2139,6 +2352,58 @@ function createAvalForClient(clientId, clientName){
   openNewAval(clientId, clientName);
 }
 
+// ── HOME SECTION ─────────────────────────────────────────────
+function loadHomeSection(){
+  const h = new Date().getHours();
+  const saudacao = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  const nome = profData?.name?.split(' ')[0] || '';
+  const el = id=>document.getElementById(id);
+  if(el('homeGreeting')) el('homeGreeting').textContent = saudacao + (nome ? ', '+nome : '') + '!';
+  if(el('homeDate')){
+    const hoje = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+    el('homeDate').textContent = hoje;
+  }
+  // Stats
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const novas = allRows.filter(r=>new Date(r.created_at)>=startOfDay).length;
+  if(el('homeStatNovas'))    el('homeStatNovas').textContent    = novas;
+  if(el('homeStatTotal'))    el('homeStatTotal').textContent    = allRows.length || '—';
+  if(el('homeStatClientes')) el('homeStatClientes').textContent = allClients.length || '—';
+  const thisMonth = allAvals.filter(a=>{
+    const d=new Date(a.created_at);
+    return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+  }).length;
+  if(el('homeStatAvals')) el('homeStatAvals').textContent = thisMonth || '—';
+  // Fichas recentes (top 5)
+  const rc = el('homeRecentContent');
+  if(!rc) return;
+  const recent = allRows.slice(0,5);
+  if(!recent.length){ rc.innerHTML='<div class="empty-state" style="padding:32px 24px"><div class="empty-icon">📋</div><div class="empty-title">Nenhuma ficha ainda</div></div>'; return; }
+  let h2 = '<table><thead><tr><th>Paciente</th><th>Status</th><th>Data</th></tr></thead><tbody>';
+  recent.forEach(r=>{
+    const d2=r.data||{};
+    const nm=esc(r.patient_name||d2.nome||'—');
+    const st=r.status||'nova';
+    const dt=new Date(r.created_at).toLocaleDateString('pt-BR');
+    h2+=`<tr><td><strong>${nm}</strong></td><td><span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></td><td>${dt}</td></tr>`;
+  });
+  h2+='</tbody></table>';
+  rc.innerHTML = h2;
+}
+
+// ── FAB ──────────────────────────────────────────────────────
+function toggleFab(){
+  const btn = document.getElementById('fabBtn');
+  const menu = document.getElementById('fabMenu');
+  const open = menu.classList.toggle('open');
+  btn.classList.toggle('open', open);
+}
+function closeFab(){
+  document.getElementById('fabBtn')?.classList.remove('open');
+  document.getElementById('fabMenu')?.classList.remove('open');
+}
+
 // ── MISC ──
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -2162,8 +2427,8 @@ function copyLink(){
     if(data?.session){
       await loadDashboard();
       const hash = window.location.hash.replace('#','');
-      if(hash && ['clientes','fichas','formulario','perfil','exportar','avaliacoes'].includes(hash)){
-        setDashTab(hash);
+      if(hash && ['home','clientes','fichas','avaliacoes','formulario','config'].includes(hash)){
+        setSection(hash);
         if(hash==='avaliacoes'){ allAvals=[]; loadAvaliacoes(); }
       }
       history.replaceState(null,'','/dashboard');
