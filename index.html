@@ -652,12 +652,24 @@ footer{
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/config.js"></script>
 <script>
 const obs = new IntersectionObserver((entries)=>{
   entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
 },{threshold:0.1});
 document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+
+// Redireciona usuário já autenticado direto para o dashboard
+(async()=>{
+  try{
+    if(!window.SUPABASE_URL || !window.SUPABASE_ANON || window.SUPABASE_URL==='COLE_SUA_URL_AQUI') return;
+    const _sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON, {auth:{persistSession:true}});
+    const {data:{session}} = await _sb.auth.getSession();
+    if(session) window.location.replace('/dashboard');
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

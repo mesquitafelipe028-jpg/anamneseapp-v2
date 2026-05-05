@@ -2144,7 +2144,17 @@ function copyLink(){
 // ── AUTO-LOGIN ──
 (async()=>{
   const {data:{session}} = await sb.auth.getSession();
-  if(session) await loadDashboard();
+  if(session){
+    await loadDashboard();
+    // Abre aba indicada pelo hash (ex: /dashboard#avaliacoes)
+    const hash = window.location.hash.replace('#','');
+    if(hash && ['clientes','fichas','formulario','perfil','exportar','avaliacoes'].includes(hash)){
+      setDashTab(hash);
+      // Força recarregamento das avaliações para mostrar a nova
+      if(hash==='avaliacoes'){ allAvals=[]; loadAvaliacoes(); }
+    }
+    history.replaceState(null,'','/dashboard'); // limpa o hash da URL
+  }
 })();
 // Re-renderiza ao girar o dispositivo (portrait ↔ landscape)
 let _resizeTimer;

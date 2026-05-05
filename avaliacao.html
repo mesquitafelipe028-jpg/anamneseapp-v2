@@ -165,7 +165,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 <header class="av-header">
   <div class="av-logo">Anamnese<span>App</span></div>
   <div class="av-patient">Avaliação — <strong id="hdrPatient">—</strong></div>
-  <button class="btn-back" onclick="location.href='/dashboard.html'">← Voltar</button>
+  <button class="btn-back" onclick="location.href='/dashboard#avaliacoes'">← Voltar</button>
 </header>
 
 <div class="av-progress">
@@ -1093,7 +1093,7 @@ async function concluirAval(){
   if(error){ showToast('Erro ao concluir: '+error.message); return; }
   showMsg('Avaliação concluída!','ok');
   showToast('Avaliação concluída!');
-  setTimeout(()=>location.href='/dashboard.html', 1800);
+  setTimeout(()=>location.href='/dashboard#avaliacoes', 1800);
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
