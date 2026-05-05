@@ -556,6 +556,7 @@ tr:hover td{background:var(--cream);}
       </div>
     </div>
     <div class="modal-footer" style="justify-content:flex-end">
+      <div class="profile-msg err" id="avalErrMsg" style="display:none;margin-right:12px;text-align:left"></div>
       <button class="btn-save-profile" onclick="createAval()">Iniciar avaliação</button>
     </div>
   </div>
@@ -602,6 +603,7 @@ tr:hover td{background:var(--cream);}
       </div>
     </div>
     <div class="modal-footer" style="justify-content:flex-end">
+      <div class="profile-msg err" id="ncErrMsg" style="display:none;margin-bottom:8px"></div>
       <button class="btn-save-profile" onclick="saveClient()">Salvar cliente</button>
     </div>
   </div>
@@ -758,6 +760,33 @@ async function loadDashboard(){
   }
 
   await loadAnamneses();
+  checkSchema();
+}
+
+// ── SCHEMA CHECK ──
+async function checkSchema(){
+  if(!sb) return;
+  const missing = [];
+  // Testa assessments.modality
+  const {error: e1} = await sb.from('assessments').select('modality').limit(1);
+  if(e1 && (e1.code==='42703'||e1.message?.includes('modality')))
+    missing.push('Execute <b>avaliacoes_schema.sql</b> no Supabase (coluna <code>modality</code> ausente)');
+  // Testa tabela clients
+  const {error: e2} = await sb.from('clients').select('id').limit(1);
+  if(e2 && e2.code==='42P01')
+    missing.push('Execute <b>clients_schema.sql</b> no Supabase (tabela <code>clients</code> ausente)');
+  // Testa coluna client_id em assessments
+  const {error: e3} = await sb.from('assessments').select('client_id').limit(1);
+  if(e3 && (e3.code==='42703'||e3.message?.includes('client_id')))
+    missing.push('Execute <b>clients_schema.sql</b> no Supabase (coluna <code>client_id</code> ausente em assessments)');
+  if(!missing.length) return;
+  const banner = document.createElement('div');
+  banner.id = 'schemaBanner';
+  banner.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.7;';
+  banner.innerHTML = '<strong>⚠️ Schema incompleto detectado:</strong><ul style="margin:6px 0 0 18px">'
+    + missing.map(m=>`<li>${m}</li>`).join('') + '</ul>'
+    + '<button onclick="this.parentElement.remove()" style="margin-top:8px;background:none;border:none;font-size:12px;color:#856404;cursor:pointer;text-decoration:underline">Dispensar</button>';
+  document.querySelector('.dash-inner').prepend(banner);
 }
 
 // ── TABS ──
@@ -1316,7 +1345,9 @@ function closeNewAval(e){
 }
 async function createAval(){
   const nome = document.getElementById('aval_nome').value.trim();
-  if(!nome){ showToast('Nome do paciente obrigatório.'); return; }
+  const errEl = document.getElementById('avalErrMsg');
+  errEl.style.display = 'none';
+  if(!nome){ errEl.textContent='Nome do paciente é obrigatório.'; errEl.style.display='block'; return; }
   const modality = document.getElementById('aval_mode').value;
   const insert = {
     professional_id: profId,
@@ -1325,8 +1356,20 @@ async function createAval(){
     status:          'em_andamento'
   };
   if(_newAvalClientId) insert.client_id = _newAvalClientId;
-  const {data, error} = await sb.from('assessments').insert(insert).select('id').single();
-  if(error){ console.error('[createAval]', error); showToast('Erro: '+error.message); return; }
+  let {data, error} = await sb.from('assessments').insert(insert).select('id').single();
+  // Coluna client_id pode não existir se clients_schema.sql não foi rodado — retry sem ela
+  if(error && (error.code==='42703'||error.code==='PGRST204') && insert.client_id){
+    console.warn('[createAval] client_id column missing, retrying without it');
+    delete insert.client_id;
+    ({data, error} = await sb.from('assessments').insert(insert).select('id').single());
+  }
+  if(error){
+    console.error('[createAval]', error);
+    const hint = error.code==='42703' ? ' (coluna modality ausente — rode avaliacoes_schema.sql)' : '';
+    errEl.textContent = 'Erro: ' + error.message + hint;
+    errEl.style.display = 'block';
+    return;
+  }
   closeNewAval();
   const url = `/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&modality=${modality}`;
   window.location.href = url;
@@ -1910,7 +1953,9 @@ function closeNewClient(e){
 }
 async function saveClient(){
   const name = document.getElementById('nc_name').value.trim();
-  if(!name){ showToast('Nome é obrigatório.'); return; }
+  const errEl = document.getElementById('ncErrMsg');
+  errEl.style.display='none';
+  if(!name){ errEl.textContent='Nome é obrigatório.'; errEl.style.display='block'; return; }
   const {data, error} = await sb.from('clients').insert({
     professional_id: profId,
     name,
@@ -1920,7 +1965,13 @@ async function saveClient(){
     sex:      document.getElementById('nc_sex').value||null,
     objetivo: document.getElementById('nc_objetivo').value.trim()||null
   }).select().single();
-  if(error){ console.error('[saveClient]', error); showToast('Erro: '+error.message); return; }
+  if(error){
+    console.error('[saveClient]', error);
+    const hint = error.code==='42P01' ? ' — rode clients_schema.sql no Supabase' : '';
+    errEl.textContent = 'Erro: ' + error.message + hint;
+    errEl.style.display = 'block';
+    return;
+  }
   allClients.push({...data, total_anamneses:0, total_avaliacoes:0, ultima_anamnese:null, ultima_avaliacao:null});
   allClients.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
   updateCliStats();
