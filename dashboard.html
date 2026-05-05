@@ -305,13 +305,52 @@ tr:hover td{background:var(--cream);}
   *{transition-duration:.01ms!important;animation-duration:.01ms!important;}
 }
 
-/* ── CLIENTES ── */
+/* ── CLIENTES CRM ── */
 .badge-cli{padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600;letter-spacing:.5px;}
 .badge-cli-a{background:rgba(107,122,66,.12);color:var(--olive);}
 .badge-cli-av{background:rgba(168,137,58,.12);color:var(--gold);}
 .cli-section-title{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--olive);margin-bottom:12px;margin-top:4px;}
 .cli-record{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px;font-size:13px;}
 .cli-record:last-child{border-bottom:none;}
+/* stat bars */
+.stat-bar-wrap{margin-top:8px;}
+.stat-bar-row{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:3px;}
+.stat-bar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.stat-bar-fill{height:100%;background:rgba(255,255,255,.6);border-radius:2px;transition:width .5s ease;}
+.stat-card .stat-bar-fill{background:var(--olive);}
+/* client cards grid */
+.cli-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.cli-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;gap:14px;align-items:flex-start;cursor:pointer;transition:box-shadow .2s,transform .2s;text-align:left;width:100%;}
+.cli-card:hover{box-shadow:0 8px 24px rgba(26,24,20,.1);transform:translateY(-2px);border-color:transparent;}
+.cli-card-avatar{width:44px;height:44px;border-radius:50%;background:var(--olive);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;font-family:'DM Sans',sans-serif;}
+.cli-card-body{flex:1;min-width:0;}
+.cli-card-name{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cli-card-phone{font-size:12px;color:var(--muted);margin-bottom:8px;}
+.cli-card-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;}
+.cli-card-date{font-size:11px;color:var(--muted);}
+/* client profile view */
+.client-list-view{display:block;}
+.client-profile-view{display:none;}
+.client-profile-view.open{display:block;}
+.client-list-view.hidden{display:none;}
+.cpv-back{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0;margin-bottom:20px;transition:color .2s;}
+.cpv-back:hover{color:var(--ink);}
+.cpv-header{display:flex;align-items:flex-start;gap:20px;margin-bottom:24px;flex-wrap:wrap;padding-bottom:24px;border-bottom:1px solid var(--border);}
+.cpv-avatar{width:68px;height:68px;border-radius:50%;background:var(--olive);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;flex-shrink:0;font-family:'DM Sans',sans-serif;}
+.cpv-name{font-family:'Instrument Serif',serif;font-size:26px;font-weight:400;color:var(--ink);margin-bottom:6px;}
+.cpv-meta{font-size:13px;color:var(--muted);line-height:1.8;}
+.cpv-tabs{display:flex;gap:0;background:var(--cream);border-radius:8px;padding:3px;margin-bottom:20px;}
+.cpv-tab{flex:1;padding:9px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:6px;transition:all .2s;}
+.cpv-tab.active{background:var(--white);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08);}
+.cpv-tab-content{display:none;}
+.cpv-tab-content.active{display:block;}
+.cpv-record{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:8px;}
+.cpv-record:last-child{border-bottom:none;}
+.cpv-record-info{flex:1;min-width:0;}
+.cpv-record-main{font-size:13px;font-weight:500;color:var(--ink);}
+.cpv-record-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.cpv-actions-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+@media(max-width:640px){.cli-grid{grid-template-columns:1fr;}}
 
 /* ── APP SHELL ── */
 #dashboard{display:none;}
@@ -545,20 +584,56 @@ tr:hover td{background:var(--cream);}
 
   <!-- CLIENTES -->
   <div class="section-pane" id="pane-clientes">
-    <div class="dash-inner">
+    <!-- Lista -->
+    <div class="dash-inner client-list-view" id="clientListView">
       <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
-        <div class="stat-card highlight"><div class="stat-val" id="statCliTotal">—</div><div class="stat-lbl">Total de clientes</div></div>
-        <div class="stat-card"><div class="stat-val" id="statCliAnamnese">—</div><div class="stat-lbl">Com anamnese</div></div>
-        <div class="stat-card"><div class="stat-val" id="statCliAval">—</div><div class="stat-lbl">Com avaliação</div></div>
+        <div class="stat-card highlight">
+          <div class="stat-val" id="statCliTotal">—</div>
+          <div class="stat-lbl">Total de clientes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statCliAnamnese">—</div>
+          <div class="stat-lbl">Com anamnese</div>
+          <div class="stat-bar-wrap"><div class="stat-bar-row"><span id="statCliAnamPct">0%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill" id="barAnam" style="width:0%"></div></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statCliAval">—</div>
+          <div class="stat-lbl">Com avaliação</div>
+          <div class="stat-bar-wrap"><div class="stat-bar-row"><span id="statCliAvalPct">0%</span></div><div class="stat-bar-bg"><div class="stat-bar-fill" id="barAval" style="width:0%"></div></div></div>
+        </div>
       </div>
       <div class="section-hd">
         <h2>Clientes</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input class="search-input" id="clientSearch" placeholder="Buscar cliente…" oninput="filterClients()">
+          <input class="search-input" id="clientSearch" placeholder="Buscar por nome ou telefone…" oninput="debouncedFilterClients()">
           <button class="btn-new-ficha" onclick="openNewClient()">+ Novo cliente</button>
         </div>
       </div>
-      <div class="table-wrap"><div id="clientContent"><div class="spinner-wrap"><div class="spin"></div>Carregando clientes…</div></div></div>
+      <div id="clientContent"><div class="spinner-wrap"><div class="spin"></div>Carregando clientes…</div></div>
+    </div>
+    <!-- Perfil inline -->
+    <div class="dash-inner client-profile-view" id="clientProfileView">
+      <button class="cpv-back" onclick="hideClientProfile()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Clientes
+      </button>
+      <div class="cpv-header">
+        <div class="cpv-avatar" id="cpvAvatar">?</div>
+        <div>
+          <div class="cpv-name"  id="cpvName">—</div>
+          <div class="cpv-meta" id="cpvMeta">—</div>
+        </div>
+      </div>
+      <div class="cpv-tabs">
+        <button class="cpv-tab active" id="cpvTabAnam" onclick="switchClientTab('anam')">Anamneses</button>
+        <button class="cpv-tab"        id="cpvTabAval" onclick="switchClientTab('aval')">Avaliações</button>
+      </div>
+      <div class="cpv-tab-content active" id="cpvAnamContent"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
+      <div class="cpv-tab-content"        id="cpvAvalContent"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
+      <div class="cpv-actions-bar">
+        <button class="btn-export" style="width:auto;padding:10px 16px" id="cpvLinkBtn">Enviar link anamnese</button>
+        <button class="btn-new-ficha" id="cpvAvalBtn">+ Nova avaliação</button>
+      </div>
     </div>
   </div>
 
@@ -813,10 +888,17 @@ tr:hover td{background:var(--cream);}
         <label>Objetivo</label>
         <input type="text" id="nc_objetivo" placeholder="Ex: emagrecimento, hipertrofia…">
       </div>
+      <div class="pf">
+        <label>Observações</label>
+        <textarea class="notes-area" id="nc_obs" placeholder="Notas sobre o cliente…" style="min-height:64px"></textarea>
+      </div>
     </div>
-    <div class="modal-footer" style="justify-content:flex-end">
-      <div class="profile-msg err" id="ncErrMsg" style="display:none;margin-bottom:8px"></div>
-      <button class="btn-save-profile" onclick="saveClient()">Salvar cliente</button>
+    <div class="modal-footer" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div class="profile-msg err" id="ncErrMsg" style="display:none"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+        <button class="btn-save-profile" style="background:none;border:1.5px solid var(--olive);color:var(--olive)" onclick="saveClient(false)">Salvar</button>
+        <button class="btn-save-profile" onclick="saveClient(true)">Salvar e enviar link</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2099,13 +2181,29 @@ async function loadClients(){
 }
 
 function updateCliStats(){
-  document.getElementById('statCliTotal').textContent    = allClients.length;
-  document.getElementById('statCliAnamnese').textContent = allClients.filter(c=>c.total_anamneses>0).length;
-  document.getElementById('statCliAval').textContent     = allClients.filter(c=>c.total_avaliacoes>0).length;
+  const total = allClients.length;
+  const comAnam = allClients.filter(c=>c.total_anamneses>0).length;
+  const comAval = allClients.filter(c=>c.total_avaliacoes>0).length;
+  const pctA = total ? Math.round(comAnam/total*100) : 0;
+  const pctV = total ? Math.round(comAval/total*100) : 0;
+  const el = id=>document.getElementById(id);
+  if(el('statCliTotal'))    el('statCliTotal').textContent    = total;
+  if(el('statCliAnamnese')) el('statCliAnamnese').textContent = comAnam;
+  if(el('statCliAval'))     el('statCliAval').textContent     = comAval;
+  if(el('statCliAnamPct'))  el('statCliAnamPct').textContent  = pctA+'%';
+  if(el('statCliAvalPct'))  el('statCliAvalPct').textContent  = pctV+'%';
+  if(el('barAnam'))  el('barAnam').style.width  = pctA+'%';
+  if(el('barAval'))  el('barAval').style.width  = pctV+'%';
+}
+
+let _cliSearchTimer = null;
+function debouncedFilterClients(){
+  clearTimeout(_cliSearchTimer);
+  _cliSearchTimer = setTimeout(filterClients, 300);
 }
 
 function filterClients(){
-  const q = (document.getElementById('clientSearch').value||'').toLowerCase()
+  const q = (document.getElementById('clientSearch')?.value||'').toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g,'');
   const filtered = q
     ? allClients.filter(c=>{
@@ -2123,58 +2221,49 @@ function _lastContact(c){
   return new Date(Math.max(...dates)).toLocaleDateString('pt-BR');
 }
 
+function _cliInitial(name){ return (name||'?')[0].toUpperCase(); }
+
 function renderClients(rows){
   if(!rows.length){ renderCliEmpty(); return; }
-  if(isMobile()){ renderCliCards(rows); return; }
-  let h = `<table><thead><tr>
-    <th>Cliente</th><th>Telefone</th><th>Registros</th><th>Último contato</th><th></th>
-  </tr></thead><tbody>`;
+  let h = '<div class="cli-grid">';
   rows.forEach(r=>{
-    const ba  = r.total_anamneses  > 0 ? `<span class="badge-cli badge-cli-a">Anamnese</span>` : '';
-    const bav = r.total_avaliacoes > 0 ? `<span class="badge-cli badge-cli-av">Avaliação</span>` : '';
-    h += `<tr>
-      <td><strong>${esc(r.name)}</strong></td>
-      <td>${esc(r.phone||'—')}</td>
-      <td><div style="display:flex;gap:4px;flex-wrap:wrap">${ba}${bav}</div></td>
-      <td>${_lastContact(r)}</td>
-      <td><button class="btn-view" onclick="openClientProfile('${r.id}')">Ver perfil</button></td>
-    </tr>`;
-  });
-  h += '</tbody></table>';
-  document.getElementById('clientContent').innerHTML = h;
-}
-
-function renderCliCards(rows){
-  let h = '<div class="cards-list">';
-  rows.forEach(r=>{
-    const ba  = r.total_anamneses  > 0 ? `<span class="badge-cli badge-cli-a">Anamnese</span>` : '';
-    const bav = r.total_avaliacoes > 0 ? `<span class="badge-cli badge-cli-av">Avaliação</span>` : '';
-    h += `<div class="ficha-card">
-      <div class="ficha-card-top">
-        <div>
-          <div class="ficha-card-name">${esc(r.name)}</div>
-          <div class="ficha-card-phone">${esc(r.phone||'—')}</div>
-        </div>
+    const ba  = r.total_anamneses  > 0
+      ? `<span class="badge-cli badge-cli-a">${r.total_anamneses} anamnese${r.total_anamneses>1?'s':''}</span>` : '';
+    const bav = r.total_avaliacoes > 0
+      ? `<span class="badge-cli badge-cli-av">${r.total_avaliacoes} avaliação${r.total_avaliacoes>1?'ões':''}</span>` : '';
+    const lc  = _lastContact(r);
+    h += `<button class="cli-card" onclick="openClientProfile('${r.id}')">
+      <div class="cli-card-avatar">${_cliInitial(r.name)}</div>
+      <div class="cli-card-body">
+        <div class="cli-card-name">${esc(r.name)}</div>
+        <div class="cli-card-phone">${esc(r.phone||'—')}</div>
+        <div class="cli-card-badges">${ba}${bav}</div>
+        ${lc!=='—'?`<div class="cli-card-date">Último contato: ${lc}</div>`:''}
       </div>
-      <div class="ficha-card-meta">${ba}${bav}<span style="font-size:12px;color:var(--muted)">${_lastContact(r)}</span></div>
-      <button class="btn-view" onclick="openClientProfile('${r.id}')">Ver perfil</button>
-    </div>`;
+    </button>`;
   });
   h += '</div>';
   document.getElementById('clientContent').innerHTML = h;
 }
 
+function renderCliCards(rows){ renderClients(rows); }
+
 function renderCliEmpty(){
   document.getElementById('clientContent').innerHTML = `
-    <div class="empty-state">
-      <div class="empty-icon">👤</div>
-      <div class="empty-title">Nenhum cliente</div>
-      <div class="empty-desc">Clique em "+ Novo cliente" para adicionar.</div>
+    <div class="empty-state" style="padding:60px 24px">
+      <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:72px;height:72px;margin-bottom:16px">
+        <circle cx="40" cy="40" r="36" fill="#f0ece3"/>
+        <circle cx="40" cy="31" r="11" fill="#e4e0d8"/>
+        <path d="M18 62c0-12.2 9.8-22 22-22s22 9.8 22 22" fill="#e4e0d8"/>
+      </svg>
+      <div class="empty-title">Nenhum cliente ainda</div>
+      <div class="empty-desc" style="margin-bottom:20px">Adicione seu primeiro cliente para começar o CRM.</div>
+      <button class="btn-new-ficha" onclick="openNewClient()">Adicionar primeiro cliente</button>
     </div>`;
 }
 
 function openNewClient(){
-  ['nc_name','nc_phone','nc_email','nc_objetivo'].forEach(id=>{
+  ['nc_name','nc_phone','nc_email','nc_objetivo','nc_obs'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('nc_dob').value='';
@@ -2188,7 +2277,7 @@ function closeNewClient(e){
 }
 function _showErr(id, msg){ const el=document.getElementById(id); if(el){el.textContent=msg;el.style.display='block';} else showToast(msg); }
 function _hideErr(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
-async function saveClient(){
+async function saveClient(sendLink=false){
   const name = document.getElementById('nc_name')?.value.trim()||'';
   _hideErr('ncErrMsg');
   if(!name){ _showErr('ncErrMsg','Nome é obrigatório.'); return; }
@@ -2196,11 +2285,12 @@ async function saveClient(){
   const payload = {
     professional_id: profId,
     name,
-    phone:    document.getElementById('nc_phone')?.value.trim()||null,
-    email:    document.getElementById('nc_email')?.value.trim()||null,
-    dob:      document.getElementById('nc_dob')?.value||null,
-    sex:      document.getElementById('nc_sex')?.value||null,
-    objetivo: document.getElementById('nc_objetivo')?.value.trim()||null
+    phone:       document.getElementById('nc_phone')?.value.trim()||null,
+    email:       document.getElementById('nc_email')?.value.trim()||null,
+    dob:         document.getElementById('nc_dob')?.value||null,
+    sex:         document.getElementById('nc_sex')?.value||null,
+    objetivo:    document.getElementById('nc_objetivo')?.value.trim()||null,
+    observacoes: document.getElementById('nc_obs')?.value.trim()||null
   };
   console.log('[saveClient] payload:', payload);
   const {data, error} = await sb.from('clients').insert(payload).select().single();
@@ -2218,7 +2308,23 @@ async function saveClient(){
   updateCliStats();
   renderClients(allClients);
   closeNewClient();
-  showToast('Cliente criado!');
+  if(sendLink){
+    const link = `${window.location.origin}/anamnese?pid=${profId}&client_id=${data.id}`;
+    navigator.clipboard.writeText(link).then(()=>showToast('Cliente criado e link copiado!'));
+  } else {
+    showToast('Cliente criado!');
+  }
+}
+
+function hideClientProfile(){
+  document.getElementById('clientListView')?.classList.remove('hidden');
+  document.getElementById('clientProfileView')?.classList.remove('open');
+}
+function switchClientTab(tab){
+  document.getElementById('cpvTabAnam')?.classList.toggle('active', tab==='anam');
+  document.getElementById('cpvTabAval')?.classList.toggle('active', tab==='aval');
+  document.getElementById('cpvAnamContent')?.classList.toggle('active', tab==='anam');
+  document.getElementById('cpvAvalContent')?.classList.toggle('active', tab==='aval');
 }
 
 async function openClientProfile(clientId){
@@ -2231,13 +2337,32 @@ async function openClientProfile(clientId){
     }
   }
   if(!client) return;
+
+  // Mostra view inline
+  document.getElementById('clientListView')?.classList.add('hidden');
+  const view = document.getElementById('clientProfileView');
+  view.classList.add('open');
+  switchClientTab('anam');
+
+  // Popula header
+  document.getElementById('cpvAvatar').textContent = _cliInitial(client.name);
+  document.getElementById('cpvName').textContent   = client.name;
+  const metaParts = [client.phone, client.email, client.objetivo].filter(Boolean);
+  document.getElementById('cpvMeta').textContent   = metaParts.join(' · ') || 'Sem informações adicionais';
+
+  // Botões de ação
+  const linkBtn = document.getElementById('cpvLinkBtn');
+  const avalBtn = document.getElementById('cpvAvalBtn');
+  if(linkBtn) linkBtn.onclick = ()=>copyClientAnamneseLink(clientId);
+  if(avalBtn) avalBtn.onclick = ()=>createAvalForClient(clientId, client.name);
+
+  // Também mantém compatibilidade com o overlay antigo
   const overlay = document.getElementById('clientProfileOverlay');
-  overlay.dataset.clientId   = clientId;
-  overlay.dataset.clientName = client.name;
-  document.getElementById('cpTitle').textContent = client.name;
-  document.getElementById('cpBody').innerHTML =
-    '<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
-  overlay.classList.add('open');
+  if(overlay){ overlay.dataset.clientId=clientId; overlay.dataset.clientName=client.name; }
+
+  // Carrega dados
+  document.getElementById('cpvAnamContent').innerHTML = '<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
+  document.getElementById('cpvAvalContent').innerHTML = '<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
 
   const [anamRes, avalRes] = await Promise.all([
     sb.from('anamneses').select('id,patient_name,status,mode,created_at')
@@ -2248,59 +2373,63 @@ async function openClientProfile(clientId){
   const anams = anamRes.data || [];
   const avals = avalRes.data || [];
 
-  let html = `
-    <div class="cli-section-title">Dados pessoais</div>
-    <div class="pf"><label>Nome</label>
-      <input type="text" id="cp_name" value="${esc(client.name)}" autocomplete="name"></div>
-    <div class="pf"><label>Telefone</label>
-      <input type="tel" id="cp_phone" value="${esc(client.phone||'')}" inputmode="tel"></div>
-    <div class="pf"><label>E-mail</label>
-      <input type="email" id="cp_email" value="${esc(client.email||'')}" inputmode="email"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="pf"><label>Data de nascimento</label>
-        <input type="date" id="cp_dob" value="${client.dob||''}"></div>
-      <div class="pf"><label>Sexo</label>
-        <select id="cp_sex">
-          <option value="">—</option>
-          <option value="M"${client.sex==='M'?' selected':''}>Masculino</option>
-          <option value="F"${client.sex==='F'?' selected':''}>Feminino</option>
-          <option value="outro"${client.sex==='outro'?' selected':''}>Outro</option>
-        </select></div>
-    </div>
-    <div class="pf"><label>Objetivo</label>
-      <input type="text" id="cp_objetivo" value="${esc(client.objetivo||'')}"></div>
-    <div class="pf"><label>Observações</label>
-      <textarea class="notes-area" id="cp_obs">${esc(client.observacoes||'')}</textarea></div>
-    <button class="btn-save-notes" onclick="saveClientProfile('${clientId}')">Salvar dados</button>
-    <div class="profile-msg" id="cpMsg"></div>
-
-    <div style="margin-top:24px">
-      <div class="cli-section-title">Anamneses (${anams.length})</div>`;
+  // — Aba Anamneses —
+  let aHtml = '';
   if(anams.length){
     anams.forEach(a=>{
-      html+=`<div class="cli-record">
-        <span>${esc(a.patient_name||client.name)} · ${new Date(a.created_at).toLocaleDateString('pt-BR')}</span>
+      const st = a.status||'nova';
+      aHtml+=`<div class="cpv-record">
+        <div class="cpv-record-info">
+          <div class="cpv-record-main">${esc(a.patient_name||client.name)}</div>
+          <div class="cpv-record-sub">${new Date(a.created_at).toLocaleDateString('pt-BR')} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></div>
+        </div>
         <button class="btn-view" onclick="openAnamneseFromClient('${a.id}')">Abrir</button>
       </div>`;
     });
   } else {
-    html+=`<p style="font-size:13px;color:var(--muted)">Nenhuma anamnese vinculada.</p>`;
+    aHtml=`<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Nenhuma anamnese vinculada a este cliente.</div></div>`;
   }
-  html+=`</div><div style="margin-top:24px">
-    <div class="cli-section-title">Avaliações físicas (${avals.length})</div>`;
+  // Edit form at bottom of anamneses tab
+  aHtml+=`<details style="margin-top:20px;border:1px solid var(--border);border-radius:10px;padding:0">
+    <summary style="padding:14px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);list-style:none">✏️ Editar dados do cliente</summary>
+    <div style="padding:16px">
+      <div class="pf"><label>Nome</label><input type="text" id="cp_name" value="${esc(client.name)}" autocomplete="name"></div>
+      <div class="pf"><label>Telefone</label><input type="tel" id="cp_phone" value="${esc(client.phone||'')}" inputmode="tel"></div>
+      <div class="pf"><label>E-mail</label><input type="email" id="cp_email" value="${esc(client.email||'')}" inputmode="email"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="pf"><label>Data de nascimento</label><input type="date" id="cp_dob" value="${client.dob||''}"></div>
+        <div class="pf"><label>Sexo</label><select id="cp_sex"><option value="">—</option><option value="M"${client.sex==='M'?' selected':''}>Masculino</option><option value="F"${client.sex==='F'?' selected':''}>Feminino</option><option value="outro"${client.sex==='outro'?' selected':''}>Outro</option></select></div>
+      </div>
+      <div class="pf"><label>Objetivo</label><input type="text" id="cp_objetivo" value="${esc(client.objetivo||'')}"></div>
+      <div class="pf"><label>Observações</label><textarea class="notes-area" id="cp_obs">${esc(client.observacoes||'')}</textarea></div>
+      <button class="btn-save-notes" onclick="saveClientProfile('${clientId}')">Salvar dados</button>
+      <div class="profile-msg" id="cpMsg"></div>
+    </div>
+  </details>`;
+  document.getElementById('cpvAnamContent').innerHTML = aHtml;
+
+  // — Aba Avaliações —
+  let vHtml = '';
   if(avals.length){
     avals.forEach(av=>{
       const url=`/avaliacao?assessment_id=${av.id}&patient_name=${encodeURIComponent(av.patient_name||client.name)}&professional_id=${profId||''}&modality=${av.modality||'presencial'}`;
-      html+=`<div class="cli-record">
-        <span>${new Date(av.created_at).toLocaleDateString('pt-BR')} · ${av.modality||'presencial'}</span>
+      const st = av.status==='concluida' ? '<span class="badge-cli badge-cli-av">Concluída</span>' : '<span class="badge-cli badge-cli-a">Em andamento</span>';
+      vHtml+=`<div class="cpv-record">
+        <div class="cpv-record-info">
+          <div class="cpv-record-main">${esc(av.patient_name||client.name)}</div>
+          <div class="cpv-record-sub">${new Date(av.created_at).toLocaleDateString('pt-BR')} · ${av.modality||'presencial'} · ${st}</div>
+        </div>
         <button class="btn-view" onclick="location.href='${url}'">Abrir</button>
       </div>`;
     });
   } else {
-    html+=`<p style="font-size:13px;color:var(--muted)">Nenhuma avaliação vinculada.</p>`;
+    vHtml=`<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Nenhuma avaliação vinculada a este cliente.</div></div>`;
   }
-  html+=`</div>`;
-  document.getElementById('cpBody').innerHTML = html;
+  document.getElementById('cpvAvalContent').innerHTML = vHtml;
+
+  // Mantém cpBody para compatibilidade (modal legado)
+  const cpBody = document.getElementById('cpBody');
+  if(cpBody) cpBody.innerHTML = '';
 }
 
 async function openAnamneseFromClient(id){
@@ -2310,7 +2439,6 @@ async function openAnamneseFromClient(id){
     if(data){ allRows.push(data); row=data; }
   }
   if(!row){ showToast('Ficha não encontrada.'); return; }
-  closeClientProfile();
   openModal(id);
 }
 
