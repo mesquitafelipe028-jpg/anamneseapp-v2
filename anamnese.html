@@ -474,7 +474,9 @@ let _profWa = WA_NUMBER;
 const _SBU = window.SUPABASE_URL  || '';
 const _SBA = window.SUPABASE_ANON || '';
 const sb = (_SBU && _SBA && _SBU !== 'COLE_SUA_URL_AQUI')
-  ? supabase.createClient(_SBU, _SBA) : null;
+  ? supabase.createClient(_SBU, _SBA, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+    }) : null;
 
 let mode=null,step=0,data={},chips={},toggles={},scales={},alunoFone='';
 let _pendingDraft=null;

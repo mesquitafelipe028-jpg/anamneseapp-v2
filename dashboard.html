@@ -671,7 +671,9 @@ if(!SB_URL || !SB_ANON || SB_URL === 'COLE_SUA_URL_AQUI'){
     '<p style="padding:80px 24px;text-align:center;font-family:sans-serif;color:#9a9588;font-size:14px">Preencha as chaves Supabase em <code>config.js</code> antes do deploy.</p>';
   throw new Error('Supabase keys not configured.');
 }
-const sb = supabase.createClient(SB_URL, SB_ANON);
+const sb = supabase.createClient(SB_URL, SB_ANON, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+});
 
 let allRows = [];
 let profId   = null;
@@ -2143,18 +2145,19 @@ function copyLink(){
 
 // ── AUTO-LOGIN ──
 (async()=>{
-  const {data:{session}} = await sb.auth.getSession();
-  if(session){
-    await loadDashboard();
-    // Abre aba indicada pelo hash (ex: /dashboard#avaliacoes)
-    const hash = window.location.hash.replace('#','');
-    if(hash && ['clientes','fichas','formulario','perfil','exportar','avaliacoes'].includes(hash)){
-      setDashTab(hash);
-      // Força recarregamento das avaliações para mostrar a nova
-      if(hash==='avaliacoes'){ allAvals=[]; loadAvaliacoes(); }
+  try{
+    const {data, error} = await sb.auth.getSession();
+    if(error){ console.warn('[auto-login] getSession error:', error.message); return; }
+    if(data?.session){
+      await loadDashboard();
+      const hash = window.location.hash.replace('#','');
+      if(hash && ['clientes','fichas','formulario','perfil','exportar','avaliacoes'].includes(hash)){
+        setDashTab(hash);
+        if(hash==='avaliacoes'){ allAvals=[]; loadAvaliacoes(); }
+      }
+      history.replaceState(null,'','/dashboard');
     }
-    history.replaceState(null,'','/dashboard'); // limpa o hash da URL
-  }
+  }catch(e){ console.error('[auto-login]', e); }
 })();
 // Re-renderiza ao girar o dispositivo (portrait ↔ landscape)
 let _resizeTimer;
