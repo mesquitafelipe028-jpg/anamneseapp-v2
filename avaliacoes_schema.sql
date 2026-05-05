@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS assessments (
   patient_phone    text,
   patient_dob      date,
   patient_sex      char(1) CHECK (patient_sex IN ('M','F')),
-  mode             text NOT NULL DEFAULT 'presencial'
-                     CHECK (mode IN ('presencial','online')),
+  modality         text NOT NULL DEFAULT 'presencial'
+                     CHECK (modality IN ('presencial','online')),
   status           text NOT NULL DEFAULT 'em_andamento'
                      CHECK (status IN ('em_andamento','concluida')),
   notes            text,
@@ -20,10 +20,21 @@ CREATE TABLE IF NOT EXISTS assessments (
   updated_at       timestamptz NOT NULL DEFAULT now()
 );
 
--- Migração para quem já criou a tabela sem a coluna mode:
+-- Migração: renomeia mode → modality para quem rodou o schema antigo
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'assessments' AND column_name = 'mode'
+  ) THEN
+    ALTER TABLE assessments RENAME COLUMN mode TO modality;
+  END IF;
+END $$;
+
+-- Garante que modality exista (criação do zero sem a tabela)
 ALTER TABLE assessments ADD COLUMN IF NOT EXISTS
-  mode text NOT NULL DEFAULT 'presencial'
-    CHECK (mode IN ('presencial','online'));
+  modality text NOT NULL DEFAULT 'presencial'
+    CHECK (modality IN ('presencial','online'));
 
 CREATE OR REPLACE FUNCTION _set_updated_at()
 RETURNS trigger LANGUAGE plpgsql AS $$

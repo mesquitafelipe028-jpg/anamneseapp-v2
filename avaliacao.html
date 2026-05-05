@@ -745,7 +745,7 @@ function renderFinal(){
       </button>
       <button class="btn-action btn-conclude-av" onclick="concluirAval()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        Concluir avaliação
+        Salvar e Concluir
       </button>
       <div style="padding-top:12px;border-top:1px solid var(--border);margin-top:4px;">
         <button class="btn-prev" onclick="prevMod()" style="width:100%;text-align:center;">← Voltar ao módulo 6</button>
@@ -773,7 +773,8 @@ async function saveAll(){
     if(_clientId) asmPayload.client_id = _clientId;
     let asmId = _savedAsmId;
     if(asmId){
-      await sb.from('assessments').update(asmPayload).eq('id', asmId);
+      const {error: upErr} = await sb.from('assessments').update(asmPayload).eq('id', asmId);
+      if(upErr) throw upErr;
     } else {
       const {data, error} = await sb.from('assessments').insert(asmPayload).select('id').single();
       if(error) throw error;
@@ -1084,9 +1085,13 @@ async function loadExistingData(){
 
 // ── CONCLUIR AVALIAÇÃO ───────────────────────────────────────
 async function concluirAval(){
-  if(!sb || !_savedAsmId){ showToast('Salve a avaliação primeiro.'); return; }
+  if(!sb){ showToast('Supabase não configurado.'); return; }
+  // Garante que todos os dados sejam salvos antes de concluir
+  await saveAll();
+  if(!_savedAsmId){ showMsg('Não foi possível salvar. Verifique a conexão.','err'); return; }
   const {error} = await sb.from('assessments').update({status:'concluida'}).eq('id',_savedAsmId);
-  if(error){ showToast('Erro: '+error.message); return; }
+  if(error){ showToast('Erro ao concluir: '+error.message); return; }
+  showMsg('Avaliação concluída!','ok');
   showToast('Avaliação concluída!');
   setTimeout(()=>location.href='/dashboard.html', 1800);
 }
