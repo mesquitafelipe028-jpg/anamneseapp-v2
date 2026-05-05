@@ -29,12 +29,14 @@
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;overflow-x:hidden;max-width:100vw;}
+html{scroll-behavior:smooth;overflow-x:hidden;max-width:100vw;touch-action:manipulation;-webkit-overflow-scrolling:touch;}
 body{
   background:var(--bg);color:var(--ink);
   font-family:'DM Sans',sans-serif;
   overflow-x:hidden;
   max-width:100vw;
+  touch-action:manipulation;
+  padding-bottom:env(safe-area-inset-bottom);
 }
 
 /* ── GRAIN ── */
@@ -378,6 +380,10 @@ footer{
   .hero{padding:40px 20px 40px;}
   .section{padding:56px 20px;}
 }
+
+/* ── PWA / iOS ── */
+*{-webkit-tap-highlight-color:transparent;}
+.nav-cta,.btn-primary,.btn-secondary,.btn-plan,.btn-cta-white{user-select:none;-webkit-user-select:none;}
 </style>
 </head>
 <body>

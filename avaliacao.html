@@ -18,15 +18,16 @@
   --border:#e4e0d8;--olive:#6b7a42;--gold:#a8893a;--cream:#f0ece3;--danger:#c0392b;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;overflow-x:hidden;max-width:100vw;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;max-width:100vw;}
+html{scroll-behavior:smooth;overflow-x:hidden;max-width:100vw;touch-action:manipulation;-webkit-overflow-scrolling:touch;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;max-width:100vw;touch-action:manipulation;padding-bottom:env(safe-area-inset-bottom);}
 
 /* ── HEADER ── */
 .av-header{
   position:sticky;top:0;z-index:100;
   background:rgba(247,245,240,.96);backdrop-filter:blur(10px);
   border-bottom:1px solid var(--border);
-  height:58px;padding:0 24px;
+  height:calc(58px + env(safe-area-inset-top));
+  padding:env(safe-area-inset-top) 24px 0;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
 .av-logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;color:var(--olive);white-space:nowrap;}
@@ -159,6 +160,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 }
 @media(prefers-reduced-motion:reduce){
   *{transition-duration:.01ms!important;animation-duration:.01ms!important;}
+}
+
+/* ── PWA / iOS ── */
+*{-webkit-tap-highlight-color:transparent;}
+.btn-action,.btn-back,.btn-prev,.btn-next,.ps,.proto-tab{user-select:none;-webkit-user-select:none;}
+@media(max-width:768px){
+  input,select,textarea{font-size:max(16px,1em) !important;}
 }
 </style>
 </head>
