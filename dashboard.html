@@ -739,15 +739,18 @@ async function loadDashboard(){
   document.getElementById('dashboard').style.display  = 'block';
   document.getElementById('topUser').textContent = user.email;
 
-  let {data:prof} = await sb.from('professionals').select('*').eq('user_id', user.id).maybeSingle();
+  let {data:prof, error:profErr} = await sb.from('professionals').select('*').eq('user_id', user.id).maybeSingle();
+  if(profErr) console.error('[loadDashboard] professionals select:', profErr);
   if(!prof){
-    const {data:created} = await sb
+    const {data:created, error:createErr} = await sb
       .from('professionals')
       .insert({user_id:user.id, name:user.email.split('@')[0], specialty:'personal'})
       .select().single();
+    if(createErr) console.error('[loadDashboard] professionals insert:', createErr);
     prof = created;
   }
   if(prof){ profId = prof.id; profData = prof; }
+  console.log('[loadDashboard] profId=', profId, 'user=', user.email);
 
   document.getElementById('shareLink').textContent =
     window.location.origin + '/anamnese?pid=' + (profId || '');
@@ -1348,6 +1351,10 @@ async function createAval(){
   const errEl = document.getElementById('avalErrMsg');
   errEl.style.display = 'none';
   if(!nome){ errEl.textContent='Nome do paciente é obrigatório.'; errEl.style.display='block'; return; }
+  if(!profId){
+    errEl.textContent='Erro: profissional não carregado — recarregue a página (F5).';
+    errEl.style.display='block'; return;
+  }
   const modality = document.getElementById('aval_mode').value;
   const insert = {
     professional_id: profId,
@@ -1356,17 +1363,21 @@ async function createAval(){
     status:          'em_andamento'
   };
   if(_newAvalClientId) insert.client_id = _newAvalClientId;
+  console.log('[createAval] payload:', insert);
   let {data, error} = await sb.from('assessments').insert(insert).select('id').single();
   // Coluna client_id pode não existir se clients_schema.sql não foi rodado — retry sem ela
   if(error && (error.code==='42703'||error.code==='PGRST204') && insert.client_id){
-    console.warn('[createAval] client_id column missing, retrying without it');
+    console.warn('[createAval] client_id ausente, retry sem ela');
     delete insert.client_id;
     ({data, error} = await sb.from('assessments').insert(insert).select('id').single());
   }
   if(error){
-    console.error('[createAval]', error);
-    const hint = error.code==='42703' ? ' (coluna modality ausente — rode avaliacoes_schema.sql)' : '';
-    errEl.textContent = 'Erro: ' + error.message + hint;
+    console.error('[createAval] code:', error.code, 'msg:', error.message, 'details:', error.details, 'hint:', error.hint);
+    const hint = error.code==='42703' ? ' — coluna modality ausente, rode avaliacoes_schema.sql'
+               : error.code==='42P01' ? ' — tabela ausente, rode avaliacoes_schema.sql'
+               : error.code==='23502' ? ' — profissional nulo, recarregue a página'
+               : '';
+    errEl.textContent = 'Erro ' + error.code + ': ' + error.message + hint;
     errEl.style.display = 'block';
     return;
   }
@@ -1956,7 +1967,11 @@ async function saveClient(){
   const errEl = document.getElementById('ncErrMsg');
   errEl.style.display='none';
   if(!name){ errEl.textContent='Nome é obrigatório.'; errEl.style.display='block'; return; }
-  const {data, error} = await sb.from('clients').insert({
+  if(!profId){
+    errEl.textContent='Erro: profissional não carregado — recarregue a página (F5).';
+    errEl.style.display='block'; return;
+  }
+  const payload = {
     professional_id: profId,
     name,
     phone:    document.getElementById('nc_phone').value.trim()||null,
@@ -1964,11 +1979,16 @@ async function saveClient(){
     dob:      document.getElementById('nc_dob').value||null,
     sex:      document.getElementById('nc_sex').value||null,
     objetivo: document.getElementById('nc_objetivo').value.trim()||null
-  }).select().single();
+  };
+  console.log('[saveClient] payload:', payload);
+  const {data, error} = await sb.from('clients').insert(payload).select().single();
   if(error){
-    console.error('[saveClient]', error);
-    const hint = error.code==='42P01' ? ' — rode clients_schema.sql no Supabase' : '';
-    errEl.textContent = 'Erro: ' + error.message + hint;
+    console.error('[saveClient] code:', error.code, 'msg:', error.message, 'details:', error.details, 'hint:', error.hint);
+    const hint = error.code==='42P01' ? ' — rode clients_schema.sql no Supabase'
+               : error.code==='42703' ? ' — coluna ausente, rode clients_schema.sql'
+               : error.code==='23502' ? ' — profissional nulo, recarregue a página'
+               : '';
+    errEl.textContent = 'Erro ' + error.code + ': ' + error.message + hint;
     errEl.style.display = 'block';
     return;
   }
