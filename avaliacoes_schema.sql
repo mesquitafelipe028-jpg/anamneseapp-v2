@@ -41,6 +41,7 @@ RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_assessments_updated_at ON assessments;
 CREATE TRIGGER trg_assessments_updated_at
   BEFORE UPDATE ON assessments
   FOR EACH ROW EXECUTE FUNCTION _set_updated_at();
