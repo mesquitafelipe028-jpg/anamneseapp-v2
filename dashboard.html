@@ -404,13 +404,48 @@ tr:hover td{background:var(--cream);}
 .home-link-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
 .home-link-url{font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;}
 
+/* ── HOME ACTION CARDS ── */
+.home-action-card{border-radius:16px;padding:20px;cursor:pointer;transition:opacity .2s,transform .15s;display:flex;flex-direction:column;gap:6px;border:none;text-align:left;width:100%;}
+.home-action-card:hover{opacity:.85;transform:translateY(-2px);}
+.home-action-card:active{transform:translateY(0);}
+.home-action-icon{margin-bottom:4px;}
+.home-action-icon svg{width:32px;height:32px;}
+.home-action-title{font-size:14px;font-weight:600;color:var(--ink);}
+.home-action-sub{font-size:11px;color:var(--muted);}
+.ac-olive{background:rgba(107,122,66,.12);}
+.ac-olive .home-action-icon svg{color:var(--olive);}
+.ac-gold{background:rgba(168,137,58,.12);}
+.ac-gold .home-action-icon svg{color:var(--gold);}
+.ac-blue{background:rgba(70,100,150,.1);}
+.ac-blue .home-action-icon svg{color:#4664a0;}
+.ac-gray{background:var(--cream);border:1px solid var(--border)!important;}
+.ac-gray .home-action-icon svg{color:var(--muted);}
+/* ── HOME ACTIVITY FEED ── */
+.home-activity{display:flex;flex-direction:column;}
+.home-act-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.home-act-item:last-child{border-bottom:none;}
+.home-act-avatar{width:38px;height:38px;border-radius:50%;background:var(--olive);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;font-family:'DM Sans',sans-serif;}
+.home-act-info{flex:1;min-width:0;}
+.home-act-name{font-size:14px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-act-sub{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px;}
+.home-act-time{font-size:11px;color:var(--muted);flex-shrink:0;}
+/* ── HOME ALERT ── */
+.home-alert{background:rgba(107,122,66,.08);border:1px solid rgba(107,122,66,.25);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
+.home-alert-text{font-size:13px;color:var(--olive);font-weight:500;}
+.btn-home-alert{padding:7px 14px;background:var(--olive);color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;white-space:nowrap;}
+.btn-home-alert:hover{opacity:.88;}
+
 /* FAB */
 .fab-wrap{position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));right:20px;z-index:250;display:none;flex-direction:column-reverse;align-items:flex-end;gap:10px;}
 .fab{width:54px;height:54px;border-radius:50%;background:var(--olive);color:#fff;border:none;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 4px 16px rgba(107,122,66,.4);display:flex;align-items:center;justify-content:center;transition:transform .2s;user-select:none;}
 .fab.open{transform:rotate(45deg);}
-.fab-menu{display:none;flex-direction:column;gap:8px;align-items:flex-end;}
-.fab-menu.open{display:flex;}
-.fab-menu-btn{padding:10px 18px;background:var(--ink);color:#fff;border:none;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);white-space:nowrap;}
+.fab-menu{display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none;}
+.fab-menu.open{pointer-events:auto;}
+.fab-menu-btn{padding:10px 18px;background:var(--ink);color:#fff;border:none;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);white-space:nowrap;transform:scale(0.7) translateY(10px);opacity:0;transition:transform .2s,opacity .2s;}
+.fab-menu.open .fab-menu-btn{transform:scale(1) translateY(0);opacity:1;}
+.fab-menu.open .fab-menu-btn:nth-child(3){transition-delay:0s;}
+.fab-menu.open .fab-menu-btn:nth-child(2){transition-delay:.05s;}
+.fab-menu.open .fab-menu-btn:nth-child(1){transition-delay:.1s;}
 
 /* config section */
 .config-group{margin-bottom:32px;}
@@ -511,36 +546,43 @@ tr:hover td{background:var(--cream);}
   <!-- HOME -->
   <div class="section-pane active" id="pane-home">
     <div class="dash-inner">
+      <div id="homeAlertBanner" class="home-alert" style="display:none">
+        <span class="home-alert-text" id="homeAlertText"></span>
+        <button class="btn-home-alert" onclick="setSection('fichas')">Ver fichas</button>
+      </div>
       <div class="home-greeting" id="homeGreeting">Olá!</div>
       <div class="home-date"     id="homeDate"></div>
-      <div class="home-cards">
-        <div class="home-card highlight" onclick="setSection('fichas')">
-          <div class="home-card-val" id="homeStatNovas">—</div>
-          <div class="home-card-lbl">Fichas novas hoje</div>
-        </div>
-        <div class="home-card" onclick="setSection('clientes')">
-          <div class="home-card-val" id="homeStatClientes">—</div>
-          <div class="home-card-lbl">Clientes ativos</div>
-        </div>
-        <div class="home-card" onclick="setSection('avaliacoes')">
-          <div class="home-card-val" id="homeStatAvals">—</div>
-          <div class="home-card-lbl">Avaliações este mês</div>
-        </div>
-        <div class="home-card" onclick="setSection('fichas')">
-          <div class="home-card-val" id="homeStatTotal">—</div>
-          <div class="home-card-lbl">Total de fichas</div>
-        </div>
+      <div class="home-cards" style="margin-bottom:20px">
+        <button class="home-action-card ac-olive" onclick="copyLink()">
+          <div class="home-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+          <div class="home-action-title">Link de anamnese</div>
+          <div class="home-action-sub">Copiar link</div>
+        </button>
+        <button class="home-action-card ac-gold" onclick="openNewAval()">
+          <div class="home-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div class="home-action-title">Nova avaliação</div>
+          <div class="home-action-sub">Criar avaliação</div>
+        </button>
+        <button class="home-action-card ac-blue" onclick="openNewClient()">
+          <div class="home-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+          <div class="home-action-title">Novo cliente</div>
+          <div class="home-action-sub">Cadastrar cliente</div>
+        </button>
+        <button class="home-action-card ac-gray" onclick="setSection('fichas')">
+          <div class="home-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <div class="home-action-title">Ver fichas</div>
+          <div class="home-action-sub">Gerenciar fichas</div>
+        </button>
       </div>
       <div class="home-link-card">
         <div style="min-width:0;flex:1">
           <div class="home-link-label">Seu link de anamnese</div>
           <div class="home-link-url" id="shareLink">—</div>
         </div>
-        <button class="btn-copy" onclick="copyLink()">Copiar link</button>
+        <button class="btn-copy" onclick="copyLink()">Copiar</button>
       </div>
-      <div class="section-hd">
-        <h2>Fichas recentes</h2>
-        <button class="btn-new-ficha" onclick="setSection('fichas')">Ver todas →</button>
+      <div class="section-hd" style="margin-top:24px">
+        <h2>Atividade recente</h2>
       </div>
       <div class="table-wrap"><div id="homeRecentContent"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div></div>
     </div>
@@ -2483,41 +2525,63 @@ function createAvalForClient(clientId, clientName){
 // ── HOME SECTION ─────────────────────────────────────────────
 function loadHomeSection(){
   const h = new Date().getHours();
-  const saudacao = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  const saudacao = h>=5&&h<12 ? 'Bom dia' : h>=12&&h<18 ? 'Boa tarde' : 'Boa noite';
   const nome = profData?.name?.split(' ')[0] || '';
   const el = id=>document.getElementById(id);
   if(el('homeGreeting')) el('homeGreeting').textContent = saudacao + (nome ? ', '+nome : '') + '!';
   if(el('homeDate')){
-    const hoje = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
-    el('homeDate').textContent = hoje;
+    const hoje = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    el('homeDate').textContent = hoje.charAt(0).toUpperCase() + hoje.slice(1);
   }
-  // Stats
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const novas = allRows.filter(r=>new Date(r.created_at)>=startOfDay).length;
-  if(el('homeStatNovas'))    el('homeStatNovas').textContent    = novas;
-  if(el('homeStatTotal'))    el('homeStatTotal').textContent    = allRows.length || '—';
-  if(el('homeStatClientes')) el('homeStatClientes').textContent = allClients.length || '—';
-  const thisMonth = allAvals.filter(a=>{
-    const d=new Date(a.created_at);
-    return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
-  }).length;
-  if(el('homeStatAvals')) el('homeStatAvals').textContent = thisMonth || '—';
-  // Fichas recentes (top 5)
+  // Alert banner: fichas com status nova
+  const novasFichas = allRows.filter(r=>r.status==='nova');
+  const banner = el('homeAlertBanner');
+  if(banner){
+    if(novasFichas.length > 0){
+      const txt = el('homeAlertText');
+      if(txt) txt.textContent = `${novasFichas.length} ${novasFichas.length===1?'ficha aguardando':'fichas aguardando'} análise`;
+      banner.style.display = 'flex';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+  // Activity feed (top 5 recent fichas)
   const rc = el('homeRecentContent');
   if(!rc) return;
   const recent = allRows.slice(0,5);
-  if(!recent.length){ rc.innerHTML='<div class="empty-state" style="padding:32px 24px"><div class="empty-icon">📋</div><div class="empty-title">Nenhuma ficha ainda</div></div>'; return; }
-  let h2 = '<table><thead><tr><th>Paciente</th><th>Status</th><th>Data</th></tr></thead><tbody>';
-  recent.forEach(r=>{
-    const d2=r.data||{};
-    const nm=esc(r.patient_name||d2.nome||'—');
-    const st=r.status||'nova';
-    const dt=new Date(r.created_at).toLocaleDateString('pt-BR');
-    h2+=`<tr><td><strong>${nm}</strong></td><td><span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></td><td>${dt}</td></tr>`;
-  });
-  h2+='</tbody></table>';
-  rc.innerHTML = h2;
+  if(!recent.length){ rc.innerHTML='<div class="empty-state" style="padding:32px 24px"><div class="empty-icon">📋</div><div class="empty-title">Nenhuma atividade ainda</div></div>'; return; }
+  const feed = recent.map(r=>{
+    const d2 = r.data||{};
+    const nm = r.patient_name||d2.nome||'Sem nome';
+    const initial = (nm.trim()[0]||'?').toUpperCase();
+    const mod = (r.modality||d2.modalidade||'').toLowerCase();
+    const badge = mod==='presencial'?'Presencial':'Online';
+    const badgeCls = mod==='presencial'?'badge-p':'badge-o';
+    const st = r.status||'nova';
+    const time = relativeTime(r.created_at);
+    return `<div class="home-act-item">
+      <div class="home-act-avatar">${esc(initial)}</div>
+      <div class="home-act-info">
+        <div class="home-act-name">${esc(nm)}</div>
+        <div class="home-act-sub"><span class="badge-mode ${badgeCls}">${badge}</span><span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></div>
+      </div>
+      <div class="home-act-time">${time}</div>
+    </div>`;
+  }).join('');
+  rc.innerHTML = `<div class="home-activity" style="padding:0 16px">${feed}</div>`;
+}
+
+function relativeTime(ts){
+  if(!ts) return '';
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff/60000);
+  if(mins < 2) return 'agora';
+  if(mins < 60) return `há ${mins} min`;
+  const hrs = Math.floor(mins/60);
+  if(hrs < 24) return `há ${hrs}h`;
+  const days = Math.floor(hrs/24);
+  if(days === 1) return 'ontem';
+  return `há ${days} dias`;
 }
 
 // ── FAB ──────────────────────────────────────────────────────
@@ -2526,10 +2590,19 @@ function toggleFab(){
   const menu = document.getElementById('fabMenu');
   const open = menu.classList.toggle('open');
   btn.classList.toggle('open', open);
+  if(open){
+    setTimeout(()=>document.addEventListener('click', _fabOutside), 10);
+  } else {
+    document.removeEventListener('click', _fabOutside);
+  }
+}
+function _fabOutside(e){
+  if(!document.getElementById('fabWrap')?.contains(e.target)) closeFab();
 }
 function closeFab(){
   document.getElementById('fabBtn')?.classList.remove('open');
   document.getElementById('fabMenu')?.classList.remove('open');
+  document.removeEventListener('click', _fabOutside);
 }
 
 // ── MISC ──
