@@ -2,3 +2,17 @@
 Thumbs.db
 *.log
 node_modules/
+
+.vercel
+
+# Configuração local com credenciais — NÃO commitar
+config.js
+
+# Arquivos temporários e de rascunho
+UsersmesquAppDataLocalTempanamnese_check.js
+config.html
+redesign*.txt
+fix*.txt
+c?.txt
+p?.txt
+prompt.txt.txt

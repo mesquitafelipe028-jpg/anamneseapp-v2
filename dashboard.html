@@ -1730,7 +1730,7 @@ async function createAval(){
     return;
   }
   closeNewAval();
-  const url = `/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&modality=${modality}`;
+  const url = `/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&professional_name=${encodeURIComponent(profData?.name||'')}&modality=${modality}`;
   window.location.href = url;
 }
 

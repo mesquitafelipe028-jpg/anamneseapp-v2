@@ -194,11 +194,12 @@ const sb   = (_SBU && _SBA && _SBU !== 'COLE_SUA_URL_AQUI')
            ? supabase.createClient(_SBU, _SBA) : null;
 
 const params       = new URLSearchParams(window.location.search);
-const _asmId       = params.get('assessment_id')   || null;
-const _patientName = params.get('patient_name')    || 'Paciente';
-const _profId      = params.get('professional_id') || null;
-const _modality    = params.get('modality')        || 'presencial';
-const _clientId    = params.get('client_id')       || null;
+const _asmId       = params.get('assessment_id')    || null;
+const _patientName = params.get('patient_name')     || 'Paciente';
+const _profId      = params.get('professional_id')  || null;
+const _profName    = params.get('professional_name')|| null;
+const _modality    = params.get('modality')         || 'presencial';
+const _clientId    = params.get('client_id')        || null;
 
 document.getElementById('hdrPatient').textContent = _patientName;
 
@@ -901,7 +902,7 @@ function gerarPDF(){
       doc.setDrawColor(...LIGHT); doc.setLineWidth(0.3);
       doc.line(ML,PH-12,PW-MR,PH-12);
       doc.setFontSize(7); doc.setTextColor(...MID); doc.setFont('helvetica','normal');
-      doc.text('LP Consultoria & Treinamento  |  Avaliação Física', PW/2, PH-7, {align:'center'});
+      doc.text((_profName||'AnamneseApp') + '  |  Avaliação Física', PW/2, PH-7, {align:'center'});
     }
     function checkY(n){ if(y+n>PH-18) newPage(); }
 
@@ -914,6 +915,7 @@ function gerarPDF(){
     doc.text(_patientName.toUpperCase(), PW/2, 62, {align:'center', charSpace:1});
     const hoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
     doc.text(hoje, PW/2, 72, {align:'center'});
+    if(_profName){ doc.setFontSize(11); doc.text(_profName, PW/2, 83, {align:'center'}); }
     doc.setFillColor(...OLIVE); doc.rect(0,PH-3,PW,3,'F');
 
     newPage();
