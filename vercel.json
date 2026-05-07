@@ -1,14 +1,15 @@
 {
+  "buildCommand": "node build.js",
   "cleanUrls": true,
   "trailingSlash": false,
   "routes": [
-    { "src": "/sw.js",       "dest": "/sw.js"           },
+    { "src": "/sw.js",        "dest": "/sw.js"          },
     { "src": "/manifest.json","dest": "/manifest.json"  },
-    { "src": "/icon.svg",    "dest": "/icon.svg"        },
-    { "src": "/config.js",   "dest": "/config.js"       },
-    { "src": "/avaliacao",   "dest": "/avaliacao.html"  },
-    { "src": "/anamnese",    "dest": "/anamnese.html"   },
-    { "src": "/dashboard",   "dest": "/dashboard.html"  },
-    { "src": "/",            "dest": "/index.html"      }
+    { "src": "/icon.svg",     "dest": "/icon.svg"       },
+    { "src": "/config.js",    "dest": "/config.js"      },
+    { "src": "/avaliacao",    "dest": "/avaliacao.html" },
+    { "src": "/anamnese",     "dest": "/anamnese.html"  },
+    { "src": "/dashboard",    "dest": "/dashboard.html" },
+    { "src": "/",             "dest": "/index.html"     }
   ]
 }

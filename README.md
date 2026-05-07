@@ -50,25 +50,32 @@ No painel do Supabase, crie um bucket chamado `assessment-photos` com acesso pú
 
 ## Deploy no Vercel
 
-### Configurar variáveis de ambiente
+O projeto usa um build script (`build.js`) que gera `config.js` automaticamente durante o deploy, injetando as chaves Supabase a partir das variáveis de ambiente do Vercel.
+
+### 1. Configurar variáveis de ambiente no Vercel
 
 No painel do Vercel, acesse seu projeto → **Settings → Environment Variables** e adicione:
 
-| Variável | Valor |
-|---|---|
-| (nenhuma) | — |
+| Variável | Valor | Ambientes |
+|---|---|---|
+| `SUPABASE_URL` | `https://seu-projeto.supabase.co` | Production, Preview, Development |
+| `SUPABASE_ANON` | `sua-anon-key` | Production, Preview, Development |
 
-> Como o projeto usa HTML estático puro (sem Node/bundler), as credenciais ficam em `config.js`. No Vercel, faça upload manual do arquivo via **Settings → Files** ou use a Vercel CLI.
+### 2. Deploy
 
-### Deploy via Vercel CLI
+O `vercel.json` já configura `"buildCommand": "node build.js"`. A cada deploy, o Vercel:
+
+1. Roda `node build.js`
+2. O script lê `SUPABASE_URL` e `SUPABASE_ANON` do ambiente
+3. Gera `config.js` a partir de `config.template.js`
+4. Serve os arquivos estáticos (incluindo o `config.js` gerado)
 
 ```bash
+# Deploy via Vercel CLI
 npm i -g vercel
 vercel login
 vercel --prod
 ```
-
-Antes do deploy, certifique-se de que `config.js` existe localmente com as credenciais corretas — ele não está no git.
 
 ### Rotas configuradas (vercel.json)
 
@@ -82,19 +89,21 @@ Antes do deploy, certifique-se de que `config.js` existe localmente com as crede
 ## Estrutura de arquivos
 
 ```
-├── index.html          — Landing page e auto-redirect
-├── dashboard.html      — Painel do profissional (SPA)
-├── anamnese.html       — Formulário de anamnese (público)
-├── avaliacao.html      — Avaliação física (6 módulos)
-├── sw.js               — Service Worker (PWA cache)
-├── manifest.json       — Metadados PWA
-├── icon.svg            — Ícone da aplicação
-├── config.js           — Credenciais Supabase (NÃO commitar, criar localmente)
-├── config.example.js   — Template de configuração
-├── vercel.json         — Configuração de rotas
-├── schema.sql          — Schema principal (executar primeiro)
+├── index.html            — Landing page e auto-redirect
+├── dashboard.html        — Painel do profissional (SPA)
+├── anamnese.html         — Formulário de anamnese (público)
+├── avaliacao.html        — Avaliação física (6 módulos)
+├── sw.js                 — Service Worker (PWA cache)
+├── manifest.json         — Metadados PWA
+├── icon.svg              — Ícone da aplicação
+├── build.js              — Build script: gera config.js a partir de env vars
+├── config.template.js    — Template de config (placeholders __SUPABASE_URL__ etc.)
+├── config.example.js     — Exemplo de config para dev local
+├── config.js             — Gerado pelo build (gitignored — não commitar)
+├── vercel.json           — Rotas + buildCommand
+├── schema.sql            — Schema principal (executar primeiro)
 ├── avaliacoes_schema.sql — Schema de avaliações (executar segundo)
-└── clients_schema.sql  — Schema de clientes (executar terceiro)
+└── clients_schema.sql    — Schema de clientes (executar terceiro)
 ```
 
 ## Tecnologias
@@ -102,5 +111,5 @@ Antes do deploy, certifique-se de que `config.js` existe localmente com as crede
 - HTML + CSS + JavaScript puro (sem framework)
 - [Supabase](https://supabase.com) — autenticação, banco de dados PostgreSQL, storage
 - [jsPDF](https://github.com/parallax/jsPDF) — geração de PDF no browser
-- Vercel — hosting estático com rotas customizadas
+- Vercel — hosting estático com rotas customizadas e build script
 - PWA — Service Worker, manifest, installable
