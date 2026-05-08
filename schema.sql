@@ -30,11 +30,17 @@ create table if not exists anamneses (
 );
 
 -- Migração: adiciona colunas se a tabela já existir
-alter table anamneses add column if not exists status text not null default 'nova' check (status in ('nova','lida','arquivada'));
+alter table anamneses add column if not exists status text not null default 'nova';
 alter table anamneses add column if not exists notes  text;
 alter table anamneses add column if not exists photos jsonb not null default '[]';
 -- wa_number em form_templates permite que pacientes leiam o número do profissional sem auth
 alter table form_templates add column if not exists wa_number text;
+
+-- Migração: garante que o check constraint de status inclui 'arquivada'
+-- (necessário se a tabela foi criada com versão antiga do schema)
+alter table anamneses drop constraint if exists anamneses_status_check;
+alter table anamneses add constraint anamneses_status_check
+  check (status in ('nova','lida','arquivada'));
 
 -- 3. SEGURANÇA (Row Level Security)
 alter table professionals enable row level security;
