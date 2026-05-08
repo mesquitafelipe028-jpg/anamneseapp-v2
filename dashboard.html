@@ -482,6 +482,30 @@ tr:hover td{background:var(--cream);}
 @media(max-width:768px){
   input,select,textarea{font-size:max(16px,1em) !important;}
 }
+
+/* ── VIEW SYSTEM ── */
+.view-container{animation:fIn .15s ease;padding-bottom:0;}
+@keyframes slideIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+.view-container{animation:slideIn .15s ease;}
+.view-header{position:sticky;top:calc(56px + env(safe-area-inset-top));z-index:40;background:var(--white);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 8px;gap:4px;}
+.view-header h1{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;}
+.btn-back{min-width:44px;min-height:44px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);border-radius:8px;flex-shrink:0;}
+.btn-back:hover{background:var(--cream);}
+.view-footer{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:40;}
+.view-footer .btn-save-profile{flex:0;white-space:nowrap;}
+.view-footer .btn-logout{flex:1;text-align:center;display:flex;align-items:center;justify-content:center;}
+@media(min-width:900px){
+  .view-header{top:0;}
+  .view-footer{left:240px;position:sticky;margin-top:24px;border-top:none;background:none;padding:0;}
+  .view-container{padding-bottom:0;}
+}
+/* ── AUTOCOMPLETE ── */
+.ac-wrap{position:relative;}
+.ac-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:200;max-height:200px;overflow-y:auto;}
+.ac-item{padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;transition:background .15s;gap:8px;}
+.ac-item:hover,.ac-item:focus{background:var(--cream);}
+.ac-item-name{color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ac-item-phone{font-size:11px;color:var(--muted);flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -542,6 +566,9 @@ tr:hover td{background:var(--cream);}
 
 <!-- CONTEÚDO PRINCIPAL -->
 <main class="app-main">
+
+  <!-- VIEW CONTAINER (views sobrepõem as section-panes) -->
+  <div id="viewContainer" class="view-container" style="display:none"></div>
 
   <!-- HOME -->
   <div class="section-pane active" id="pane-home">
@@ -626,8 +653,7 @@ tr:hover td{background:var(--cream);}
 
   <!-- CLIENTES -->
   <div class="section-pane" id="pane-clientes">
-    <!-- Lista -->
-    <div class="dash-inner client-list-view" id="clientListView">
+    <div class="dash-inner" id="clientListView">
       <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
         <div class="stat-card highlight">
           <div class="stat-val" id="statCliTotal">—</div>
@@ -652,30 +678,6 @@ tr:hover td{background:var(--cream);}
         </div>
       </div>
       <div id="clientContent"><div class="spinner-wrap"><div class="spin"></div>Carregando clientes…</div></div>
-    </div>
-    <!-- Perfil inline -->
-    <div class="dash-inner client-profile-view" id="clientProfileView">
-      <button class="cpv-back" onclick="hideClientProfile()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-        Clientes
-      </button>
-      <div class="cpv-header">
-        <div class="cpv-avatar" id="cpvAvatar">?</div>
-        <div>
-          <div class="cpv-name"  id="cpvName">—</div>
-          <div class="cpv-meta" id="cpvMeta">—</div>
-        </div>
-      </div>
-      <div class="cpv-tabs">
-        <button class="cpv-tab active" id="cpvTabAnam" onclick="switchClientTab('anam')">Anamneses</button>
-        <button class="cpv-tab"        id="cpvTabAval" onclick="switchClientTab('aval')">Avaliações</button>
-      </div>
-      <div class="cpv-tab-content active" id="cpvAnamContent"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
-      <div class="cpv-tab-content"        id="cpvAvalContent"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
-      <div class="cpv-actions-bar">
-        <button class="btn-export" style="width:auto;padding:10px 16px" id="cpvLinkBtn">Enviar link anamnese</button>
-        <button class="btn-new-ficha" id="cpvAvalBtn">+ Nova avaliação</button>
-      </div>
     </div>
   </div>
 
@@ -843,160 +845,7 @@ tr:hover td{background:var(--cream);}
 <!-- TOAST -->
 <div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg">Nova ficha!</span></div>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal" id="modalBox">
-    <div class="modal-hd">
-      <h3 id="modalTitle">Anamnese</h3>
-      <div class="modal-hd-right">
-        <button class="modal-close" onclick="closeModal()">✕</button>
-      </div>
-    </div>
-    <div class="modal-body" id="modalBody"></div>
-    <div class="modal-footer">
-      <button class="btn-delete" onclick="deleteAnamnese()">Excluir ficha</button>
-      <button class="btn-save-notes" onclick="saveNotes()">Salvar nota</button>
-    </div>
-  </div>
-</div>
-
-<!-- NOVA AVALIAÇÃO MODAL -->
-<div class="modal-overlay" id="newAvalOverlay" onclick="closeNewAval(event)">
-  <div class="modal">
-    <div class="modal-hd">
-      <h3>Nova avaliação</h3>
-      <div class="modal-hd-right"><button class="modal-close" onclick="closeNewAval()">✕</button></div>
-    </div>
-    <div class="modal-body">
-      <div class="pf">
-        <label>Nome do paciente <span style="color:var(--danger)">*</span></label>
-        <input type="text" id="aval_nome" autocomplete="name" placeholder="Nome completo">
-      </div>
-      <div class="pf">
-        <label>Data da avaliação</label>
-        <input type="date" id="aval_data">
-      </div>
-      <div class="pf">
-        <label>Modalidade</label>
-        <select id="aval_mode">
-          <option value="presencial">Atendimento Presencial</option>
-          <option value="online">Consultoria Online</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer" style="justify-content:flex-end">
-      <div class="profile-msg err" id="avalErrMsg" style="display:none;margin-right:12px;text-align:left"></div>
-      <button class="btn-save-profile" onclick="createAval()">Iniciar avaliação</button>
-    </div>
-  </div>
-</div>
-
-<!-- NOVO CLIENTE MODAL -->
-<div class="modal-overlay" id="newClientOverlay" onclick="closeNewClient(event)">
-  <div class="modal">
-    <div class="modal-hd">
-      <h3>Novo cliente</h3>
-      <div class="modal-hd-right"><button class="modal-close" onclick="closeNewClient()">✕</button></div>
-    </div>
-    <div class="modal-body">
-      <div class="pf">
-        <label>Nome <span style="color:var(--danger)">*</span></label>
-        <input type="text" id="nc_name" autocomplete="name" placeholder="Nome completo">
-      </div>
-      <div class="pf">
-        <label>Telefone / WhatsApp</label>
-        <input type="tel" id="nc_phone" autocomplete="tel" inputmode="tel" placeholder="(85) 99999-9999">
-      </div>
-      <div class="pf">
-        <label>E-mail</label>
-        <input type="email" id="nc_email" autocomplete="email" inputmode="email" placeholder="cliente@email.com">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="pf">
-          <label>Data de nascimento</label>
-          <input type="date" id="nc_dob">
-        </div>
-        <div class="pf">
-          <label>Sexo</label>
-          <select id="nc_sex">
-            <option value="">—</option>
-            <option value="M">Masculino</option>
-            <option value="F">Feminino</option>
-            <option value="outro">Outro</option>
-          </select>
-        </div>
-      </div>
-      <div class="pf">
-        <label>Objetivo</label>
-        <input type="text" id="nc_objetivo" placeholder="Ex: emagrecimento, hipertrofia…">
-      </div>
-      <div class="pf">
-        <label>Observações</label>
-        <textarea class="notes-area" id="nc_obs" placeholder="Notas sobre o cliente…" style="min-height:64px"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer" style="flex-direction:column;align-items:stretch;gap:8px">
-      <div class="profile-msg err" id="ncErrMsg" style="display:none"></div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
-        <button class="btn-save-profile" style="background:none;border:1.5px solid var(--olive);color:var(--olive)" onclick="saveClient(false)">Salvar</button>
-        <button class="btn-save-profile" onclick="saveClient(true)">Salvar e enviar link</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- PERFIL CLIENTE MODAL -->
-<div class="modal-overlay" id="clientProfileOverlay" onclick="closeClientProfile(event)">
-  <div class="modal">
-    <div class="modal-hd">
-      <h3 id="cpTitle">Perfil do cliente</h3>
-      <div class="modal-hd-right"><button class="modal-close" onclick="closeClientProfile()">✕</button></div>
-    </div>
-    <div class="modal-body" id="cpBody"></div>
-    <div class="modal-footer">
-      <button class="btn-export" style="width:auto;padding:10px 16px" onclick="copyClientAnamneseLink(document.getElementById('clientProfileOverlay').dataset.clientId)">Enviar link anamnese</button>
-      <button class="btn-new-ficha" onclick="createAvalForClient(document.getElementById('clientProfileOverlay').dataset.clientId, document.getElementById('clientProfileOverlay').dataset.clientName)">+ Nova avaliação</button>
-    </div>
-  </div>
-</div>
-
-<!-- NOVA FICHA MODAL -->
-<div class="modal-overlay" id="newOverlay" onclick="closeNew(event)">
-  <div class="modal">
-    <div class="modal-hd">
-      <h3>Nova ficha</h3>
-      <div class="modal-hd-right"><button class="modal-close" onclick="closeNew()">✕</button></div>
-    </div>
-    <div class="modal-body">
-      <div class="pf">
-        <label>Modalidade <span style="color:var(--danger)">*</span></label>
-        <select id="new_mode">
-          <option value="online">Consultoria Online</option>
-          <option value="presencial">Atendimento Presencial</option>
-        </select>
-      </div>
-      <div class="pf">
-        <label>Nome completo <span style="color:var(--danger)">*</span></label>
-        <input type="text" id="new_nome" autocomplete="name" placeholder="Nome do paciente">
-      </div>
-      <div class="pf">
-        <label>WhatsApp / Telefone</label>
-        <input type="tel" id="new_fone" autocomplete="tel" inputmode="tel" placeholder="(85) 99999-9999">
-      </div>
-      <div class="pf">
-        <label>Objetivo</label>
-        <input type="text" id="new_obj" placeholder="Ex: emagrecimento, hipertrofia…">
-      </div>
-      <div class="pf">
-        <label>Observações iniciais</label>
-        <textarea class="notes-area" id="new_obs" placeholder="Notas sobre o paciente…"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer" style="justify-content:flex-end">
-      <button class="btn-save-profile" onclick="createFicha()">Criar ficha</button>
-    </div>
-  </div>
-</div>
+<!-- Modais removidos — substituídos por views (sistema navigateTo) -->
 
 <script>
 // ── SUPABASE INIT ──
@@ -1022,6 +871,7 @@ let activeFilter = 'all';
 let activeStatusFilter = 'all';
 let currentPage = 1;
 const PAGE_SIZE = 20;
+let _currentSection = 'home';
 
 const STATUS_LABEL = {nova:'Nova', lida:'Lida', arquivada:'Arquivada'};
 const STATUS_CYCLE = {nova:'lida', lida:'arquivada', arquivada:'nova'};
@@ -1142,6 +992,8 @@ async function checkSchema(){
 // ── NAVEGAÇÃO ──
 function _cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 function setSection(s){
+  hideView();
+  _currentSection = s;
   ['home','fichas','clientes','avaliacoes','formulario','config'].forEach(id=>{
     document.getElementById('pane-'+id)?.classList.toggle('active', id===s);
     document.getElementById('nav'+_cap(id))?.classList.toggle('active', id===s);
@@ -1152,8 +1004,489 @@ function setSection(s){
   if(s==='clientes'   && !allClients.length) loadClients();
   if(s==='home')                             loadHomeSection();
 }
-// compat alias — algumas chamadas internas ainda podem usar o nome antigo
 function setDashTab(t){ setSection(t); }
+
+// ── VIEW SYSTEM ──────────────────────────────────────────────
+function navigateTo(view, params={}){
+  const sp = new URLSearchParams({view, ...params});
+  history.pushState({view, params, section:_currentSection}, '', '/dashboard?'+sp.toString());
+  _renderView(view, params);
+}
+function goBack(){
+  if(history.state && history.length > 1) history.back();
+  else { hideView(); setSection(_currentSection||'home'); history.replaceState(null,'','/dashboard'); }
+}
+function getViewFromURL(){
+  return new URLSearchParams(location.search).get('view');
+}
+function hideView(){
+  const vc = document.getElementById('viewContainer');
+  if(vc) vc.style.display = 'none';
+}
+window.addEventListener('popstate', e=>{
+  const st = e.state;
+  if(st?.view){
+    _renderView(st.view, st.params||{});
+  } else {
+    hideView();
+    ['home','fichas','clientes','avaliacoes','formulario','config'].forEach(id=>{
+      document.getElementById('pane-'+id)?.classList.remove('active');
+      document.getElementById('nav'+_cap(id))?.classList.remove('active');
+      document.getElementById('bnav'+_cap(id))?.classList.remove('active');
+    });
+    const sec = st?.section || _currentSection || 'home';
+    setSection(sec);
+  }
+});
+function _renderView(view, params={}){
+  document.querySelectorAll('.section-pane').forEach(p=>p.classList.remove('active'));
+  const vc = document.getElementById('viewContainer');
+  vc.style.display = 'block';
+  vc.innerHTML = '<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
+  switch(view){
+    case 'novo-cliente':   renderViewNovoCliente(params); break;
+    case 'editar-cliente': renderViewEditarCliente(params); break;
+    case 'cliente':        renderViewCliente(params); break;
+    case 'nova-ficha':     renderViewNovaFicha(params); break;
+    case 'ficha':          renderViewFicha(params); break;
+    case 'nova-avaliacao': renderViewNovaAvaliacao(params); break;
+    default: goBack();
+  }
+}
+function _vHd(title, rightBtn=''){
+  return `<div class="view-header">
+    <button class="btn-back" onclick="goBack()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <h1>${esc(title)}</h1>${rightBtn}
+  </div>`;
+}
+function _vFooter(...btns){
+  return `<div class="view-footer">${btns.join('')}</div>`;
+}
+
+// ── VIEW: NOVO CLIENTE ─────────────────────────────────────────
+function renderViewNovoCliente(params={}){
+  const vc = document.getElementById('viewContainer');
+  vc.innerHTML = _vHd('Novo cliente') + `
+  <div class="dash-inner" style="padding-bottom:90px">
+    <div class="pf"><label>Nome <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="vc_name" autocomplete="name" placeholder="Nome completo">
+    </div>
+    <div class="pf"><label>Telefone / WhatsApp</label>
+      <input type="tel" id="vc_phone" autocomplete="tel" inputmode="tel" placeholder="(85) 99999-9999">
+    </div>
+    <div class="pf"><label>E-mail</label>
+      <input type="email" id="vc_email" autocomplete="email" inputmode="email" placeholder="cliente@email.com">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="pf"><label>Data de nascimento</label><input type="date" id="vc_dob"></div>
+      <div class="pf"><label>Sexo</label>
+        <select id="vc_sex"><option value="">—</option><option value="M">Masculino</option><option value="F">Feminino</option><option value="outro">Outro</option></select>
+      </div>
+    </div>
+    <div class="pf"><label>Objetivo</label>
+      <input type="text" id="vc_objetivo" placeholder="Ex: emagrecimento, hipertrofia…">
+    </div>
+    <div class="pf"><label>Observações</label>
+      <textarea class="notes-area" id="vc_obs" placeholder="Notas sobre o cliente…" style="min-height:64px"></textarea>
+    </div>
+    <div class="profile-msg err" id="vcErrMsg" style="display:none;margin-top:8px"></div>
+  </div>` +
+  _vFooter(
+    `<button class="btn-logout" onclick="goBack()">Cancelar</button>`,
+    `<button class="btn-save-profile" style="background:none;border:1.5px solid var(--olive);color:var(--olive)" onclick="saveClientFromView(false)">Salvar</button>`,
+    `<button class="btn-save-profile" onclick="saveClientFromView(true)">Salvar e enviar link</button>`
+  );
+  setTimeout(()=>document.getElementById('vc_name')?.focus(), 100);
+}
+async function saveClientFromView(sendLink=false){
+  const name = document.getElementById('vc_name')?.value.trim()||'';
+  const errEl = document.getElementById('vcErrMsg');
+  if(errEl) errEl.style.display='none';
+  if(!name){ _showVcErr('Nome é obrigatório.'); return; }
+  if(!profId){ _showVcErr('Profissional não carregado — recarregue a página.'); return; }
+  const payload = {
+    professional_id: profId, name,
+    phone:       document.getElementById('vc_phone')?.value.trim()||null,
+    email:       document.getElementById('vc_email')?.value.trim()||null,
+    dob:         document.getElementById('vc_dob')?.value||null,
+    sex:         document.getElementById('vc_sex')?.value||null,
+    objetivo:    document.getElementById('vc_objetivo')?.value.trim()||null,
+    observacoes: document.getElementById('vc_obs')?.value.trim()||null
+  };
+  const {data, error} = await sb.from('clients').insert(payload).select().single();
+  if(error){
+    const hint = error.code==='42P01'?' — rode clients_schema.sql':error.code==='42703'?' — coluna ausente':'';
+    _showVcErr('Erro '+error.code+': '+error.message+hint); return;
+  }
+  allClients.push({...data, total_anamneses:0, total_avaliacoes:0});
+  allClients.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+  updateCliStats(); renderClients(allClients);
+  if(sendLink){
+    const link = `${location.origin}/anamnese?pid=${profId}&client_id=${data.id}`;
+    navigator.clipboard.writeText(link).then(()=>showToast('Cliente criado e link copiado!'));
+  } else { showToast('Cliente criado!'); }
+  navigateTo('cliente',{id:data.id});
+}
+function _showVcErr(msg){ const el=document.getElementById('vcErrMsg'); if(el){el.textContent=msg;el.style.display='block';} else showToast(msg); }
+
+// ── VIEW: EDITAR CLIENTE ───────────────────────────────────────
+async function renderViewEditarCliente(params={}){
+  const clientId = params.id;
+  let client = allClients.find(c=>c.id===clientId);
+  if(!client){
+    const {data} = await sb.from('clients').select('*').eq('id',clientId).maybeSingle();
+    client = data;
+  }
+  if(!client){ goBack(); return; }
+  const vc = document.getElementById('viewContainer');
+  const sel=(v,opt)=>opt===v?' selected':'';
+  vc.innerHTML = _vHd('Editar cliente') + `
+  <div class="dash-inner" style="padding-bottom:90px">
+    <div class="pf"><label>Nome <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="vc_name" value="${esc(client.name)}" autocomplete="name">
+    </div>
+    <div class="pf"><label>Telefone / WhatsApp</label>
+      <input type="tel" id="vc_phone" value="${esc(client.phone||'')}" inputmode="tel">
+    </div>
+    <div class="pf"><label>E-mail</label>
+      <input type="email" id="vc_email" value="${esc(client.email||'')}" inputmode="email">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="pf"><label>Data de nascimento</label><input type="date" id="vc_dob" value="${client.dob||''}"></div>
+      <div class="pf"><label>Sexo</label>
+        <select id="vc_sex"><option value="">—</option><option value="M"${sel(client.sex,'M')}>Masculino</option><option value="F"${sel(client.sex,'F')}>Feminino</option><option value="outro"${sel(client.sex,'outro')}>Outro</option></select>
+      </div>
+    </div>
+    <div class="pf"><label>Objetivo</label>
+      <input type="text" id="vc_objetivo" value="${esc(client.objetivo||'')}">
+    </div>
+    <div class="pf"><label>Observações</label>
+      <textarea class="notes-area" id="vc_obs">${esc(client.observacoes||'')}</textarea>
+    </div>
+    <div class="profile-msg err" id="vcErrMsg" style="display:none;margin-top:8px"></div>
+    <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
+      <button class="btn-danger-logout" onclick="deleteClientFromView('${clientId}')">Excluir cliente</button>
+    </div>
+  </div>` +
+  _vFooter(
+    `<button class="btn-logout" onclick="goBack()">Cancelar</button>`,
+    `<button class="btn-save-profile" onclick="updateClientFromView('${clientId}')">Salvar alterações</button>`
+  );
+}
+async function updateClientFromView(clientId){
+  const name = document.getElementById('vc_name')?.value.trim()||'';
+  if(!name){ _showVcErr('Nome é obrigatório.'); return; }
+  const payload = {
+    name,
+    phone:       document.getElementById('vc_phone')?.value.trim()||null,
+    email:       document.getElementById('vc_email')?.value.trim()||null,
+    dob:         document.getElementById('vc_dob')?.value||null,
+    sex:         document.getElementById('vc_sex')?.value||null,
+    objetivo:    document.getElementById('vc_objetivo')?.value.trim()||null,
+    observacoes: document.getElementById('vc_obs')?.value.trim()||null
+  };
+  const {error} = await sb.from('clients').update(payload).eq('id',clientId);
+  if(error){ _showVcErr('Erro: '+error.message); return; }
+  const idx = allClients.findIndex(c=>c.id===clientId);
+  if(idx>=0) Object.assign(allClients[idx], payload);
+  showToast('Dados atualizados!');
+  goBack();
+}
+async function deleteClientFromView(clientId){
+  if(!confirm('Excluir este cliente? Esta ação não pode ser desfeita.')) return;
+  const {error} = await sb.from('clients').delete().eq('id',clientId);
+  if(error){ showToast('Erro: '+error.message); return; }
+  allClients = allClients.filter(c=>c.id!==clientId);
+  updateCliStats(); renderClients(allClients);
+  showToast('Cliente excluído.');
+  history.go(-2);
+}
+
+// ── VIEW: PERFIL DO CLIENTE ────────────────────────────────────
+async function renderViewCliente(params={}){
+  const clientId = params.id;
+  if(!clientId){ goBack(); return; }
+  let client = allClients.find(c=>c.id===clientId);
+  if(!client && profId){
+    const {data} = await sb.from('clients').select('*').eq('id',clientId).maybeSingle();
+    if(data){ client={...data,total_anamneses:0,total_avaliacoes:0}; allClients.push(client); }
+  }
+  if(!client){ showToast('Cliente não encontrado.'); goBack(); return; }
+  const vc = document.getElementById('viewContainer');
+  const ini = _cliInitial(client.name);
+  const meta = [client.phone,client.email,client.objetivo].filter(Boolean).map(esc).join(' · ')||'Sem informações adicionais';
+  vc.innerHTML = _vHd(client.name,
+    `<button class="btn-view" style="margin-left:auto;white-space:nowrap" onclick="navigateTo('editar-cliente',{id:'${clientId}'})">Editar</button>`
+  ) + `
+  <div class="dash-inner">
+    <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border);flex-wrap:wrap">
+      <div class="cpv-avatar">${esc(ini)}</div>
+      <div style="min-width:0">
+        <div class="cpv-name">${esc(client.name)}</div>
+        <div class="cpv-meta">${meta}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px">
+      <button class="btn-export" style="width:auto;padding:10px 16px" onclick="copyClientAnamneseLink('${clientId}')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Enviar link anamnese
+      </button>
+      <button class="btn-new-ficha" onclick="navigateTo('nova-avaliacao',{clientId:'${clientId}',clientName:'${esc(client.name).replace(/'/g,"\\'")}' })">+ Nova avaliação</button>
+    </div>
+    <div class="cpv-tabs" id="cliViewTabs" style="margin-bottom:16px">
+      <button class="cpv-tab active" onclick="switchCliViewTab('anam')">Anamneses</button>
+      <button class="cpv-tab"        onclick="switchCliViewTab('aval')">Avaliações</button>
+    </div>
+    <div id="cliTabAnam"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
+    <div id="cliTabAval" style="display:none"></div>
+  </div>`;
+  const [anamRes, avalRes] = await Promise.all([
+    sb.from('anamneses').select('id,patient_name,status,mode,created_at').eq('client_id',clientId).order('created_at',{ascending:false}),
+    sb.from('assessments').select('id,patient_name,status,modality,created_at').eq('client_id',clientId).order('created_at',{ascending:false})
+  ]);
+  const anams = anamRes.data||[];
+  const avals = avalRes.data||[];
+  const aHtml = anams.length ? anams.map(a=>{
+    const st=a.status||'nova';
+    return `<div class="cpv-record">
+      <div class="cpv-record-info">
+        <div class="cpv-record-main">${esc(a.patient_name||client.name)}</div>
+        <div class="cpv-record-sub">${new Date(a.created_at).toLocaleDateString('pt-BR')} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></div>
+      </div>
+      <button class="btn-view" onclick="navigateTo('ficha',{id:'${a.id}'})">Abrir</button>
+    </div>`;
+  }).join('')
+  : `<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Nenhuma anamnese vinculada.</div>
+     <button class="btn-new-ficha" style="margin-top:12px" onclick="copyClientAnamneseLink('${clientId}')">Enviar link</button></div>`;
+  const vHtml = avals.length ? avals.map(av=>{
+    const url=`/avaliacao?assessment_id=${av.id}&patient_name=${encodeURIComponent(av.patient_name||client.name)}&professional_id=${profId||''}&professional_name=${encodeURIComponent(profData?.name||'')}&modality=${av.modality||'presencial'}&client_id=${clientId}`;
+    const st=av.status==='concluida'?'<span class="badge-cli badge-cli-av">Concluída</span>':'<span class="badge-cli badge-cli-a">Em andamento</span>';
+    return `<div class="cpv-record">
+      <div class="cpv-record-info">
+        <div class="cpv-record-main">${esc(av.patient_name||client.name)}</div>
+        <div class="cpv-record-sub">${new Date(av.created_at).toLocaleDateString('pt-BR')} · ${av.modality||'presencial'} · ${st}</div>
+      </div>
+      <button class="btn-view" onclick="location.href='${url}'">${av.status==='concluida'?'Ver':'Continuar'}</button>
+    </div>`;
+  }).join('')
+  : `<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Nenhuma avaliação vinculada.</div>
+     <button class="btn-new-ficha" style="margin-top:12px" onclick="navigateTo('nova-avaliacao',{clientId:'${clientId}',clientName:'${esc(client.name).replace(/'/g,"\\'")}' })">Nova avaliação</button></div>`;
+  document.getElementById('cliTabAnam').innerHTML = aHtml;
+  document.getElementById('cliTabAval').innerHTML = vHtml;
+}
+function switchCliViewTab(tab){
+  document.querySelectorAll('#cliViewTabs .cpv-tab').forEach((b,i)=>{
+    b.classList.toggle('active',(i===0&&tab==='anam')||(i===1&&tab==='aval'));
+  });
+  document.getElementById('cliTabAnam').style.display = tab==='anam'?'':'none';
+  document.getElementById('cliTabAval').style.display = tab==='aval'?'':'none';
+}
+
+// ── VIEW: NOVA FICHA ───────────────────────────────────────────
+function renderViewNovaFicha(params={}){
+  const vc = document.getElementById('viewContainer');
+  vc.innerHTML = _vHd('Nova ficha') + `
+  <div class="dash-inner" style="padding-bottom:90px">
+    <div class="pf"><label>Modalidade <span style="color:var(--danger)">*</span></label>
+      <select id="vf_mode">
+        <option value="online">Consultoria Online</option>
+        <option value="presencial">Atendimento Presencial</option>
+      </select>
+    </div>
+    <div class="pf ac-wrap"><label>Nome do paciente <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="vf_nome" autocomplete="off" placeholder="Nome completo" oninput="_acFilter(this.value,'vf_ac','vf_nome','vf_fone','vf_cliId')">
+      <div id="vf_ac" class="ac-dropdown" style="display:none"></div>
+    </div>
+    <div class="pf"><label>Telefone</label>
+      <input type="tel" id="vf_fone" inputmode="tel" placeholder="(85) 99999-9999">
+    </div>
+    <div class="pf"><label>Objetivo</label>
+      <input type="text" id="vf_obj" placeholder="Ex: emagrecimento, hipertrofia…">
+    </div>
+    <div class="pf"><label>Observações iniciais</label>
+      <textarea class="notes-area" id="vf_obs" placeholder="Notas sobre o paciente…"></textarea>
+    </div>
+    <input type="hidden" id="vf_cliId">
+    <div class="profile-msg err" id="vfErrMsg" style="display:none;margin-top:8px"></div>
+  </div>` +
+  _vFooter(
+    `<button class="btn-logout" onclick="goBack()">Cancelar</button>`,
+    `<button class="btn-save-profile" onclick="createFichaFromView()">Criar ficha</button>`
+  );
+  setTimeout(()=>document.getElementById('vf_nome')?.focus(), 100);
+}
+async function createFichaFromView(){
+  const nome = document.getElementById('vf_nome')?.value.trim()||'';
+  const errEl = document.getElementById('vfErrMsg');
+  if(errEl) errEl.style.display='none';
+  if(!nome){ if(errEl){errEl.textContent='Nome é obrigatório.';errEl.style.display='block';} else showToast('Nome é obrigatório.'); return; }
+  const newData = {
+    nome,
+    fone: document.getElementById('vf_fone')?.value.trim(),
+    obj:  document.getElementById('vf_obj')?.value.trim(),
+    obs:  document.getElementById('vf_obs')?.value.trim(),
+  };
+  const cliId = document.getElementById('vf_cliId')?.value||null;
+  const payload = {
+    professional_id: profId,
+    mode:          document.getElementById('vf_mode')?.value||'online',
+    patient_name:  nome,
+    patient_phone: newData.fone||null,
+    data:          newData,
+    status:        'nova'
+  };
+  if(cliId) payload.client_id = cliId;
+  const {data, error} = await sb.from('anamneses').insert(payload).select().single();
+  if(error){ const msg='Erro: '+error.message; if(errEl){errEl.textContent=msg;errEl.style.display='block';} else showToast(msg); return; }
+  allRows.unshift(data); updateStats(allRows); applyFilters();
+  showToast('Ficha criada!');
+  navigateTo('ficha',{id:data.id});
+}
+
+// ── VIEW: DETALHE DA FICHA ─────────────────────────────────────
+function renderViewFicha(params={}){
+  const fichaId = params.id;
+  const row = allRows.find(r=>r.id===fichaId);
+  if(!row){ goBack(); return; }
+  currentModalId = fichaId;
+  const d=row.data||{};
+  const dt=new Date(row.created_at).toLocaleString('pt-BR');
+  const st=row.status||'nova';
+  const vc = document.getElementById('viewContainer');
+  let html = _vHd(row.patient_name||d.nome||'Anamnese');
+  html += `<div class="dash-inner">`;
+  // Editar dados básicos
+  html += `<div class="modal-block">
+    <div class="modal-block-title">Dados básicos</div>
+    <div class="pf" style="margin-bottom:10px"><label>Nome</label>
+      <input type="text" id="editNome" value="${esc(row.patient_name||d.nome||'')}" autocomplete="name" style="background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;width:100%;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;min-height:44px;color:var(--ink);transition:border-color .2s" onfocus="this.style.borderColor='var(--olive)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <div class="pf" style="margin-bottom:12px"><label>Telefone</label>
+      <input type="tel" id="editFone" value="${esc(row.patient_phone||d.fone||'')}" inputmode="tel" style="background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;width:100%;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;min-height:44px;color:var(--ink);transition:border-color .2s" onfocus="this.style.borderColor='var(--olive)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <button onclick="saveEdit()" style="padding:9px 18px;background:var(--olive);color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;min-height:44px">Salvar edição</button>
+  </div>`;
+  if(row.client_id){
+    html+=`<div style="margin-bottom:12px">
+      <button class="btn-view" onclick="navigateTo('cliente',{id:'${row.client_id}'})">Ver perfil do cliente</button>
+    </div>`;
+  }
+  html+=`<div style="font-size:12px;color:#9a9588;margin-bottom:14px">${row.mode==='online'?'Consultoria Online':'Presencial'} · ${dt}</div>`;
+  html+=`<div class="modal-block">
+    <div class="modal-block-title">Status da ficha</div>
+    <div class="status-row">
+      <button class="status-opt ${st==='nova'?'active-nova':''}"      onclick="setModalStatus('nova')">Nova</button>
+      <button class="status-opt ${st==='lida'?'active-lida':''}"      onclick="setModalStatus('lida')">Lida</button>
+      <button class="status-opt ${st==='arquivada'?'active-arquivada':''}" onclick="setModalStatus('arquivada')">Arquivada</button>
+    </div>
+  </div>`;
+  const entries=Object.entries(d).filter(([k,v])=>v&&v!=='—');
+  if(entries.length){
+    html+='<div class="modal-block"><div class="modal-block-title">Dados da anamnese</div>';
+    entries.forEach(([k,v])=>{
+      html+=`<div class="modal-row"><span class="mk">${LABELS[k]||k}</span><span class="mv">${esc(String(v))}</span></div>`;
+    });
+    html+='</div>';
+  }
+  html+=`<div class="modal-block">
+    <div class="modal-block-title">Anotações internas</div>
+    <textarea class="notes-area" id="modalNotes" placeholder="Adicione observações sobre este paciente…">${esc(row.notes||'')}</textarea>
+    <button class="btn-save-notes" style="margin-top:10px" onclick="saveNotes()">Salvar nota</button>
+  </div>`;
+  html+=`<div class="modal-block">
+    <div class="modal-block-title">Fotos do paciente</div>
+    <div id="photosGrid">${buildPhotosGrid(row.photos||[])}</div>
+    <div class="upload-zone" style="margin-top:10px">
+      <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotoUpload(this)">
+      <div class="upload-zone-label">Clique ou arraste fotos aqui</div>
+      <div class="upload-zone-sub">JPG, PNG, WEBP · múltiplas fotos</div>
+    </div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-lbl" id="progressLbl">Enviando…</div>
+    </div>
+    <div class="upload-err" id="uploadErr"></div>
+  </div>
+  <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border);margin-bottom:24px">
+    <button class="btn-danger-logout" onclick="deleteAnamnese()">Excluir ficha</button>
+  </div>
+  </div>`;
+  vc.innerHTML = html;
+}
+
+// ── VIEW: NOVA AVALIAÇÃO ───────────────────────────────────────
+function renderViewNovaAvaliacao(params={}){
+  const clientId = params.clientId||null;
+  const clientName = params.clientName||'';
+  _newAvalClientId = clientId;
+  const today = new Date().toISOString().slice(0,10);
+  const vc = document.getElementById('viewContainer');
+  vc.innerHTML = _vHd('Nova avaliação') + `
+  <div class="dash-inner" style="padding-bottom:90px">
+    <div class="pf ac-wrap"><label>Nome do paciente <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="va_nome" value="${esc(clientName)}" autocomplete="off" oninput="_acFilter(this.value,'va_ac','va_nome','','va_cliId')">
+      <div id="va_ac" class="ac-dropdown" style="display:none"></div>
+    </div>
+    <div class="pf"><label>Data</label><input type="date" id="va_data" value="${today}"></div>
+    <div class="pf"><label>Modalidade</label>
+      <select id="va_mode">
+        <option value="presencial">Atendimento Presencial</option>
+        <option value="online">Consultoria Online</option>
+      </select>
+    </div>
+    <input type="hidden" id="va_cliId" value="${clientId||''}">
+    <div class="profile-msg err" id="vaErrMsg" style="display:none;margin-top:8px"></div>
+  </div>` +
+  _vFooter(
+    `<button class="btn-logout" onclick="goBack()">Cancelar</button>`,
+    `<button class="btn-save-profile" onclick="createAvalFromView()">Iniciar avaliação</button>`
+  );
+  if(!clientName) setTimeout(()=>document.getElementById('va_nome')?.focus(), 100);
+}
+async function createAvalFromView(){
+  const nome = document.getElementById('va_nome')?.value.trim()||'';
+  const errEl = document.getElementById('vaErrMsg');
+  if(errEl) errEl.style.display='none';
+  if(!nome){ if(errEl){errEl.textContent='Nome é obrigatório.';errEl.style.display='block';} else showToast('Nome é obrigatório.'); return; }
+  if(!profId){ if(errEl){errEl.textContent='Profissional não carregado — recarregue a página.';errEl.style.display='block';} return; }
+  const cliId = document.getElementById('va_cliId')?.value||null;
+  _newAvalClientId = cliId||_newAvalClientId||null;
+  const modality = document.getElementById('va_mode')?.value||'presencial';
+  const insert = { professional_id:profId, patient_name:nome, modality, status:'em_andamento' };
+  if(_newAvalClientId) insert.client_id = _newAvalClientId;
+  let {data, error} = await sb.from('assessments').insert(insert).select('id').single();
+  if(error&&(error.code==='42703'||error.code==='PGRST204')&&insert.client_id){
+    delete insert.client_id;
+    ({data,error}=await sb.from('assessments').insert(insert).select('id').single());
+  }
+  if(error){
+    const hint=error.code==='42703'?' — rode avaliacoes_schema.sql':error.code==='42P01'?' — rode avaliacoes_schema.sql':'';
+    if(errEl){errEl.textContent='Erro '+error.code+': '+error.message+hint;errEl.style.display='block';} else showToast('Erro: '+error.message);
+    return;
+  }
+  const url=`/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&professional_name=${encodeURIComponent(profData?.name||'')}&modality=${modality}${_newAvalClientId?'&client_id='+_newAvalClientId:''}`;
+  window.location.href = url;
+}
+
+// ── AUTOCOMPLETE DE CLIENTES ───────────────────────────────────
+function _acFilter(query, acId, nameId, phoneId, cliId){
+  const ac = document.getElementById(acId);
+  if(!ac) return;
+  if(!query||!query.trim()){ ac.style.display='none'; return; }
+  const q = query.toLowerCase().trim();
+  const matches = allClients.filter(c=>c.name.toLowerCase().includes(q)||(c.phone||'').includes(q)).slice(0,7);
+  if(!matches.length){ ac.style.display='none'; return; }
+  ac.innerHTML = matches.map(c=>`<div class="ac-item" onmousedown="_acSelect(event,'${c.id}','${esc(c.name).replace(/'/g,"\\'")}','${esc(c.phone||'').replace(/'/g,"\\'")}','${nameId}','${phoneId}','${cliId}','${acId}')">
+    <span class="ac-item-name">${esc(c.name)}</span>${c.phone?`<span class="ac-item-phone">${esc(c.phone)}</span>`:''}
+  </div>`).join('');
+  ac.style.display='block';
+}
+function _acSelect(e, clientId, name, phone, nameId, phoneId, cliId, acId){
+  e.preventDefault();
+  const nameEl=document.getElementById(nameId); if(nameEl) nameEl.value=name;
+  const phoneEl=document.getElementById(phoneId); if(phoneEl&&phone) phoneEl.value=phone;
+  const cliEl=document.getElementById(cliId); if(cliEl) cliEl.value=clientId;
+  const ac=document.getElementById(acId); if(ac) ac.style.display='none';
+}
 
 // ── FORM EDITOR ──
 // Definição completa de todos os blocos e campos padrão
@@ -1685,19 +2018,9 @@ function renderAvalEmpty(){
 }
 
 function openNewAval(clientId, clientName){
-  _newAvalClientId = clientId || null;
-  const today = new Date().toISOString().slice(0,10);
-  document.getElementById('aval_data').value = today;
-  document.getElementById('aval_nome').value = clientName || '';
-  document.getElementById('newAvalOverlay').classList.add('open');
-  setTimeout(()=>{ if(!clientName) document.getElementById('aval_nome').focus(); }, 100);
+  navigateTo('nova-avaliacao', {clientId:clientId||'', clientName:clientName||''});
 }
-function closeNewAval(e){
-  if(!e || e.target===document.getElementById('newAvalOverlay')){
-    document.getElementById('newAvalOverlay').classList.remove('open');
-    _newAvalClientId = null;
-  }
-}
+function closeNewAval(){ goBack(); }
 async function createAval(){
   const nome = document.getElementById('aval_nome')?.value.trim()||'';
   _hideErr('avalErrMsg');
@@ -1811,6 +2134,9 @@ const LABELS = {
 };
 
 function openModal(id){
+  navigateTo('ficha',{id});
+}
+function _openModalLegacy(id){
   const row = allRows.find(r=>r.id===id);
   if(!row) return;
   currentModalId = id;
@@ -1897,12 +2223,7 @@ function buildPhotosGrid(photos){
   ).join('') + '</div>';
 }
 
-function closeModal(e){
-  if(!e||e.target===document.getElementById('modalOverlay')){
-    document.getElementById('modalOverlay').classList.remove('open');
-    currentModalId = null;
-  }
-}
+function closeModal(){ goBack(); }
 
 // ── STATUS NO MODAL ──
 async function setModalStatus(st){
@@ -2010,7 +2331,7 @@ function deleteAnamnese(){
     const {error} = await sb.from('anamneses').delete().eq('id',currentModalId);
     if(error){ console.error('[deleteAnamnese]',error); showToast('Erro ao excluir: '+error.message); return; }
     allRows = allRows.filter(r=>r.id!==currentModalId);
-    updateStats(allRows); applyFilters(); closeModal();
+    updateStats(allRows); applyFilters(); goBack();
     showToast('Ficha excluída.');
   });
 }
@@ -2033,15 +2354,7 @@ async function saveEdit(){
 }
 
 // ── CRIAR FICHA ──
-function openNew(){
-  ['new_nome','new_fone','new_obj','new_obs'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.value = '';
-  });
-  document.getElementById('new_mode').value = 'online';
-  document.getElementById('newOverlay').classList.add('open');
-  setTimeout(()=>document.getElementById('new_nome').focus(), 120);
-}
+function openNew(){ navigateTo('nova-ficha'); }
 
 async function createFicha(){
   const nome = document.getElementById('new_nome').value.trim();
@@ -2304,19 +2617,8 @@ function renderCliEmpty(){
     </div>`;
 }
 
-function openNewClient(){
-  ['nc_name','nc_phone','nc_email','nc_objetivo','nc_obs'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  document.getElementById('nc_dob').value='';
-  document.getElementById('nc_sex').value='';
-  document.getElementById('newClientOverlay').classList.add('open');
-  setTimeout(()=>document.getElementById('nc_name').focus(), 100);
-}
-function closeNewClient(e){
-  if(!e||e.target===document.getElementById('newClientOverlay'))
-    document.getElementById('newClientOverlay').classList.remove('open');
-}
+function openNewClient(){ navigateTo('novo-cliente'); }
+function closeNewClient(){ goBack(); }
 function _showErr(id, msg){ const el=document.getElementById(id); if(el){el.textContent=msg;el.style.display='block';} else showToast(msg); }
 function _hideErr(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
 async function saveClient(sendLink=false){
@@ -2369,110 +2671,11 @@ function switchClientTab(tab){
   document.getElementById('cpvAvalContent')?.classList.toggle('active', tab==='aval');
 }
 
-async function openClientProfile(clientId){
-  let client = allClients.find(c=>c.id===clientId);
-  if(!client && profId){
-    const {data} = await sb.from('clients').select('*').eq('id',clientId).maybeSingle();
-    if(data){
-      client={...data, total_anamneses:0, total_avaliacoes:0, ultima_anamnese:null, ultima_avaliacao:null};
-      allClients.push(client);
-    }
-  }
-  if(!client) return;
-
-  // Mostra view inline
-  document.getElementById('clientListView')?.classList.add('hidden');
-  const view = document.getElementById('clientProfileView');
-  view.classList.add('open');
-  switchClientTab('anam');
-
-  // Popula header
-  document.getElementById('cpvAvatar').textContent = _cliInitial(client.name);
-  document.getElementById('cpvName').textContent   = client.name;
-  const metaParts = [client.phone, client.email, client.objetivo].filter(Boolean);
-  document.getElementById('cpvMeta').textContent   = metaParts.join(' · ') || 'Sem informações adicionais';
-
-  // Botões de ação
-  const linkBtn = document.getElementById('cpvLinkBtn');
-  const avalBtn = document.getElementById('cpvAvalBtn');
-  if(linkBtn) linkBtn.onclick = ()=>copyClientAnamneseLink(clientId);
-  if(avalBtn) avalBtn.onclick = ()=>createAvalForClient(clientId, client.name);
-
-  // Também mantém compatibilidade com o overlay antigo
-  const overlay = document.getElementById('clientProfileOverlay');
-  if(overlay){ overlay.dataset.clientId=clientId; overlay.dataset.clientName=client.name; }
-
-  // Carrega dados
-  document.getElementById('cpvAnamContent').innerHTML = '<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
-  document.getElementById('cpvAvalContent').innerHTML = '<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
-
-  const [anamRes, avalRes] = await Promise.all([
-    sb.from('anamneses').select('id,patient_name,status,mode,created_at')
-      .eq('client_id', clientId).order('created_at', {ascending:false}),
-    sb.from('assessments').select('id,patient_name,status,modality,created_at')
-      .eq('client_id', clientId).order('created_at', {ascending:false})
-  ]);
-  const anams = anamRes.data || [];
-  const avals = avalRes.data || [];
-
-  // — Aba Anamneses —
-  let aHtml = '';
-  if(anams.length){
-    anams.forEach(a=>{
-      const st = a.status||'nova';
-      aHtml+=`<div class="cpv-record">
-        <div class="cpv-record-info">
-          <div class="cpv-record-main">${esc(a.patient_name||client.name)}</div>
-          <div class="cpv-record-sub">${new Date(a.created_at).toLocaleDateString('pt-BR')} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></div>
-        </div>
-        <button class="btn-view" onclick="openAnamneseFromClient('${a.id}')">Abrir</button>
-      </div>`;
-    });
-  } else {
-    aHtml=`<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Nenhuma anamnese vinculada a este cliente.</div></div>`;
-  }
-  // Edit form at bottom of anamneses tab
-  aHtml+=`<details style="margin-top:20px;border:1px solid var(--border);border-radius:10px;padding:0">
-    <summary style="padding:14px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);list-style:none">✏️ Editar dados do cliente</summary>
-    <div style="padding:16px">
-      <div class="pf"><label>Nome</label><input type="text" id="cp_name" value="${esc(client.name)}" autocomplete="name"></div>
-      <div class="pf"><label>Telefone</label><input type="tel" id="cp_phone" value="${esc(client.phone||'')}" inputmode="tel"></div>
-      <div class="pf"><label>E-mail</label><input type="email" id="cp_email" value="${esc(client.email||'')}" inputmode="email"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="pf"><label>Data de nascimento</label><input type="date" id="cp_dob" value="${client.dob||''}"></div>
-        <div class="pf"><label>Sexo</label><select id="cp_sex"><option value="">—</option><option value="M"${client.sex==='M'?' selected':''}>Masculino</option><option value="F"${client.sex==='F'?' selected':''}>Feminino</option><option value="outro"${client.sex==='outro'?' selected':''}>Outro</option></select></div>
-      </div>
-      <div class="pf"><label>Objetivo</label><input type="text" id="cp_objetivo" value="${esc(client.objetivo||'')}"></div>
-      <div class="pf"><label>Observações</label><textarea class="notes-area" id="cp_obs">${esc(client.observacoes||'')}</textarea></div>
-      <button class="btn-save-notes" onclick="saveClientProfile('${clientId}')">Salvar dados</button>
-      <div class="profile-msg" id="cpMsg"></div>
-    </div>
-  </details>`;
-  document.getElementById('cpvAnamContent').innerHTML = aHtml;
-
-  // — Aba Avaliações —
-  let vHtml = '';
-  if(avals.length){
-    avals.forEach(av=>{
-      const url=`/avaliacao?assessment_id=${av.id}&patient_name=${encodeURIComponent(av.patient_name||client.name)}&professional_id=${profId||''}&modality=${av.modality||'presencial'}`;
-      const st = av.status==='concluida' ? '<span class="badge-cli badge-cli-av">Concluída</span>' : '<span class="badge-cli badge-cli-a">Em andamento</span>';
-      vHtml+=`<div class="cpv-record">
-        <div class="cpv-record-info">
-          <div class="cpv-record-main">${esc(av.patient_name||client.name)}</div>
-          <div class="cpv-record-sub">${new Date(av.created_at).toLocaleDateString('pt-BR')} · ${av.modality||'presencial'} · ${st}</div>
-        </div>
-        <button class="btn-view" onclick="location.href='${url}'">Abrir</button>
-      </div>`;
-    });
-  } else {
-    vHtml=`<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Nenhuma avaliação vinculada a este cliente.</div></div>`;
-  }
-  document.getElementById('cpvAvalContent').innerHTML = vHtml;
-
-  // Mantém cpBody para compatibilidade (modal legado)
-  const cpBody = document.getElementById('cpBody');
-  if(cpBody) cpBody.innerHTML = '';
+function openClientProfile(clientId){
+  navigateTo('cliente',{id:clientId});
 }
+function closeClientProfile(){ goBack(); }
+function hideClientProfile(){ goBack(); }
 
 async function openAnamneseFromClient(id){
   let row = allRows.find(r=>r.id===id);
@@ -2481,7 +2684,7 @@ async function openAnamneseFromClient(id){
     if(data){ allRows.push(data); row=data; }
   }
   if(!row){ showToast('Ficha não encontrada.'); return; }
-  openModal(id);
+  navigateTo('ficha',{id});
 }
 
 async function saveClientProfile(clientId){
@@ -2627,12 +2830,19 @@ function copyLink(){
     if(error){ console.warn('[auto-login] getSession error:', error.message); return; }
     if(data?.session){
       await loadDashboard();
+      const urlView = getViewFromURL();
       const hash = window.location.hash.replace('#','');
-      if(hash && ['home','clientes','fichas','avaliacoes','formulario','config'].includes(hash)){
+      if(urlView){
+        const params = Object.fromEntries(new URLSearchParams(location.search));
+        delete params.view;
+        _renderView(urlView, params);
+      } else if(hash && ['home','clientes','fichas','avaliacoes','formulario','config'].includes(hash)){
         setSection(hash);
         if(hash==='avaliacoes'){ allAvals=[]; loadAvaliacoes(); }
+        history.replaceState(null,'','/dashboard');
+      } else {
+        history.replaceState(null,'','/dashboard');
       }
-      history.replaceState(null,'','/dashboard');
     }
   }catch(e){ console.error('[auto-login]', e); }
 })();
