@@ -514,7 +514,7 @@ tr:hover td{background:var(--cream);}
 .view-header h1{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;}
 .btn-back{min-width:44px;min-height:44px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);border-radius:8px;flex-shrink:0;}
 .btn-back:hover{background:var(--cream);}
-.view-footer{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:40;}
+.view-footer{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:260;}
 .view-footer .btn-save-profile{flex:0;white-space:nowrap;}
 .view-footer .btn-logout{flex:1;text-align:center;display:flex;align-items:center;justify-content:center;}
 @media(min-width:900px){
@@ -937,6 +937,7 @@ let profData = null;
 let allAvals = [];
 let allClients = [];
 let _newAvalClientId = null;
+let _newAvalReturnToClient = false;
 let currentModalId = null;
 let activeFilter = 'all';
 let activeStatusFilter = 'all';
@@ -1094,6 +1095,8 @@ function getViewFromURL(){
 function hideView(){
   const vc = document.getElementById('viewContainer');
   if(vc) vc.style.display = 'none';
+  const fabWrap = document.getElementById('fabWrap');
+  if(fabWrap && window.innerWidth < 900) fabWrap.style.display = 'flex';
 }
 window.addEventListener('popstate', e=>{
   const st = e.state;
@@ -1115,6 +1118,8 @@ function _renderView(view, params={}){
   const vc = document.getElementById('viewContainer');
   vc.style.display = 'block';
   vc.innerHTML = '<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
+  const fabWrap = document.getElementById('fabWrap');
+  if(fabWrap) fabWrap.style.display = 'none';
   switch(view){
     case 'novo-cliente':   renderViewNovoCliente(params); break;
     case 'editar-cliente': renderViewEditarCliente(params); break;
@@ -2036,6 +2041,8 @@ async function addCheckin(goalId,clientId){
 
 // ── VIEW: NOVA FICHA ───────────────────────────────────────────
 function renderViewNovaFicha(params={}){
+  const clientId = params.clientId||null;
+  const clientName = params.clientName||'';
   const vc = document.getElementById('viewContainer');
   vc.innerHTML = _vHd('Nova ficha') + `
   <div class="dash-inner" style="padding-bottom:90px">
@@ -2046,26 +2053,31 @@ function renderViewNovaFicha(params={}){
       </select>
     </div>
     <div class="pf ac-wrap"><label>Nome do paciente <span style="color:var(--danger)">*</span></label>
-      <input type="text" id="vf_nome" autocomplete="off" placeholder="Nome completo" oninput="_acFilter(this.value,'vf_ac','vf_nome','vf_fone','vf_cliId')">
+      <input type="text" id="vf_nome" value="${esc(clientName)}" autocomplete="off" placeholder="Nome completo" oninput="_acFilter(this.value,'vf_ac','vf_nome','vf_fone','vf_cliId')">
       <div id="vf_ac" class="ac-dropdown" style="display:none"></div>
     </div>
-    <div class="pf"><label>Telefone</label>
+    <div id="vf_nome_ctx" style="display:none;font-size:12px;color:var(--muted);margin-top:-8px;margin-bottom:8px;padding:0 2px"></div>
+    <div class="pf"><label>Telefone <span style="font-size:11px;color:var(--muted);font-weight:400">(opcional)</span></label>
       <input type="tel" id="vf_fone" inputmode="tel" placeholder="(85) 99999-9999">
     </div>
-    <div class="pf"><label>Objetivo</label>
+    <div class="pf"><label>Objetivo <span style="font-size:11px;color:var(--muted);font-weight:400">(opcional)</span></label>
       <input type="text" id="vf_obj" placeholder="Ex: emagrecimento, hipertrofia…">
     </div>
-    <div class="pf"><label>Observações iniciais</label>
+    <div class="pf"><label>Observações iniciais <span style="font-size:11px;color:var(--muted);font-weight:400">(opcional)</span></label>
       <textarea class="notes-area" id="vf_obs" placeholder="Notas sobre o paciente…"></textarea>
     </div>
-    <input type="hidden" id="vf_cliId">
+    <input type="hidden" id="vf_cliId" value="${clientId||''}">
     <div class="profile-msg err" id="vfErrMsg" style="display:none;margin-top:8px"></div>
   </div>` +
   _vFooter(
     `<button class="btn-logout" onclick="goBack()">Cancelar</button>`,
     `<button class="btn-save-profile" onclick="createFichaFromView()">Criar ficha</button>`
   );
-  setTimeout(()=>document.getElementById('vf_nome')?.focus(), 100);
+  if(!clientName) setTimeout(()=>document.getElementById('vf_nome')?.focus(), 100);
+  if(clientId && clientName){
+    const ctxEl = document.getElementById('vf_nome_ctx');
+    if(ctxEl) _loadClientCtx(clientId, clientName, ctxEl);
+  }
 }
 async function createFichaFromView(){
   const nome = document.getElementById('vf_nome')?.value.trim()||'';
@@ -2171,6 +2183,7 @@ function renderViewNovaAvaliacao(params={}){
   const clientId = params.clientId||null;
   const clientName = params.clientName||'';
   _newAvalClientId = clientId;
+  _newAvalReturnToClient = !!clientId;
   const today = new Date().toISOString().slice(0,10);
   const vc = document.getElementById('viewContainer');
   vc.innerHTML = _vHd('Nova avaliação') + `
@@ -2179,8 +2192,9 @@ function renderViewNovaAvaliacao(params={}){
       <input type="text" id="va_nome" value="${esc(clientName)}" autocomplete="off" oninput="_acFilter(this.value,'va_ac','va_nome','','va_cliId')">
       <div id="va_ac" class="ac-dropdown" style="display:none"></div>
     </div>
-    <div class="pf"><label>Data</label><input type="date" id="va_data" value="${today}"></div>
-    <div class="pf"><label>Modalidade</label>
+    <div id="va_nome_ctx" style="display:none;font-size:12px;color:var(--muted);margin-top:-8px;margin-bottom:8px;padding:0 2px"></div>
+    <div class="pf"><label>Data <span style="font-size:11px;color:var(--muted);font-weight:400">(opcional)</span></label><input type="date" id="va_data" value="${today}"></div>
+    <div class="pf"><label>Modalidade <span style="font-size:11px;color:var(--muted);font-weight:400">(opcional)</span></label>
       <select id="va_mode">
         <option value="presencial">Atendimento Presencial</option>
         <option value="online">Consultoria Online</option>
@@ -2194,6 +2208,10 @@ function renderViewNovaAvaliacao(params={}){
     `<button class="btn-save-profile" onclick="createAvalFromView()">Iniciar avaliação</button>`
   );
   if(!clientName) setTimeout(()=>document.getElementById('va_nome')?.focus(), 100);
+  if(clientId && clientName){
+    const ctxEl = document.getElementById('va_nome_ctx');
+    if(ctxEl) _loadClientCtx(clientId, clientName, ctxEl);
+  }
 }
 async function createAvalFromView(){
   const nome = document.getElementById('va_nome')?.value.trim()||'';
@@ -2216,7 +2234,8 @@ async function createAvalFromView(){
     if(errEl){errEl.textContent='Erro '+error.code+': '+error.message+hint;errEl.style.display='block';} else showToast('Erro: '+error.message);
     return;
   }
-  const url=`/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&professional_name=${encodeURIComponent(profData?.name||'')}&modality=${modality}${_newAvalClientId?'&client_id='+_newAvalClientId:''}`;
+  const returnPart = (_newAvalReturnToClient && _newAvalClientId) ? `&return_to=cliente&return_id=${_newAvalClientId}` : '';
+  const url=`/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&professional_name=${encodeURIComponent(profData?.name||'')}&modality=${modality}${_newAvalClientId?'&client_id='+_newAvalClientId:''}${returnPart}`;
   window.location.href = url;
 }
 
@@ -2224,21 +2243,46 @@ async function createAvalFromView(){
 function _acFilter(query, acId, nameId, phoneId, cliId){
   const ac = document.getElementById(acId);
   if(!ac) return;
-  if(!query||!query.trim()){ ac.style.display='none'; return; }
+  if(!query||query.trim().length < 2){ ac.style.display='none'; return; }
   const q = query.toLowerCase().trim();
   const matches = allClients.filter(c=>c.name.toLowerCase().includes(q)||(c.phone||'').includes(q)).slice(0,7);
   if(!matches.length){ ac.style.display='none'; return; }
   ac.innerHTML = matches.map(c=>`<div class="ac-item" onmousedown="_acSelect(event,'${c.id}','${esc(c.name).replace(/'/g,"\\'")}','${esc(c.phone||'').replace(/'/g,"\\'")}','${nameId}','${phoneId}','${cliId}','${acId}')">
-    <span class="ac-item-name">${esc(c.name)}</span>${c.phone?`<span class="ac-item-phone">${esc(c.phone)}</span>`:''}
+    <strong class="ac-item-name">${esc(c.name)}</strong>${c.phone?`<span class="ac-item-phone">${esc(c.phone)}</span>`:''}
   </div>`).join('');
   ac.style.display='block';
 }
+function _acCloseAll(){
+  document.querySelectorAll('.ac-dropdown').forEach(el=>el.style.display='none');
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.ac-wrap')) _acCloseAll();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') _acCloseAll();
+});
 function _acSelect(e, clientId, name, phone, nameId, phoneId, cliId, acId){
   e.preventDefault();
   const nameEl=document.getElementById(nameId); if(nameEl) nameEl.value=name;
   const phoneEl=document.getElementById(phoneId); if(phoneEl&&phone) phoneEl.value=phone;
   const cliEl=document.getElementById(cliId); if(cliEl) cliEl.value=clientId;
   const ac=document.getElementById(acId); if(ac) ac.style.display='none';
+  const ctxEl=document.getElementById(nameId.replace('_nome','_nome_ctx'));
+  if(ctxEl && clientId) _loadClientCtx(clientId, name, ctxEl);
+}
+async function _loadClientCtx(clientId, name, ctxEl){
+  const firstName = name.split(' ')[0];
+  const isAval = ctxEl.id.startsWith('va_');
+  if(isAval){
+    const {count} = await sb.from('assessments').select('id',{count:'exact',head:true}).eq('client_id',clientId);
+    const n = count||0;
+    ctxEl.textContent = `${firstName} já tem ${n} avaliação${n!==1?'ões':''}. A nova será a avaliação ${n+1}.`;
+  } else {
+    const {count} = await sb.from('anamneses').select('id',{count:'exact',head:true}).eq('client_id',clientId);
+    const n = count||0;
+    ctxEl.textContent = `${firstName} já tem ${n} ficha${n!==1?'s':''}.`;
+  }
+  ctxEl.style.display='block';
 }
 
 // ── FORM EDITOR ──
