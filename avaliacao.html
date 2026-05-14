@@ -93,6 +93,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .proto-tabs{display:flex;gap:6px;margin-bottom:18px;}
 .proto-tab{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;text-align:center;}
 .proto-tab.active{background:var(--olive);border-color:var(--olive);color:#fff;}
+/* ── PROTOCOL CARROSSEL ── */
+.protocol-scroll{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:8px;scrollbar-width:none;margin-bottom:18px;}
+.protocol-scroll::-webkit-scrollbar{display:none;}
+.protocol-card{scroll-snap-align:start;min-width:130px;max-width:140px;padding:14px 10px;border:2px solid var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s;flex-shrink:0;background:var(--white);}
+.protocol-card:hover{border-color:var(--olive);}
+.protocol-card.active{border-color:var(--olive);background:rgba(107,122,66,.07);}
+.protocol-card-icon{font-size:22px;margin-bottom:6px;line-height:1;}
+.protocol-card-name{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.protocol-card-desc{font-size:10px;color:var(--muted);line-height:1.4;}
+/* Tabela de referência inline */
+.ref-table{width:100%;border-collapse:collapse;font-size:11px;margin:10px 0;}
+.ref-table th{background:var(--cream);padding:5px 8px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);}
+.ref-table td{padding:5px 8px;border-bottom:1px solid var(--cream);color:var(--ink);}
+.ref-table tr:last-child td{border-bottom:none;}
+/* Result box variantes por classificação */
+.result-box.poor{background:rgba(192,57,43,.07);border-color:rgba(192,57,43,.25);}
+.result-box.poor .result-label,.result-box.poor .result-val{color:#c0392b;}
+.result-box.good{background:rgba(107,122,66,.07);border-color:rgba(107,122,66,.25);}
+.result-box.great{background:rgba(39,174,96,.08);border-color:rgba(39,174,96,.3);}
+.result-box.great .result-label,.result-box.great .result-val{color:#27ae60;}
+.proto-note{font-size:11px;color:var(--muted);background:var(--cream);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.5;}
 
 /* ── PHOTO UPLOAD ── */
 .photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
@@ -299,12 +320,18 @@ function saveCurrentFields(){
 
 function onFieldChange(k){
   if(['peso_kg','altura_cm'].includes(k)) calcIMC();
-  if(['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm',
-      'suprailiaca_mm','abdominal_mm','coxa_mm','protocolo_dobras'].includes(k)) calcDobras();
-  if(['cooper_distancia','rockport_tempo_min','rockport_tempo_sec','rockport_fc',
-      'harvard_fc1','harvard_fc2','harvard_fc3','protocolo_vo2'].includes(k)) calcVO2();
+  if(k==='protocolo_dobras'||_DOBRAS_FIELDS.includes(k)) calcDobras();
+  if(k==='protocolo_vo2'||_VO2_FIELDS.includes(k)) calcVO2();
   if(['supino_peso','supino_reps','leg_peso','leg_reps'].includes(k)) calcRM();
 }
+
+const _DOBRAS_FIELDS=['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm',
+  'biceps_mm','panturrilha_mm','biceps_mm',
+  'bio_pct_gordura','bio_massa_gorda','bio_massa_magra','bio_agua','bio_metabolismo'];
+const _VO2_FIELDS=['cooper_distancia','rockport_tempo_min','rockport_tempo_sec','rockport_fc',
+  'harvard_fc1','harvard_fc2','harvard_fc3','balke_distancia','bruce_tempo',
+  'astrand_carga','astrand_fc','yoyo_nivel','yoyo_estagio','ukk_tempo_min','ukk_tempo_sec','ukk_fc','ukk_peso','ukk_altura',
+  'pacer_nivel','pacer_beeps','fc_repouso'];
 
 // ── IMC ─────────────────────────────────────────────────────
 function calcIMC(){
@@ -320,99 +347,216 @@ function calcIMC(){
 }
 
 // ── DOBRAS ───────────────────────────────────────────────────
+function _siri(d){ return (495/d)-450; }
+function _classGordura(pct, sex){
+  // ACSM %G classification
+  if(sex==='M'){
+    if(pct<6)  return 'Essencial';
+    if(pct<14) return 'Atleta';
+    if(pct<18) return 'Fitness';
+    if(pct<25) return 'Aceitável';
+    return 'Obesidade';
+  } else {
+    if(pct<14) return 'Essencial';
+    if(pct<21) return 'Atleta';
+    if(pct<25) return 'Fitness';
+    if(pct<32) return 'Aceitável';
+    return 'Obesidade';
+  }
+}
+function _showDobrasResult(box, pct, soma, dens, extra){
+  if(!box) return;
+  if(pct==null){ box.style.display='none'; return; }
+  const sex=D.patient_sex||'M';
+  const peso=parseFloat(D.peso_kg)||0;
+  const cls=_classGordura(pct,sex);
+  const boxCls=pct<(sex==='M'?18:25)?'good':pct<(sex==='M'?25:32)?'':'poor';
+  const mgKg=peso>0?(peso*pct/100).toFixed(1):null;
+  const mmKg=peso>0&&mgKg?(peso-parseFloat(mgKg)).toFixed(1):null;
+  box.className='result-box '+boxCls;
+  box.innerHTML=`<span class="result-label">Resultado</span><div>
+    <div class="result-val">${pct.toFixed(1)}% gordura · <strong>${cls}</strong></div>
+    <div class="result-class">${soma?'Σ '+soma.toFixed(1)+' mm':''} ${dens?'· D: '+dens.toFixed(4):''} ${extra||''}</div>
+    ${mgKg?`<div class="result-class" style="margin-top:3px">Massa gorda: ${mgKg} kg · Massa magra: ${mmKg} kg</div>`:''}
+  </div>`;
+  box.style.display='flex';
+  // Sincroniza com módulo 1
+  D.percentual_gordura_bio=pct.toFixed(1);
+  if(mgKg){ D.massa_gorda_kg=mgKg; D.massa_magra_kg=mmKg; }
+  const pgEl=document.querySelector('[data-f="percentual_gordura_bio"]');
+  const mgEl=document.querySelector('[data-f="massa_gorda_kg"]');
+  const mmEl=document.querySelector('[data-f="massa_magra_kg"]');
+  if(pgEl) pgEl.value=D.percentual_gordura_bio;
+  if(mgEl&&mgKg) mgEl.value=mgKg;
+  if(mmEl&&mmKg) mmEl.value=mmKg;
+}
+
 function calcDobras(){
   saveCurrentFields();
-  const box = document.getElementById('dobrasBox');
+  const box=document.getElementById('dobrasBox');
   if(!box) return;
-  const sex = D.patient_sex || 'M';
-  const age = calcAge() || 30;
-  const proto = D.protocolo_dobras;
-  let soma, dens, pct;
-  if(proto === 'jp7'){
-    const vals = ['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm']
-      .map(k=>parseFloat(D[k])||0);
-    soma = vals.reduce((a,b)=>a+b,0);
-    if(soma > 0){
-      if(sex==='M') dens = 1.112 - (0.00043499*soma) + (0.00000055*soma*soma) - (0.00028826*age);
-      else          dens = 1.097  - (0.00046971*soma) + (0.00000056*soma*soma) - (0.00012828*age);
-      pct = (495/dens) - 450;
+  const sex=D.patient_sex||'M'; const age=calcAge()||30;
+  const proto=D.protocolo_dobras||'jp7';
+  const mm=k=>parseFloat(D[k+'_mm'])||0;
+  let soma=0,dens=null,pct=null,extra='';
+
+  if(proto==='jp7'){
+    const v=['triceps','subescapular','peitoral','axilar','suprailiaca','abdominal','coxa'].map(mm);
+    soma=v.reduce((a,b)=>a+b,0);
+    if(soma>0){
+      if(sex==='M') dens=1.112-(0.00043499*soma)+(0.00000055*soma*soma)-(0.00028826*age);
+      else          dens=1.097-(0.00046971*soma)+(0.00000056*soma*soma)-(0.00012828*age);
+      pct=_siri(dens);
     }
-  } else {
-    // JP3: M=peitoral+abdominal+coxa  F=triceps+suprailiaca+coxa
-    let v1,v2,v3;
+  } else if(proto==='jp3m'){
+    const v=[mm('peitoral'),mm('abdominal'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
+    if(soma>0){ dens=1.10938-(0.0008267*soma)+(0.0000016*soma*soma)-(0.0002574*age); pct=_siri(dens); }
+  } else if(proto==='jp3f'){
+    const v=[mm('triceps'),mm('suprailiaca'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
+    if(soma>0){ dens=1.0994921-(0.0009929*soma)+(0.0000023*soma*soma)-(0.0001392*age); pct=_siri(dens); }
+  } else if(proto==='dw4'){
+    const bic=mm('biceps'),tri=mm('triceps'),sub=mm('subescapular'),sup=mm('suprailiaca');
+    soma=bic+tri+sub+sup;
+    if(soma>0){
+      const logS=Math.log10(soma);
+      // Durnin-Womersley coefficients [ageMin, A_M, B_M, A_F, B_F]
+      const DW=[[17,1.1620,0.0630,1.1549,0.0678],[20,1.1631,0.0632,1.1599,0.0717],[30,1.1422,0.0544,1.1423,0.0632],[40,1.1620,0.0700,1.1333,0.0612],[50,1.1715,0.0779,1.1339,0.0645]];
+      const row=DW.reduce((b,r)=>age>=r[0]?r:b,DW[0]);
+      if(sex==='M') dens=row[1]-(row[2]*logS); else dens=row[3]-(row[4]*logS);
+      pct=_siri(dens);
+    }
+  } else if(proto==='guedes'){
     if(sex==='M'){
-      v1=parseFloat(D.peitoral_mm)||0; v2=parseFloat(D.abdominal_mm)||0; v3=parseFloat(D.coxa_mm)||0;
-      soma=v1+v2+v3;
-      if(soma>0){ dens=1.10938-(0.0008267*soma)+(0.0000016*soma*soma)-(0.0002574*age); pct=(495/dens)-450; }
+      const v=[mm('subescapular'),mm('abdominal'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
+      if(soma>0){ dens=1.1714-(0.0671*Math.log10(soma)); pct=_siri(dens); }
     } else {
-      v1=parseFloat(D.triceps_mm)||0; v2=parseFloat(D.suprailiaca_mm)||0; v3=parseFloat(D.coxa_mm)||0;
-      soma=v1+v2+v3;
-      if(soma>0){ dens=1.0994921-(0.0009929*soma)+(0.0000023*soma*soma)-(0.0001392*age); pct=(495/dens)-450; }
+      const v=[mm('triceps'),mm('suprailiaca'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
+      if(soma>0){ dens=1.1665-(0.0706*Math.log10(soma)); pct=_siri(dens); }
+    }
+  } else if(proto==='faulkner'){
+    soma=[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('abdominal')].reduce((a,b)=>a+b,0);
+    if(soma>0){ pct=sex==='M'?(soma*0.153)+5.783:(soma*0.213)+7.9; dens=null; }
+  } else if(proto==='petroski'){
+    const peq=D.petroski_eq||'I';
+    if(sex==='M'){
+      const v=[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('panturrilha')]; soma=v.reduce((a,b)=>a+b,0);
+      if(soma>0){ dens=1.10726863-(0.00081201*soma)+(0.00000212*soma*soma)-(0.00041761*age); pct=_siri(dens); }
+    } else {
+      const h=parseFloat(D.altura_cm)||170;
+      const v=[mm('triceps'),mm('suprailiaca'),mm('abdominal'),mm('panturrilha')]; soma=v.reduce((a,b)=>a+b,0);
+      if(soma>0){ dens=1.0954-(0.0004699*soma)+(0.0000003*soma*soma)-(0.0001505*h); pct=_siri(dens); }
+    }
+    extra='Petroski '+peq;
+  } else if(proto==='slaughter'){
+    const t=mm('triceps'),panturrilha=mm('panturrilha'); soma=t+panturrilha;
+    const ageC=calcAge()||12;
+    if(soma>0){
+      if(sex==='M') pct=ageC<12?(0.735*soma)+1.0:(0.610*soma)+5.1;
+      else          pct=(0.610*soma)+5.1;
+      extra='(6–17 anos)'; dens=null;
+    }
+  } else if(proto==='bio'){
+    const bio=parseFloat(D.bio_pct_gordura);
+    if(bio>0){
+      pct=bio; soma=0; dens=null;
+      // sync bioimpedance fields
+      const fields=['bio_massa_gorda','bio_massa_magra','bio_agua','bio_metabolismo'];
+      const db=['massa_gorda_kg','massa_magra_kg','agua_corporal_pct','metabolismo_basal'];
+      fields.forEach((f,i)=>{ if(D[f]) D[db[i]]=D[f]; });
     }
   }
-  if(pct!=null && soma>0){
-    box.innerHTML=`<span class="result-label">Resultado</span><div>
-      <div class="result-val">${pct.toFixed(1)}% gordura</div>
-      <div class="result-class">Σ dobras: ${soma.toFixed(1)} mm · Densidade: ${dens.toFixed(4)}</div>
-    </div>`;
-    box.style.display='flex';
-  } else { box.style.display='none'; }
+  _showDobrasResult(box,pct,soma>0?soma:null,dens,extra);
 }
 
 // ── VO2 ──────────────────────────────────────────────────────
-function calcVO2(){
-  saveCurrentFields();
-  const box = document.getElementById('vo2Box');
-  if(!box) return;
-  const proto = D.protocolo_vo2;
-  let vo2 = null;
-  if(proto==='cooper'){
-    const dist = parseFloat(D.cooper_distancia);
-    if(dist>0) vo2 = (dist-504.9)/44.73;
-  } else if(proto==='rockport'){
-    const tMin = parseFloat(D.rockport_tempo_min)||0;
-    const tSec = parseFloat(D.rockport_tempo_sec)||0;
-    const hr   = parseFloat(D.rockport_fc);
-    const peso = parseFloat(D.peso_kg);
-    const age  = calcAge()||30;
-    const sex  = D.patient_sex==='F'?0:1;
-    const time = tMin + tSec/60;
-    const wLbs = (peso||70)*2.20462;
-    if(hr>0 && time>0) vo2 = 132.853-(0.0769*wLbs)-(0.3877*age)+(6.315*sex)-(3.2649*time)-(0.1565*hr);
-  } else if(proto==='harvard'){
-    const fc1=parseFloat(D.harvard_fc1)||0, fc2=parseFloat(D.harvard_fc2)||0, fc3=parseFloat(D.harvard_fc3)||0;
-    if(fc1>0&&fc2>0&&fc3>0){
-      const idx = (300*100)/(2*(fc1+fc2+fc3));
-      const cls = idx<55?'Fraco':idx<65?'Regular':idx<80?'Médio':idx<90?'Bom':'Excelente';
-      box.innerHTML=`<span class="result-label">Índice Harvard</span><div>
-        <div class="result-val">${idx.toFixed(0)}</div>
-        <div class="result-class">${cls}</div></div>`;
-      box.style.display='flex'; return;
-    }
-  }
-  if(vo2!=null){
-    const cls = classifyVO2(vo2);
-    box.innerHTML=`<span class="result-label">VO2 Máx Estimado</span><div>
-      <div class="result-val">${vo2.toFixed(1)} ml/kg/min</div>
-      <div class="result-class">${cls}</div></div>`;
-    box.style.display='flex';
-  } else { box.style.display='none'; }
+function classifyVO2(vo2){
+  const sex=D.patient_sex==='F'?'F':'M'; const age=calcAge()||25;
+  const M=[[20,55.9,51.0,45.2,38.4,35.0],[30,54.0,48.7,43.0,35.7,30.2],[40,52.5,46.1,39.9,35.1,29.1],[50,48.9,43.1,36.5,30.2,25.1],[60,45.7,39.5,32.3,26.1,20.5]];
+  const F=[[20,49.7,43.9,36.1,32.3,26.5],[30,47.4,42.4,35.7,29.5,23.4],[40,45.3,39.7,34.3,28.9,22.8],[50,41.1,36.7,31.1,25.5,18.0],[60,37.8,33.0,28.0,23.9,16.5]];
+  const tbl=sex==='F'?F:M; const row=tbl.reduce((b,r)=>age>=r[0]?r:b,tbl[0]);
+  if(vo2>=row[1])return'Superior';if(vo2>=row[2])return'Excelente';if(vo2>=row[3])return'Bom';if(vo2>=row[4])return'Regular';if(vo2>=row[5])return'Fraco';return'Muito Fraco';
 }
 
-function classifyVO2(vo2){
-  const sex = D.patient_sex==='F'?'F':'M';
-  const age = calcAge()||25;
-  // ACSM tables [ageMin, Superior, Excellent, Good, Fair, Poor]
-  const maleRanges  = [[20,55.9,51.0,45.2,38.4,35.0],[30,54.0,48.7,43.0,35.7,30.2],[40,52.5,46.1,39.9,35.1,29.1],[50,48.9,43.1,36.5,30.2,25.1],[60,45.7,39.5,32.3,26.1,20.5]];
-  const femaleRanges= [[20,49.7,43.9,36.1,32.3,26.5],[30,47.4,42.4,35.7,29.5,23.4],[40,45.3,39.7,34.3,28.9,22.8],[50,41.1,36.7,31.1,25.5,18.0],[60,37.8,33.0,28.0,23.9,16.5]];
-  const tbl = sex==='F'?femaleRanges:maleRanges;
-  const row = tbl.reduce((best,r)=>age>=r[0]?r:best, tbl[0]);
-  if(vo2>=row[1]) return 'Superior';
-  if(vo2>=row[2]) return 'Excelente';
-  if(vo2>=row[3]) return 'Bom';
-  if(vo2>=row[4]) return 'Regular';
-  if(vo2>=row[5]) return 'Fraco';
-  return 'Muito Fraco';
+function calcVO2(){
+  saveCurrentFields();
+  const box=document.getElementById('vo2Box');
+  if(!box) return;
+  const proto=D.protocolo_vo2||'cooper';
+  const sex=D.patient_sex||'M'; const age=calcAge()||25;
+  let vo2=null, label='VO2 Máx Estimado', extra='';
+
+  if(proto==='cooper'){
+    const d=parseFloat(D.cooper_distancia); if(d>0) vo2=(d-504.9)/44.73;
+  } else if(proto==='rockport'){
+    const tMin=parseFloat(D.rockport_tempo_min)||0,tSec=parseFloat(D.rockport_tempo_sec)||0;
+    const hr=parseFloat(D.rockport_fc),peso=parseFloat(D.peso_kg)||70;
+    const time=tMin+tSec/60,wLbs=peso*2.20462,sexN=sex==='F'?0:1;
+    if(hr>0&&time>0) vo2=132.853-(0.0769*wLbs)-(0.3877*age)+(6.315*sexN)-(3.2649*time)-(0.1565*hr);
+  } else if(proto==='harvard'){
+    const fc1=parseFloat(D.harvard_fc1)||0,fc2=parseFloat(D.harvard_fc2)||0,fc3=parseFloat(D.harvard_fc3)||0;
+    if(fc1>0&&fc2>0&&fc3>0){
+      const idx=(300*100)/(2*(fc1+fc2+fc3));
+      const cls=idx<55?'Fraco':idx<65?'Regular':idx<80?'Médio':idx<90?'Bom':'Excelente';
+      box.className='result-box'; box.style.display='flex';
+      box.innerHTML=`<span class="result-label">Índice Harvard</span><div><div class="result-val">${idx.toFixed(0)}</div><div class="result-class">${cls}</div></div>`;
+      return;
+    }
+  } else if(proto==='balke'){
+    const d=parseFloat(D.balke_distancia); if(d>0) vo2=(d/15-133)*0.172+33.3;
+  } else if(proto==='bruce'){
+    const t=parseFloat(D.bruce_tempo); if(t>0){
+      if(sex==='M') vo2=14.8-(1.379*t)+(0.451*t*t)-(0.012*t*t*t);
+      else          vo2=4.38*t-3.9;
+    }
+  } else if(proto==='astrand'){
+    const carga=parseFloat(D.astrand_carga),fc=parseFloat(D.astrand_fc);
+    if(carga>0&&fc>0){
+      const fSex=sex==='M'?1.0:0.7;
+      vo2=((carga*0.0141+0.435)/fc)*fSex*1000/parseFloat(D.peso_kg||70);
+      // Fator de correção por idade Astrand
+      const corr=[[15,1.10],[25,1.00],[35,0.87],[40,0.83],[45,0.78],[50,0.75],[55,0.71],[60,0.68],[65,0.65]];
+      const fc2=corr.reduce((b,r)=>age>=r[0]?r:b,corr[0])[1];
+      vo2*=fc2; extra='(fator correção idade: '+fc2+')';
+    }
+  } else if(proto==='yoyo'){
+    const nivel=parseInt(D.yoyo_nivel)||1,estagio=parseInt(D.yoyo_estagio)||0;
+    if(estagio>0){
+      // Yoyo nível 1: distância ≈ estagio * 40m (simplificado); nível 2 idem
+      const dist=estagio*40;
+      vo2=nivel===1?dist*0.0084+36.4:dist*0.0136+45.3;
+      extra='Nível '+nivel+' · Estágio '+estagio;
+    }
+  } else if(proto==='ukk'){
+    const tMin=parseFloat(D.ukk_tempo_min)||0,tSec=parseFloat(D.ukk_tempo_sec)||0;
+    const fc=parseFloat(D.ukk_fc),peso=parseFloat(D.ukk_peso)||parseFloat(D.peso_kg)||70;
+    const alt=parseFloat(D.ukk_altura)||parseFloat(D.altura_cm)||170;
+    const t=tMin+tSec/60,imc=peso/((alt/100)**2),cSex=sex==='M'?0:2.93;
+    if(fc>0&&t>0) vo2=116.2-(2.98*imc)-(0.11*fc)-(1.48*t)+cSex;
+  } else if(proto==='pacer'){
+    const nivel=parseInt(D.pacer_nivel)||1,beeps=parseInt(D.pacer_beeps)||0;
+    if(nivel>0){
+      const vel=8.5+(nivel-1)*0.5; // velocidade estimada por nível (simplificado)
+      vo2=31.025+(3.238*vel)-(3.248*age)+(0.1536*vel*age);
+      extra='Nível '+nivel+(beeps?' · Beeps '+beeps:'');
+    }
+  } else if(proto==='fc_repouso'){
+    box.className='result-box'; box.style.display='flex';
+    const fc=parseFloat(D.fc_repouso);
+    box.innerHTML=`<span class="result-label">FC de Repouso</span><div><div class="result-val">${fc>0?fc+' bpm':'—'}</div><div class="result-class">Registro — sem estimativa de VO2</div></div>`;
+    return;
+  }
+
+  if(vo2!=null&&!isNaN(vo2)&&isFinite(vo2)){
+    vo2=Math.max(0,vo2);
+    const cls=classifyVO2(vo2);
+    const boxCls=cls==='Superior'||cls==='Excelente'?'great':cls==='Fraco'||cls==='Muito Fraco'?'poor':'good';
+    box.className='result-box '+boxCls; box.style.display='flex';
+    box.innerHTML=`<span class="result-label">${label}</span><div>
+      <div class="result-val">${vo2.toFixed(1)} ml/kg/min · <strong>${cls}</strong></div>
+      ${extra?`<div class="result-class">${extra}</div>`:''}
+    </div>`;
+    D.vo2max_estimado=vo2.toFixed(1); D.classificacao=cls;
+  } else { box.style.display='none'; }
 }
 
 // ── 1RM BRZYCKI ──────────────────────────────────────────────
@@ -518,30 +662,62 @@ function mod2(){
 
 // ── MODULE 3 ─────────────────────────────────────────────────
 function mod3(){
-  const p = D.protocolo_dobras || 'jp7';
-  const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
-  const jp7Fields = `<div class="grid2">
-    ${f('Tríceps','triceps_mm')}${f('Subescapular','subescapular_mm')}
-    ${f('Peitoral','peitoral_mm')}${f('Axilar Média','axilar_mm')}
-    ${f('Suprailíaca','suprailiaca_mm')}${f('Abdominal','abdominal_mm')}
-    ${f('Coxa','coxa_mm')}
-  </div>`;
-  const jp3SexHint = D.patient_sex==='F'?'Tríceps + Suprailíaca + Coxa':'Peitoral + Abdominal + Coxa';
-  const jp3Fields = `<div class="av-card-sub" style="margin-bottom:12px">Pontos: ${jp3SexHint}</div>
-  <div class="grid2">
-    ${D.patient_sex==='F'?
-      f('Tríceps','triceps_mm')+f('Suprailíaca','suprailiaca_mm')+f('Coxa','coxa_mm'):
-      f('Peitoral','peitoral_mm')+f('Abdominal','abdominal_mm')+f('Coxa','coxa_mm')
-    }
-  </div>`;
+  const p=D.protocolo_dobras||'jp7';
+  const sx=D.patient_sex||'M';
+  const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}_mm"></div>`;
+  const fna=(lbl,k,u='')=>`<div class="field"><label>${lbl}${u?' ('+u+')':''}</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
+
+  const PROTOS=[
+    {id:'jp7',  icon:'📐', name:'JP 7 Dobras',  desc:'Jackson-Pollock 7 pontos'},
+    {id:'jp3m', icon:'♂️', name:'JP 3 — Masc',  desc:'Peitoral, Abdômen, Coxa'},
+    {id:'jp3f', icon:'♀️', name:'JP 3 — Fem',   desc:'Tríceps, Suprailíaca, Coxa'},
+    {id:'dw4',  icon:'🔢', name:'Durnin-Wom.',  desc:'Bíceps, Tríceps, Sub, Sup'},
+    {id:'guedes',icon:'🇧🇷',name:'Guedes',       desc:'3 dobras - protocolo BR'},
+    {id:'faulkner',icon:'🧮',name:'Faulkner',   desc:'4 dobras sem densidade'},
+    {id:'petroski',icon:'📊',name:'Petroski',   desc:'4 equações por sexo'},
+    {id:'slaughter',icon:'👶',name:'Slaughter', desc:'Crianças e adolescentes'},
+    {id:'bio',  icon:'⚡',  name:'Bioimpedância',desc:'Registro de aparelho'},
+  ];
+
+  const carousel=PROTOS.map(pr=>`<div class="protocol-card${p===pr.id?' active':''}" onclick="setProto('${pr.id}')">
+    <div class="protocol-card-icon">${pr.icon}</div>
+    <div class="protocol-card-name">${pr.name}</div>
+    <div class="protocol-card-desc">${pr.desc}</div>
+  </div>`).join('');
+
+  const dwTable=`<details style="margin-bottom:10px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Tabela coeficientes Durnin-Womersley</summary>
+    <table class="ref-table"><thead><tr><th>Idade</th><th>A (M)</th><th>B (M)</th><th>A (F)</th><th>B (F)</th></tr></thead><tbody>
+    <tr><td>17–19</td><td>1.1620</td><td>0.0630</td><td>1.1549</td><td>0.0678</td></tr>
+    <tr><td>20–29</td><td>1.1631</td><td>0.0632</td><td>1.1599</td><td>0.0717</td></tr>
+    <tr><td>30–39</td><td>1.1422</td><td>0.0544</td><td>1.1423</td><td>0.0632</td></tr>
+    <tr><td>40–49</td><td>1.1620</td><td>0.0700</td><td>1.1333</td><td>0.0612</td></tr>
+    <tr><td>50+</td><td>1.1715</td><td>0.0779</td><td>1.1339</td><td>0.0645</td></tr>
+    </tbody></table></details>`;
+
+  const fields={
+    jp7:`<div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Peitoral','peitoral')}${f('Axilar Média','axilar')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`,
+    jp3m:`<p class="proto-note">Pontos masculinos: Peitoral + Abdominal + Coxa</p><div class="grid2">${f('Peitoral','peitoral')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`,
+    jp3f:`<p class="proto-note">Pontos femininos: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div>`,
+    dw4:dwTable+`<div class="grid2">${f('Bíceps','biceps')}${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}</div>`,
+    guedes:sx==='M'?`<p class="proto-note">Masculino: Subescapular + Abdominal + Coxa</p><div class="grid2">${f('Subescapular','subescapular')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`:
+                    `<p class="proto-note">Feminino: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div>`,
+    faulkner:`<p class="proto-note">Tríceps + Subescapular + Suprailíaca + Abdominal</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}</div>`,
+    petroski:sx==='M'?`<p class="proto-note">Masculino: Tríceps + Subescapular + Suprailíaca + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Panturrilha','panturrilha')}</div>`:
+                      `<p class="proto-note">Feminino: Tríceps + Suprailíaca + Abdominal + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Panturrilha','panturrilha')}</div>`,
+    slaughter:`<p class="proto-note">⚠️ Protocolo para crianças e adolescentes (6–17 anos)${calcAge()&&calcAge()>17?' — idade do avaliado fora da faixa':''}</p><div class="grid2">${f('Tríceps','triceps')}${f('Panturrilha medial','panturrilha')}</div>`,
+    bio:`<p class="proto-note">Insira os valores fornecidos pelo aparelho de bioimpedância. Os campos serão sincronizados com o módulo de Biometria automaticamente.</p>
+      <div class="grid2">
+        ${fna('% Gordura','bio_pct_gordura','%')}${fna('Massa Gorda','bio_massa_gorda','kg')}
+        ${fna('Massa Magra','bio_massa_magra','kg')}${fna('Água Corporal','bio_agua','%')}
+        ${fna('Massa Óssea','bio_ossa','kg')}${fna('Metabolismo Basal','bio_metabolismo','kcal')}
+      </div>`
+  };
+
   return `<div class="av-card">
     <div class="av-card-title">Dobras Cutâneas</div>
-    <div class="av-card-sub">Protocolo e pontos de medição</div>
-    <div class="proto-tabs">
-      <div class="proto-tab${p==='jp7'?' active':''}" onclick="setProto('jp7')">Jackson-Pollock 7</div>
-      <div class="proto-tab${p==='jp3'?' active':''}" onclick="setProto('jp3')">Jackson-Pollock 3</div>
-    </div>
-    ${p==='jp7'?jp7Fields:jp3Fields}
+    <div class="av-card-sub">Selecione o protocolo e preencha os campos</div>
+    <div class="protocol-scroll">${carousel}</div>
+    ${fields[p]||''}
     <div class="result-box" id="dobrasBox" style="display:none;margin-top:14px"></div>
     ${navHTML(true)}
   </div>`;
@@ -633,33 +809,93 @@ function removePhoto(key, e){
 
 // ── MODULE 5 ─────────────────────────────────────────────────
 function mod5(){
-  const p = D.protocolo_vo2 || 'cooper';
-  const protoFields = {
+  const p=D.protocolo_vo2||'cooper';
+
+  const PROTOS=[
+    {id:'cooper',   icon:'🏃', name:'Cooper 12min', desc:'Corrida 12 minutos'},
+    {id:'rockport', icon:'🚶', name:'Rockport 1mi',  desc:'Caminhada 1 milha'},
+    {id:'harvard',  icon:'🪜', name:'Banco Harvard', desc:'Step test 3 min'},
+    {id:'balke',    icon:'⏱️', name:'Balke 15min',   desc:'Corrida 15 minutos'},
+    {id:'bruce',    icon:'🏋️', name:'Bruce',          desc:'Esteira incremental'},
+    {id:'astrand',  icon:'🚴', name:'Astrand',        desc:'Bicicleta ergométrica'},
+    {id:'yoyo',     icon:'📡', name:'Yo-Yo Test',     desc:'Shuttle progressivo'},
+    {id:'ukk',      icon:'🚶‍♀️', name:'UKK 2km',       desc:'Caminhada 2 km'},
+    {id:'pacer',    icon:'🔊', name:'Beep Test',      desc:'Shuttle 20 metros'},
+    {id:'fc_repouso',icon:'❤️',name:'FC Repouso',    desc:'Apenas FC de repouso'},
+  ];
+
+  const carousel=PROTOS.map(pr=>`<div class="protocol-card${p===pr.id?' active':''}" onclick="setVO2Proto('${pr.id}')">
+    <div class="protocol-card-icon">${pr.icon}</div>
+    <div class="protocol-card-name">${pr.name}</div>
+    <div class="protocol-card-desc">${pr.desc}</div>
+  </div>`).join('');
+
+  const bruceTable=`<details style="margin-bottom:10px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Estágios do protocolo Bruce</summary>
+    <table class="ref-table"><thead><tr><th>Estágio</th><th>Tempo (min)</th><th>Velocidade</th><th>Inclinação</th></tr></thead><tbody>
+    <tr><td>1</td><td>0–3</td><td>2.7 km/h</td><td>10%</td></tr>
+    <tr><td>2</td><td>3–6</td><td>4.0 km/h</td><td>12%</td></tr>
+    <tr><td>3</td><td>6–9</td><td>5.5 km/h</td><td>14%</td></tr>
+    <tr><td>4</td><td>9–12</td><td>6.8 km/h</td><td>16%</td></tr>
+    <tr><td>5</td><td>12–15</td><td>8.0 km/h</td><td>18%</td></tr>
+    <tr><td>6</td><td>15–18</td><td>8.8 km/h</td><td>20%</td></tr>
+    </tbody></table></details>`;
+
+  const astrandTable=`<details style="margin-bottom:10px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Fator de correção por idade (Astrand)</summary>
+    <table class="ref-table"><thead><tr><th>Idade</th><th>Fator</th><th>Idade</th><th>Fator</th></tr></thead><tbody>
+    <tr><td>15</td><td>1.10</td><td>45</td><td>0.78</td></tr>
+    <tr><td>25</td><td>1.00</td><td>50</td><td>0.75</td></tr>
+    <tr><td>35</td><td>0.87</td><td>55</td><td>0.71</td></tr>
+    <tr><td>40</td><td>0.83</td><td>60+</td><td>0.65–0.68</td></tr>
+    </tbody></table></details>`;
+
+  const fields={
     cooper:`<div class="field"><label>Distância percorrida (m)</label>
       <input type="number" inputmode="decimal" placeholder="Ex: 2200" data-f="cooper_distancia">
-      <div class="hint">Distância em metros no teste de 12 minutos</div></div>`,
+      <div class="hint">Distância em metros corridos em 12 minutos</div></div>`,
     rockport:`<div class="grid2">
       <div class="field"><label>Tempo — minutos</label><input type="number" inputmode="numeric" placeholder="Min" data-f="rockport_tempo_min"></div>
       <div class="field"><label>Tempo — segundos</label><input type="number" inputmode="numeric" placeholder="Seg" data-f="rockport_tempo_sec"></div>
     </div>
     <div class="field"><label>FC ao final (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 160" data-f="rockport_fc"></div>`,
     harvard:`<div class="field"><label>FC após 1 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 92" data-f="harvard_fc1"></div>
-    <div class="field"><label>FC após 2 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 80" data-f="harvard_fc2"></div>
-    <div class="field"><label>FC após 3 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 72" data-f="harvard_fc3"></div>`,
+      <div class="field"><label>FC após 2 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 80" data-f="harvard_fc2"></div>
+      <div class="field"><label>FC após 3 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 72" data-f="harvard_fc3"></div>`,
+    balke:`<div class="field"><label>Distância percorrida (m)</label>
+      <input type="number" inputmode="decimal" placeholder="Ex: 2500" data-f="balke_distancia">
+      <div class="hint">Distância em metros corridos em 15 minutos</div></div>`,
+    bruce:bruceTable+`<div class="field"><label>Tempo total até exaustão (min)</label>
+      <input type="number" step="0.1" inputmode="decimal" placeholder="Ex: 10.5" data-f="bruce_tempo">
+      <div class="hint">Inclua frações de minuto (ex: 9.5 = 9min 30s)</div></div>`,
+    astrand:astrandTable+`<div class="grid2">
+      <div class="field"><label>Carga (Watts)</label><input type="number" inputmode="decimal" placeholder="Ex: 100" data-f="astrand_carga"></div>
+      <div class="field"><label>FC estado estável (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 140" data-f="astrand_fc"></div>
+    </div><p class="proto-note">Pedalada em cadência constante por 6 min com carga ajustada para FC 120–170 bpm</p>`,
+    yoyo:`<div class="grid2">
+      <div class="field"><label>Nível (1 ou 2)</label>
+        <select data-f="yoyo_nivel"><option value="1">Nível 1 (Resistência)</option><option value="2">Nível 2 (Recuperação)</option></select>
+      </div>
+      <div class="field"><label>Último estágio completado</label><input type="number" inputmode="numeric" placeholder="Ex: 14" data-f="yoyo_estagio"></div>
+    </div>`,
+    ukk:`<div class="grid2">
+      <div class="field"><label>Tempo — minutos</label><input type="number" inputmode="numeric" placeholder="Min" data-f="ukk_tempo_min"></div>
+      <div class="field"><label>Tempo — segundos</label><input type="number" inputmode="numeric" placeholder="Seg" data-f="ukk_tempo_sec"></div>
+      <div class="field"><label>FC ao final (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 130" data-f="ukk_fc"></div>
+      <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="Ex: 70" data-f="ukk_peso"></div>
+    </div>`,
+    pacer:`<div class="grid2">
+      <div class="field"><label>Último nível completado</label><input type="number" inputmode="numeric" placeholder="Ex: 8" data-f="pacer_nivel"></div>
+      <div class="field"><label>Beeps no último nível</label><input type="number" inputmode="numeric" placeholder="Ex: 5" data-f="pacer_beeps"></div>
+    </div><p class="proto-note">Shuttle run de 20 metros com velocidade crescente a cada nível</p>`,
     fc_repouso:`<div class="field"><label>FC de repouso (bpm)</label>
       <input type="number" inputmode="numeric" placeholder="Ex: 62" data-f="fc_repouso">
-      <div class="hint">Protocolo apenas de registro — sem estimativa de VO2</div></div>`
+      <div class="hint">Apenas registro — sem estimativa de VO2</div></div>`
   };
+
   return `<div class="av-card">
     <div class="av-card-title">VO2 Máximo</div>
-    <div class="av-card-sub">Estimativa de capacidade aeróbica</div>
-    <div class="proto-tabs" style="flex-wrap:wrap;">
-      <div class="proto-tab${p==='cooper'?' active':''}"     onclick="setVO2Proto('cooper')">Cooper 12min</div>
-      <div class="proto-tab${p==='rockport'?' active':''}"   onclick="setVO2Proto('rockport')">Rockport 1mi</div>
-      <div class="proto-tab${p==='harvard'?' active':''}"    onclick="setVO2Proto('harvard')">Banco Harvard</div>
-      <div class="proto-tab${p==='fc_repouso'?' active':''}" onclick="setVO2Proto('fc_repouso')">FC Repouso</div>
-    </div>
-    ${protoFields[p] || ''}
+    <div class="av-card-sub">Selecione o protocolo de teste</div>
+    <div class="protocol-scroll">${carousel}</div>
+    ${fields[p]||''}
     <div class="result-box" id="vo2Box" style="display:none;margin-top:14px"></div>
     ${navHTML(true)}
   </div>`;
