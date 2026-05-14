@@ -521,6 +521,38 @@ tr:hover td{background:var(--cream);}
   .view-footer{left:240px;position:sticky;margin-top:24px;border-top:none;background:none;padding:0;}
   .view-container{padding-bottom:0;}
 }
+/* ── METAS / GOALS ── */
+.goal-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;transition:border-color .15s;}
+.goal-card:hover{border-color:var(--olive);}
+.goal-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.goal-title{font-size:14px;font-weight:600;color:var(--ink);line-height:1.4;}
+.goal-cat{padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0;}
+.gc-peso{background:rgba(70,100,150,.1);color:#4664a0;}
+.gc-gordura{background:rgba(200,100,20,.1);color:#c86414;}
+.gc-circunferencia{background:rgba(130,50,150,.1);color:#823296;}
+.gc-vo2{background:rgba(107,122,66,.12);color:var(--olive);}
+.gc-forca{background:rgba(192,57,43,.1);color:#c0392b;}
+.gc-outro{background:var(--cream);color:var(--muted);}
+.goal-progress-wrap{margin:10px 0;}
+.goal-progress-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.goal-progress-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+.gp-low{background:#c0392b;}
+.gp-mid{background:var(--gold);}
+.gp-high{background:var(--olive);}
+.goal-values{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;}
+.goal-deadline{font-size:11px;color:var(--muted);margin-top:4px;}
+.goal-detail{border-top:1px solid var(--border);padding-top:12px;margin-top:12px;display:none;}
+.goal-detail.open{display:block;}
+.checkin-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--cream);font-size:12px;}
+.checkin-row:last-child{border-bottom:none;}
+.checkin-val{font-weight:600;color:var(--ink);flex-shrink:0;}
+.checkin-note{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.checkin-date{color:var(--muted);flex-shrink:0;}
+.goal-form-card{background:var(--cream);border:1.5px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.goal-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:540px){.goal-form-grid{grid-template-columns:1fr;}}
+.checkin-form-card{background:rgba(107,122,66,.06);border:1.5px solid rgba(107,122,66,.2);border-radius:10px;padding:14px;margin-bottom:12px;}
+
 /* ── AUTOCOMPLETE ── */
 .ac-wrap{position:relative;}
 .ac-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:200;max-height:200px;overflow-y:auto;}
@@ -1258,9 +1290,11 @@ async function renderViewCliente(params={}){
     <div class="cpv-tabs" id="cliViewTabs" style="margin-bottom:16px">
       <button class="cpv-tab active" onclick="switchCliViewTab('anam')">Anamneses</button>
       <button class="cpv-tab"        onclick="switchCliViewTab('aval')">Avaliações</button>
+      <button class="cpv-tab"        onclick="switchCliViewTab('metas')">Metas</button>
     </div>
     <div id="cliTabAnam"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
-    <div id="cliTabAval" style="display:none"></div>
+    <div id="cliTabAval"   style="display:none"></div>
+    <div id="cliTabMetas"  style="display:none"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
   </div>`;
   const [anamRes, avalRes] = await Promise.all([
     sb.from('anamneses').select('id,patient_name,status,mode,created_at').eq('client_id',clientId).order('created_at',{ascending:false}),
@@ -1295,13 +1329,221 @@ async function renderViewCliente(params={}){
      <button class="btn-new-ficha" style="margin-top:12px" onclick="navigateTo('nova-avaliacao',{clientId:'${clientId}',clientName:'${esc(client.name).replace(/'/g,"\\'")}' })">Nova avaliação</button></div>`;
   document.getElementById('cliTabAnam').innerHTML = aHtml;
   document.getElementById('cliTabAval').innerHTML = vHtml;
+  loadGoals(clientId);
 }
 function switchCliViewTab(tab){
   document.querySelectorAll('#cliViewTabs .cpv-tab').forEach((b,i)=>{
-    b.classList.toggle('active',(i===0&&tab==='anam')||(i===1&&tab==='aval'));
+    b.classList.toggle('active',
+      (i===0&&tab==='anam')||(i===1&&tab==='aval')||(i===2&&tab==='metas'));
   });
-  document.getElementById('cliTabAnam').style.display = tab==='anam'?'':'none';
-  document.getElementById('cliTabAval').style.display = tab==='aval'?'':'none';
+  document.getElementById('cliTabAnam').style.display  = tab==='anam'  ?'':'none';
+  document.getElementById('cliTabAval').style.display  = tab==='aval'  ?'':'none';
+  document.getElementById('cliTabMetas').style.display = tab==='metas' ?'':'none';
+}
+
+// ── METAS ────────────────────────────────────────────────────────
+const _CAT_LBL={peso:'Peso',gordura:'Gordura',circunferencia:'Circunf.',vo2:'VO2 Máx',forca:'Força',outro:'Outro'};
+const _CAT_CLS={peso:'gc-peso',gordura:'gc-gordura',circunferencia:'gc-circunferencia',vo2:'gc-vo2',forca:'gc-forca',outro:'gc-outro'};
+
+function _deadlineTxt(dl){
+  const d=new Date(dl+'T00:00:00');const today=new Date();today.setHours(0,0,0,0);
+  const diff=Math.round((d-today)/(1000*60*60*24));
+  if(diff<0) return `Vencida há ${Math.abs(diff)} dias`;
+  if(diff===0) return 'Prazo hoje';
+  if(diff===1) return 'Prazo amanhã';
+  return `${diff} dias restantes`;
+}
+function _goalPct(g){
+  const base=parseFloat(g.baseline_value)||0;
+  const target=parseFloat(g.target_value)||0;
+  const current=parseFloat(g.current_value??g.baseline_value)||0;
+  const range=target-base;
+  if(range===0) return null;
+  return Math.max(0,Math.min(100,((current-base)/range)*100));
+}
+
+async function loadGoals(clientId){
+  const cont=document.getElementById('cliTabMetas');
+  if(!cont) return;
+  const {data,error}=await sb.from('client_goals')
+    .select('*,goal_checkins(id,value,note,checked_at)')
+    .eq('client_id',clientId)
+    .order('created_at',{ascending:false});
+  if(error){cont.innerHTML='<div class="empty-state" style="padding:30px 0"><div class="empty-desc">Erro ao carregar metas: '+error.message+'</div></div>';return;}
+  renderGoals(data||[],clientId);
+}
+
+function renderGoals(goals,clientId){
+  const cont=document.getElementById('cliTabMetas');
+  if(!cont) return;
+  const addBtn=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <span style="font-size:13px;font-weight:600;color:var(--ink)">Metas do cliente</span>
+    <button class="btn-new-ficha" style="font-size:12px;padding:7px 14px" onclick="toggleNewGoalForm('${clientId}')">+ Nova meta</button>
+  </div>`;
+  const formHtml=`<div id="newGoalForm" style="display:none"><div class="goal-form-card">
+    <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:14px">Nova meta</div>
+    <div class="pf"><label>Título <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="ng_title" placeholder="Ex: Reduzir peso para 75kg">
+    </div>
+    <div class="goal-form-grid">
+      <div class="pf"><label>Categoria</label>
+        <select id="ng_cat"><option value="">—</option><option value="peso">Peso</option><option value="gordura">Gordura corporal</option><option value="circunferencia">Circunferência</option><option value="vo2">VO2 Máx</option><option value="forca">Força</option><option value="outro">Outro</option></select>
+      </div>
+      <div class="pf"><label>Unidade</label>
+        <input type="text" id="ng_unit" placeholder="kg, %, cm…">
+      </div>
+      <div class="pf"><label>Valor atual (início)</label>
+        <input type="number" id="ng_baseline" step="0.1" placeholder="0">
+      </div>
+      <div class="pf"><label>Valor alvo (meta)</label>
+        <input type="number" id="ng_target" step="0.1" placeholder="0">
+      </div>
+    </div>
+    <div class="pf"><label>Prazo</label><input type="date" id="ng_deadline"></div>
+    <div class="pf"><label>Descrição</label>
+      <textarea class="notes-area" id="ng_desc" placeholder="Detalhes da meta…" style="min-height:56px"></textarea>
+    </div>
+    <div id="ngErrMsg" class="profile-msg err" style="display:none;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-logout" onclick="toggleNewGoalForm()">Cancelar</button>
+      <button class="btn-save-profile" onclick="saveGoal('${clientId}')">Criar meta</button>
+    </div>
+  </div></div>`;
+
+  if(!goals.length){
+    cont.innerHTML=addBtn+formHtml+`<div class="empty-state" style="padding:32px 0">
+      <div class="empty-title" style="font-size:16px">Nenhuma meta ainda</div>
+      <div class="empty-desc">Defina objetivos mensuráveis para acompanhar a evolução do cliente.</div>
+    </div>`; return;
+  }
+
+  const goalsHtml=goals.map(g=>{
+    const pct=_goalPct(g);
+    const pctR=pct!=null?Math.round(pct):null;
+    const fillCls=pct==null?'':pct<30?'gp-low':pct<70?'gp-mid':'gp-high';
+    const catCls=_CAT_CLS[g.category]||'gc-outro';
+    const catLbl=_CAT_LBL[g.category]||'Outro';
+    const unit=g.target_unit?' '+g.target_unit:'';
+    const cur=g.current_value??g.baseline_value;
+    const dl=g.deadline?_deadlineTxt(g.deadline):'';
+    const checkins=(g.goal_checkins||[]).sort((a,b)=>new Date(b.checked_at)-new Date(a.checked_at));
+    const checkinsHtml=checkins.length
+      ?checkins.slice(0,6).map(c=>`<div class="checkin-row">
+          <span class="checkin-val">${c.value}${unit}</span>
+          <span class="checkin-note">${esc(c.note||'—')}</span>
+          <span class="checkin-date">${new Date(c.checked_at).toLocaleDateString('pt-BR')}</span>
+        </div>`).join('')
+      :'<div style="font-size:12px;color:var(--muted);padding:6px 0">Nenhum registro ainda.</div>';
+    const statusBadge=g.status==='concluida'?'<span class="badge-cli badge-cli-av" style="margin-left:6px">Concluída</span>'
+      :g.status==='pausada'?'<span class="badge-cli" style="background:rgba(168,137,58,.1);color:var(--gold);margin-left:6px">Pausada</span>'
+      :g.status==='cancelada'?'<span class="badge-cli" style="background:rgba(192,57,43,.1);color:var(--danger);margin-left:6px">Cancelada</span>'
+      :'';
+    return `<div class="goal-card">
+      <div class="goal-card-top">
+        <div style="flex:1;min-width:0">
+          <div class="goal-title">${esc(g.title)}${statusBadge}</div>
+          ${g.description?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(g.description)}</div>`:''}
+        </div>
+        <span class="goal-cat ${catCls}">${catLbl}</span>
+      </div>
+      ${pct!=null?`<div class="goal-progress-wrap">
+        <div class="goal-progress-bg"><div class="goal-progress-fill ${fillCls}" style="width:${pctR}%"></div></div>
+        <div class="goal-values">
+          <span>Atual: <strong>${cur!=null?cur+unit:'—'}</strong></span>
+          <span style="font-weight:600">${pctR}%</span>
+          <span>Meta: <strong>${g.target_value!=null?g.target_value+unit:'—'}</strong></span>
+        </div>
+      </div>`:''}
+      ${dl?`<div class="goal-deadline">⏱ ${dl}</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn-view" onclick="toggleGoalDetail('${g.id}')">Histórico</button>
+        ${g.status==='ativa'?`<button class="btn-new-ficha" style="font-size:11px;padding:6px 12px"
+          onclick="openCheckinForm('${g.id}','${esc(g.title).replace(/'/g,"\\'")}','${g.target_unit||''}','${clientId}')">+ Registrar progresso</button>`:''}
+      </div>
+      <div id="ci-form-${g.id}" class="checkin-form-card" style="display:none;margin-top:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:10px">Registrar progresso</div>
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px">
+          <div class="pf"><label>Valor${g.target_unit?' ('+g.target_unit+')':''} *</label>
+            <input type="number" id="ci-val-${g.id}" step="0.1" placeholder="0">
+          </div>
+          <div class="pf"><label>Observação</label>
+            <input type="text" id="ci-note-${g.id}" placeholder="Opcional…">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-logout" onclick="document.getElementById('ci-form-${g.id}').style.display='none'">Cancelar</button>
+          <button class="btn-save-profile" onclick="addCheckin('${g.id}','${clientId}')">Salvar</button>
+        </div>
+      </div>
+      <div class="goal-detail" id="gd-${g.id}">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Registros</div>
+        ${checkinsHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  cont.innerHTML=addBtn+formHtml+goalsHtml;
+}
+
+function toggleNewGoalForm(clientId){
+  const f=document.getElementById('newGoalForm');
+  if(!f) return;
+  const open=f.style.display==='none';
+  f.style.display=open?'block':'none';
+  if(open) setTimeout(()=>document.getElementById('ng_title')?.focus(),80);
+}
+
+function toggleGoalDetail(goalId){
+  const el=document.getElementById('gd-'+goalId);
+  if(el) el.classList.toggle('open');
+}
+
+function openCheckinForm(goalId,title,unit,clientId){
+  document.querySelectorAll('[id^="ci-form-"]').forEach(el=>el.style.display='none');
+  const f=document.getElementById('ci-form-'+goalId);
+  if(f){ f.style.display='block'; document.getElementById('ci-val-'+goalId)?.focus(); }
+}
+
+async function saveGoal(clientId){
+  const title=(document.getElementById('ng_title')?.value||'').trim();
+  const errEl=document.getElementById('ngErrMsg');
+  if(errEl) errEl.style.display='none';
+  if(!title){if(errEl){errEl.textContent='Título é obrigatório.';errEl.style.display='block';}else showToast('Título é obrigatório.');return;}
+  if(!profId) return;
+  const baseline=document.getElementById('ng_baseline')?.value;
+  const payload={
+    client_id:      clientId,
+    professional_id:profId,
+    title,
+    category:       document.getElementById('ng_cat')?.value||null,
+    target_unit:    document.getElementById('ng_unit')?.value.trim()||null,
+    baseline_value: baseline!==''?parseFloat(baseline):null,
+    current_value:  baseline!==''?parseFloat(baseline):null,
+    target_value:   document.getElementById('ng_target')?.value!==''?parseFloat(document.getElementById('ng_target')?.value):null,
+    deadline:       document.getElementById('ng_deadline')?.value||null,
+    description:    document.getElementById('ng_desc')?.value.trim()||null,
+    status:         'ativa'
+  };
+  const {error}=await sb.from('client_goals').insert(payload);
+  if(error){if(errEl){errEl.textContent='Erro: '+error.message;errEl.style.display='block';}else showToast('Erro: '+error.message);return;}
+  showToast('Meta criada!');
+  loadGoals(clientId);
+}
+
+async function addCheckin(goalId,clientId){
+  const valEl=document.getElementById('ci-val-'+goalId);
+  const noteEl=document.getElementById('ci-note-'+goalId);
+  const val=parseFloat(valEl?.value);
+  if(isNaN(val)){showToast('Informe um valor.');return;}
+  const {data:chk,error:e1}=await sb.from('goal_checkins').insert({
+    goal_id:goalId,value:val,note:noteEl?.value.trim()||null,created_by:profId
+  }).select().single();
+  if(e1){showToast('Erro: '+e1.message);return;}
+  const {error:e2}=await sb.from('client_goals').update({current_value:val,updated_at:new Date().toISOString()}).eq('id',goalId);
+  if(e2) console.warn('[addCheckin] update current_value:',e2);
+  showToast('Progresso registrado!');
+  document.getElementById('ci-form-'+goalId).style.display='none';
+  loadGoals(clientId);
 }
 
 // ── VIEW: NOVA FICHA ───────────────────────────────────────────
