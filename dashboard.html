@@ -216,16 +216,22 @@ tr:hover td{background:var(--cream);}
 .fe-mode-tab.active{background:var(--olive);border-color:var(--olive);color:#fff;}
 .fe-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;}
 .fe-header h2{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;}
-.fe-actions{display:flex;gap:8px;}
+.fe-actions{display:flex;gap:8px;align-items:center;}
 .btn-fe-save{padding:10px 20px;background:var(--olive);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;min-height:44px;transition:opacity .2s;}
 .btn-fe-save:hover{opacity:.88;}
 .btn-fe-reset{padding:10px 14px;background:none;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;min-height:44px;transition:all .2s;}
 .btn-fe-reset:hover{border-color:var(--ink);color:var(--ink);}
+.fe-save-status{font-size:11px;color:var(--muted);min-width:60px;text-align:right;}
+.fe-save-status.saving{color:var(--gold);}
+.fe-save-status.saved{color:var(--olive);}
+.fe-save-status.err{color:var(--danger);}
 .fe-tip{font-size:12px;color:var(--muted);background:var(--cream);border-radius:8px;padding:10px 14px;margin-bottom:16px;line-height:1.6;}
-.fe-block{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .2s;}
-.fe-block.inactive{opacity:.45;}
-.fe-block-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;}
-.fe-block-num{width:30px;height:30px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;}
+/* section (bloco) */
+.gf-section{margin-bottom:10px;}
+.gf-section-hd{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:12px;transition:border-color .15s;}
+.gf-section-hd:hover{border-color:var(--olive);}
+.gf-section-num{width:28px;height:28px;border-radius:50%;background:var(--olive);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.gf-section-num.off{background:var(--muted);}
 .fe-block-title{flex:1;font-size:14px;font-weight:500;color:var(--ink);border:none;background:none;font-family:'DM Sans',sans-serif;outline:none;padding:4px 6px;border-radius:4px;min-height:36px;transition:background .15s;}
 .fe-block-title:focus{background:var(--cream);}
 .fe-toggle{width:42px;height:24px;border-radius:12px;background:var(--border);position:relative;cursor:pointer;border:none;transition:background .25s;flex-shrink:0;}
@@ -234,38 +240,54 @@ tr:hover td{background:var(--cream);}
 .fe-toggle.on::after{transform:translateX(18px);}
 .fe-expand{padding:0 6px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;min-height:36px;min-width:36px;line-height:1;transition:transform .2s;display:flex;align-items:center;justify-content:center;}
 .fe-expand.open{transform:rotate(180deg);}
-.fe-block-body{padding:8px 16px 14px;border-top:1px solid var(--border);display:none;}
-.fe-block-body.open{display:block;}
-/* field item */
-.fe-field{padding:10px 0;border-bottom:1px solid var(--cream);}
-.fe-field:last-of-type{border-bottom:none;}
-.fe-field.fe-off{opacity:.4;}
-.fe-field-top{display:flex;align-items:center;gap:6px;}
-.fe-chk{width:18px;height:18px;cursor:pointer;accent-color:var(--olive);flex-shrink:0;}
-.fe-field-label{flex:1;padding:7px 10px;background:transparent;border:1.5px solid transparent;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;min-height:40px;transition:all .15s;}
-.fe-field-label:hover{border-color:var(--border);}
-.fe-field-label:focus{background:var(--cream);border-color:var(--olive);}
-.fe-type-sel{padding:6px 8px;background:var(--cream);border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);outline:none;min-height:36px;appearance:none;cursor:pointer;max-width:130px;}
-.fe-req{min-width:36px;min-height:36px;border:none;background:none;cursor:pointer;font-size:15px;color:var(--border);transition:color .2s;flex-shrink:0;}
-.fe-req.on{color:var(--olive);}
-.fe-fdel{min-width:36px;min-height:36px;border:none;background:none;color:var(--border);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:17px;transition:color .2s;flex-shrink:0;}
-.fe-fdel:hover{color:var(--danger);}
-/* options */
-.fe-opts{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 4px 24px;}
-.fe-opt{display:flex;align-items:center;gap:3px;padding:4px 10px;background:var(--cream);border:1px solid var(--border);border-radius:20px;font-size:12px;}
-.fe-opt input{border:none;background:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none;min-width:50px;max-width:110px;}
-.fe-opt-del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;padding:0;transition:color .2s;}
+.gf-section-body{padding:8px 0 4px;}
+/* pergunta card (estilo Google Forms) */
+.gf-card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden;transition:border-color .15s,box-shadow .15s;}
+.gf-card:hover{border-color:#c8c3b8;}
+.gf-card.focused{border-left:4px solid var(--olive);box-shadow:0 2px 12px rgba(107,122,66,.1);}
+.gf-card.gf-card-off{opacity:.45;}
+.gf-card-top{padding:16px 16px 12px;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+.gf-question-input{flex:1;min-width:160px;border:none;border-bottom:1.5px solid var(--border);background:var(--cream);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;border-radius:6px 6px 0 0;transition:border-color .2s;min-height:44px;}
+.gf-question-input:focus{border-bottom-color:var(--olive);background:#eeead9;}
+.gf-type-sel{padding:8px 10px;background:var(--white);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none;cursor:pointer;min-height:36px;min-width:160px;flex-shrink:0;transition:border-color .2s;}
+.gf-type-sel:focus{border-color:var(--olive);}
+/* preview */
+.gf-preview{padding:4px 16px 14px;}
+.gf-preview-line{height:1px;background:var(--border);margin:12px 0 3px;width:55%;}
+.gf-preview-label{font-size:11px;color:var(--muted);}
+.gf-preview-opts{display:flex;flex-direction:column;gap:8px;margin:10px 16px 14px;}
+.gf-preview-opt{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink);}
+.gf-preview-opt-circle{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);flex-shrink:0;}
+.gf-preview-opt-check{width:16px;height:16px;border-radius:3px;border:2px solid var(--muted);flex-shrink:0;}
+.gf-preview-toggle-row{display:flex;gap:8px;margin:10px 16px 14px;}
+.gf-preview-pill{padding:5px 16px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;color:var(--muted);}
+.gf-preview-scale{display:flex;gap:4px;margin:10px 16px 14px;flex-wrap:wrap;}
+.gf-preview-scale span{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);}
+.gf-preview-file{display:flex;align-items:center;gap:8px;margin:10px 16px 14px;padding:10px 14px;border:1.5px dashed var(--border);border-radius:8px;color:var(--muted);font-size:13px;}
+/* opções editor */
+.gf-opts-editor{padding:4px 16px 12px;}
+.gf-opt-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--cream);}
+.gf-opt-row:last-child{border-bottom:none;}
+.gf-opt-input{flex:1;border:none;border-bottom:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);padding:4px 2px;outline:none;background:none;min-height:34px;transition:border-color .2s;}
+.gf-opt-input:focus{border-bottom-color:var(--olive);}
+.gf-opt-add{color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 0;transition:color .15s;user-select:none;}
+.gf-opt-add:hover{color:var(--olive);}
+.fe-opt-del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 4px;transition:color .2s;}
 .fe-opt-del:hover{color:var(--danger);}
-.btn-fe-add-opt{padding:4px 12px;background:none;border:1px dashed var(--border);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;min-height:28px;}
-.btn-fe-add-opt:hover{border-color:var(--olive);color:var(--olive);}
-/* add field + block */
-.btn-fe-add-field{width:100%;padding:9px;background:none;border:1.5px dashed var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;min-height:44px;transition:all .2s;margin-top:8px;}
-.btn-fe-add-field:hover{border-color:var(--olive);color:var(--olive);}
-.fe-block-footer{display:flex;justify-content:flex-end;margin-top:8px;}
-.btn-fe-del-block{padding:7px 14px;background:none;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);cursor:pointer;min-height:36px;transition:all .2s;}
-.btn-fe-del-block:hover{border-color:var(--danger);color:var(--danger);}
-.fe-add-block{width:100%;padding:14px;border:2px dashed var(--border);border-radius:12px;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;min-height:52px;transition:all .2s;margin-top:6px;}
+/* card footer */
+.gf-card-footer{display:flex;align-items:center;padding:8px 12px 8px 16px;border-top:1px solid var(--cream);gap:8px;}
+.gf-footer-left{display:flex;align-items:center;gap:14px;flex:1;flex-wrap:wrap;}
+.gf-chk-label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none;white-space:nowrap;}
+.gf-chk-label input{accent-color:var(--olive);width:14px;height:14px;cursor:pointer;}
+.fe-fdel{min-width:36px;min-height:36px;border:none;background:none;color:var(--muted);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:color .2s;flex-shrink:0;}
+.fe-fdel:hover{color:var(--danger);}
+/* botões add/remove */
+.gf-add-field{width:100%;padding:10px;background:none;border:1.5px dashed var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;min-height:44px;transition:all .2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.gf-add-field:hover{border-color:var(--olive);color:var(--olive);}
+.fe-add-block{width:100%;padding:14px;border:2px dashed var(--border);border-radius:12px;background:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;min-height:52px;transition:all .2s;margin-top:12px;}
 .fe-add-block:hover{border-color:var(--olive);color:var(--olive);}
+.btn-fe-del-block{width:100%;padding:9px;background:none;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;min-height:40px;transition:all .2s;margin-top:6px;}
+.btn-fe-del-block:hover{border-color:var(--danger);color:var(--danger);}
 .fe-msg{font-size:12px;margin-top:12px;min-height:18px;line-height:1.5;}
 .fe-msg.ok{color:var(--olive);}
 .fe-msg.err{color:var(--danger);}
@@ -704,12 +726,13 @@ tr:hover td{background:var(--cream);}
       <div class="fe-header">
         <h2>Editor de Formulário</h2>
         <div class="fe-actions">
+          <span class="fe-save-status" id="feStatus"></span>
           <button class="btn-fe-reset" onclick="resetFormConfig()">Restaurar padrão</button>
-          <button class="btn-fe-save"  onclick="saveFormConfig()">Salvar</button>
+          <button class="btn-fe-save"  onclick="saveFormConfig()">Salvar agora</button>
         </div>
       </div>
-      <p class="fe-tip">Personalize o formulário que seus pacientes preenchem ao abrir seu link. Ative/desative blocos, edite títulos e adicione campos extras.
-        <a id="fePreviewLink" href="#" target="_blank" style="color:var(--olive);text-decoration:none;font-weight:500"> Visualizar →</a>
+      <p class="fe-tip">Edite as perguntas abaixo. As alterações são <strong>salvas automaticamente</strong> em 2 segundos. Visualize o resultado em:
+        <a id="fePreviewLink" href="#" target="_blank" style="color:var(--olive);text-decoration:none;font-weight:500">abrir formulário →</a>
       </p>
       <div class="fe-mode-tabs">
         <button class="fe-mode-tab active" id="feModeOnline"     onclick="setFeMode('online')">Consultoria Online</button>
@@ -1641,9 +1664,12 @@ function applyTypeKey(f,key){
   else if(key==='select'){f.t='select';if(!f.opts||!f.opts.length)f.opts=['Opção 1','Opção 2'];}
   else{f.t=key;delete f.multi;if(key!=='scale')delete f.opts;}
 }
-const TYPE_LABELS={text:'Resposta curta',textarea:'Parágrafo',date:'Data',
+const TYPE_LABELS={
+  text:'Resposta curta',textarea:'Parágrafo',date:'Data',
   chips_single:'Múltipla escolha',chips_multi:'Caixas de seleção',
-  select:'Lista suspensa',scale:'Escala linear',toggle:'Sim / Não'};
+  select:'Lista suspensa',scale:'Escala linear',toggle:'Sim / Não',
+  file:'Envio de arquivo'
+};
 function typeOpts(cur){
   return Object.entries(TYPE_LABELS).map(([v,l])=>
     `<option value="${v}"${cur===v?' selected':''}>${l}</option>`).join('');
@@ -1665,98 +1691,156 @@ function setFeMode(mode){
   renderFormEditor();
 }
 
+// ── AUTO-SAVE ─────────────────────────────────────────────────
+let _feSaveTimer=null;
+function _feScheduleSave(){
+  const st=document.getElementById('feStatus');
+  if(st){st.textContent='Não salvo';st.className='fe-save-status';}
+  clearTimeout(_feSaveTimer);
+  _feSaveTimer=setTimeout(()=>saveFormConfig(true),2000);
+}
+
 function renderFormEditor(){
   if(!formDraft[feMode]) formDraft[feMode]=buildDefaultDraft(feMode);
   const draft=getDraft();
   let html='';
   draft.forEach((blk,bi)=>{
-    const exp=!!feExpanded[bi];
-    const fields=blk.fields||[];
-    let body='';
-    fields.forEach((f,fi)=>{
-      const tk=typeKeyOf(f);
-      const hasOpts=['chips_single','chips_multi','select'].includes(tk);
-      const optsHtml=hasOpts?`<div class="fe-opts">
-        ${(f.opts||[]).map((o,oi)=>`<div class="fe-opt">
-          <input type="text" value="${esc(o)}" onchange="feUpdateOpt(${bi},${fi},${oi},this.value)" placeholder="Opção">
-          <button class="fe-opt-del" onclick="feRemoveOpt(${bi},${fi},${oi})">×</button>
-        </div>`).join('')}
-        <button class="btn-fe-add-opt" onclick="feAddOpt(${bi},${fi})">+ opção</button>
-      </div>`:'';
-      body+=`<div class="fe-field${f.active===false?' fe-off':''}">
-        <div class="fe-field-top">
-          <input type="checkbox" class="fe-chk" ${f.active!==false?'checked':''}
-            onchange="feToggleField(${bi},${fi})" title="Mostrar/ocultar">
-          <input class="fe-field-label" type="text" value="${esc(f.lbl)}"
-            onchange="feUpdateFieldLabel(${bi},${fi},this.value)" placeholder="Texto da pergunta">
-          <select class="fe-type-sel" onchange="feChangeFieldType(${bi},${fi},this.value)">${typeOpts(tk)}</select>
-          ${f.t!=='toggle'?`<button class="fe-req${f.req?' on':''}" onclick="feToggleReq(${bi},${fi})"
-            title="${f.req?'Obrigatório':'Opcional'}">★</button>`:''}
-          <button class="fe-fdel" onclick="feDeleteField(${bi},${fi})" title="Excluir pergunta">×</button>
-        </div>${optsHtml}
-      </div>`;
-    });
-    body+=`<button class="btn-fe-add-field" onclick="feAddField(${bi})">+ Adicionar pergunta</button>`;
-    if(blk.custom) body+=`<div class="fe-block-footer">
-      <button class="btn-fe-del-block" onclick="feRemoveBlock(${bi})">Remover bloco</button></div>`;
-    html+=`<div class="fe-block${blk.active?'':' inactive'}">
-      <div class="fe-block-hd" onclick="feToggleExpand(${bi})">
-        <div class="fe-block-num">${blk.num}</div>
+    const exp=feExpanded[bi]!==false; // aberto por padrão
+    html+=`<div class="gf-section">
+      <div class="gf-section-hd">
+        <div class="gf-section-num${blk.active?'':' off'}">${blk.num}</div>
         <input class="fe-block-title" type="text" value="${esc(blk.title)}"
-          onclick="event.stopPropagation()" onchange="feUpdateTitle(${bi},this.value)" placeholder="Título">
+          onclick="event.stopPropagation()"
+          onchange="feUpdateTitle(${bi},this.value)"
+          placeholder="Título da seção">
         <button class="fe-toggle${blk.active?' on':''}"
           onclick="event.stopPropagation();feToggle(${bi})"
-          title="${blk.active?'Desativar':'Ativar bloco'}"></button>
-        <button class="fe-expand${exp?' open':''}">⌄</button>
-      </div>
-      <div class="fe-block-body${exp?' open':''}">${body}</div>
-    </div>`;
+          title="${blk.active?'Desativar seção':'Ativar seção'}"></button>
+        <button class="fe-expand${exp?' open':''}" onclick="feToggleExpand(${bi})">⌄</button>
+      </div>`;
+    if(exp){
+      html+='<div class="gf-section-body">';
+      (blk.fields||[]).forEach((f,fi)=>{ html+=_renderGFCard(bi,fi,f); });
+      html+=`<button class="gf-add-field" onclick="feAddField(${bi})">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar pergunta
+      </button>`;
+      if(blk.custom){
+        html+=`<button class="btn-fe-del-block" onclick="feRemoveBlock(${bi})">Remover esta seção</button>`;
+      }
+      html+='</div>';
+    }
+    html+='</div>';
   });
-  html+=`<button class="fe-add-block" onclick="feAddBlock()">+ Adicionar bloco personalizado</button>`;
+  html+=`<button class="fe-add-block" onclick="feAddBlock()">+ Adicionar seção personalizada</button>`;
   document.getElementById('feBlocks').innerHTML=html;
 }
 
-// Bloco
-function feToggle(bi){getDraft()[bi].active=!getDraft()[bi].active;renderFormEditor();}
-function feToggleExpand(bi){feExpanded[bi]=!feExpanded[bi];renderFormEditor();}
-function feUpdateTitle(bi,val){getDraft()[bi].title=val||getDraft()[bi].title;}
+function _renderGFCard(bi,fi,f){
+  const tk=typeKeyOf(f);
+  const hasOpts=['chips_single','chips_multi','select'].includes(tk);
+  const circleIcon=tk==='chips_multi'
+    ?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>'
+    :'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>';
+
+  let content='';
+  if(hasOpts){
+    content=`<div class="gf-opts-editor">`;
+    (f.opts||[]).forEach((o,oi)=>{
+      content+=`<div class="gf-opt-row">
+        <span style="color:var(--muted);flex-shrink:0;display:flex">${circleIcon}</span>
+        <input type="text" class="gf-opt-input" value="${esc(o)}"
+          onchange="feUpdateOpt(${bi},${fi},${oi},this.value)"
+          placeholder="Opção ${oi+1}">
+        <button class="fe-opt-del" onclick="feRemoveOpt(${bi},${fi},${oi})" title="Remover">×</button>
+      </div>`;
+    });
+    content+=`<div class="gf-opt-add" onclick="feAddOpt(${bi},${fi})">
+      <span style="display:flex;color:var(--muted)">${circleIcon}</span>
+      <span>Adicionar opção</span>
+    </div></div>`;
+  } else {
+    let prev='';
+    if(f.t==='text')   prev=`<div class="gf-preview-line"></div><div class="gf-preview-label">Resposta curta</div>`;
+    else if(f.t==='textarea') prev=`<div class="gf-preview-line" style="width:90%"></div><div class="gf-preview-line" style="width:65%;margin-top:8px"></div><div class="gf-preview-label">Parágrafo</div>`;
+    else if(f.t==='date')     prev=`<div class="gf-preview-line"></div><div class="gf-preview-label">📅  dd/mm/aaaa</div>`;
+    else if(f.t==='toggle')   prev=`</div><div class="gf-preview-toggle-row"><span class="gf-preview-pill">Sim</span><span class="gf-preview-pill">Não</span><div style="display:none">`;
+    else if(f.t==='file')     prev=`</div><div class="gf-preview-file"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Adicionar arquivo<div style="display:none">`;
+    else if(f.t==='scale'){
+      const mn=f.min||1,mx=f.max||10;
+      prev=`</div><div class="gf-preview-scale">${Array.from({length:Math.min(mx-mn+1,10)},(_,i)=>`<span>${mn+i}</span>`).join('')}<div style="display:none">`;
+    }
+    content=`<div class="gf-preview">${prev}</div>`;
+  }
+
+  return `<div class="gf-card${f.active===false?' gf-card-off':''}">
+    <div class="gf-card-top">
+      <input class="gf-question-input" type="text" value="${esc(f.lbl)}"
+        placeholder="Pergunta sem título"
+        onchange="feUpdateFieldLabel(${bi},${fi},this.value)"
+        onfocus="this.closest('.gf-card').classList.add('focused')"
+        onblur="this.closest('.gf-card').classList.remove('focused')">
+      <select class="gf-type-sel" onchange="feChangeFieldType(${bi},${fi},this.value)">
+        ${typeOpts(tk)}
+      </select>
+    </div>
+    ${content}
+    <div class="gf-card-footer">
+      <div class="gf-footer-left">
+        ${f.t!=='toggle'?`<label class="gf-chk-label"><input type="checkbox" ${f.req?'checked':''} onchange="feToggleReq(${bi},${fi})"> Obrigatória</label>`:''}
+        <label class="gf-chk-label"><input type="checkbox" ${f.active!==false?'checked':''} onchange="feToggleField(${bi},${fi})"> Visível</label>
+      </div>
+      <button class="fe-fdel" onclick="feDeleteField(${bi},${fi})" title="Excluir pergunta">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
+  </div>`;
+}
+
+// Bloco / seção
+function feToggle(bi){getDraft()[bi].active=!getDraft()[bi].active;renderFormEditor();_feScheduleSave();}
+function feToggleExpand(bi){feExpanded[bi]=feExpanded[bi]===false;renderFormEditor();}
+function feUpdateTitle(bi,val){getDraft()[bi].title=val||getDraft()[bi].title;_feScheduleSave();}
 function feRemoveBlock(bi){
-  showConfirm('Remover este bloco personalizado?', ()=>{
+  showConfirm('Remover esta seção personalizada?',()=>{
     getDraft().splice(bi,1);
     const e2={};
     Object.keys(feExpanded).forEach(k=>{const ki=parseInt(k);if(ki<bi)e2[ki]=feExpanded[k];else if(ki>bi)e2[ki-1]=feExpanded[k];});
-    feExpanded=e2;renderFormEditor();
+    feExpanded=e2;renderFormEditor();_feScheduleSave();
   });
 }
 function feAddBlock(){
   const draft=getDraft();
   const cc=draft.filter(b=>b.custom).length;
-  draft.push({num:'C'+(cc+1),title:'Bloco personalizado',active:true,custom:true,
+  draft.push({num:'C'+(cc+1),title:'Nova seção',active:true,custom:true,
     fields:[{id:'ef_'+Date.now(),t:'text',lbl:'',active:true}]});
-  feExpanded[draft.length-1]=true;renderFormEditor();
-  setTimeout(()=>{const ls=[...document.querySelectorAll('.fe-block-body.open .fe-field-label')];if(ls.length)ls[ls.length-1].focus();},60);
+  feExpanded[draft.length-1]=true;renderFormEditor();_feScheduleSave();
+  setTimeout(()=>{const ls=[...document.querySelectorAll('.gf-question-input')];if(ls.length)ls[ls.length-1].focus();},80);
 }
 // Campo
-function feToggleField(bi,fi){const f=getDraft()[bi].fields[fi];f.active=f.active===false;renderFormEditor();}
-function feUpdateFieldLabel(bi,fi,val){getDraft()[bi].fields[fi].lbl=val;}
-function feChangeFieldType(bi,fi,key){applyTypeKey(getDraft()[bi].fields[fi],key);renderFormEditor();}
-function feToggleReq(bi,fi){const f=getDraft()[bi].fields[fi];f.req=!f.req;renderFormEditor();}
-function feDeleteField(bi,fi){showConfirm('Excluir esta pergunta?',()=>{getDraft()[bi].fields.splice(fi,1);renderFormEditor();});}
+function feToggleField(bi,fi){const f=getDraft()[bi].fields[fi];f.active=f.active===false;renderFormEditor();_feScheduleSave();}
+function feUpdateFieldLabel(bi,fi,val){getDraft()[bi].fields[fi].lbl=val;_feScheduleSave();}
+function feChangeFieldType(bi,fi,key){applyTypeKey(getDraft()[bi].fields[fi],key);renderFormEditor();_feScheduleSave();}
+function feToggleReq(bi,fi){const f=getDraft()[bi].fields[fi];f.req=!f.req;renderFormEditor();_feScheduleSave();}
+function feDeleteField(bi,fi){showConfirm('Excluir esta pergunta?',()=>{getDraft()[bi].fields.splice(fi,1);renderFormEditor();_feScheduleSave();});}
 function feAddField(bi){
   const blk=getDraft()[bi];if(!blk.fields)blk.fields=[];
   blk.fields.push({id:'ef_'+Date.now(),t:'text',lbl:'',active:true});
-  feExpanded[bi]=true;renderFormEditor();
-  setTimeout(()=>{const bodies=[...document.querySelectorAll('.fe-block-body.open')];const t=bodies[bi]||bodies[bodies.length-1];if(!t)return;const ls=t.querySelectorAll('.fe-field-label');if(ls.length)ls[ls.length-1].focus();},60);
+  feExpanded[bi]=true;renderFormEditor();_feScheduleSave();
+  setTimeout(()=>{const ls=[...document.querySelectorAll('.gf-question-input')];if(ls.length)ls[ls.length-1].focus();},80);
 }
 // Opções
-function feAddOpt(bi,fi){const f=getDraft()[bi].fields[fi];if(!f.opts)f.opts=[];f.opts.push('Nova opção');renderFormEditor();}
-function feRemoveOpt(bi,fi,oi){getDraft()[bi].fields[fi].opts.splice(oi,1);renderFormEditor();}
-function feUpdateOpt(bi,fi,oi,val){getDraft()[bi].fields[fi].opts[oi]=val;}
+function feAddOpt(bi,fi){const f=getDraft()[bi].fields[fi];if(!f.opts)f.opts=[];f.opts.push('');renderFormEditor();_feScheduleSave();}
+function feRemoveOpt(bi,fi,oi){getDraft()[bi].fields[fi].opts.splice(oi,1);renderFormEditor();_feScheduleSave();}
+function feUpdateOpt(bi,fi,oi,val){getDraft()[bi].fields[fi].opts[oi]=val;_feScheduleSave();}
 
-async function saveFormConfig(){
-  if(!profId)return;
+async function saveFormConfig(auto=false){
+  if(!profId) return;
+  clearTimeout(_feSaveTimer);
   const msg=document.getElementById('feMsg');
-  msg.textContent='Salvando…';msg.className='fe-msg ok';
+  const st=document.getElementById('feStatus');
+  if(st){st.textContent='Salvando…';st.className='fe-save-status saving';}
+  if(!auto){msg.textContent='Salvando…';msg.className='fe-msg ok';}
   const {error}=await sb.from('form_templates').upsert({
     professional_id:  profId,
     wa_number:        profData?.wa_number||'',
@@ -1764,9 +1848,14 @@ async function saveFormConfig(){
     presencial_config:formDraft.presencial||buildDefaultDraft('presencial'),
     updated_at:new Date().toISOString()
   },{onConflict:'professional_id'});
-  if(error){console.error('[saveFormConfig]',error);msg.textContent='Erro: '+error.message;msg.className='fe-msg err';return;}
-  msg.textContent='Salvo! O link de anamnese já reflete as mudanças.';msg.className='fe-msg ok';
-  setTimeout(()=>msg.textContent='',5000);
+  if(error){
+    console.error('[saveFormConfig]',error);
+    if(st){st.textContent='Erro ao salvar';st.className='fe-save-status err';}
+    if(!auto){msg.textContent='Erro: '+error.message;msg.className='fe-msg err';}
+    return;
+  }
+  if(st){st.textContent='✓ Salvo';st.className='fe-save-status saved';setTimeout(()=>{if(st)st.textContent='';},3000);}
+  if(!auto){msg.textContent='Salvo com sucesso!';msg.className='fe-msg ok';setTimeout(()=>msg.textContent='',4000);}
 }
 function resetFormConfig(){
   showConfirm('Restaurar formulário padrão para o modo '+feMode+'?', ()=>{

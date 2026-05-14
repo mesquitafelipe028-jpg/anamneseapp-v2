@@ -232,6 +232,10 @@ body {
   background-color: #f5f2ec; padding-right: 38px; cursor: pointer;
 }
 .field .hint { font-size: 11px; color: #b0ab9e; margin-top: 6px; line-height: 1.5; }
+.file-upload-wrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;}
+.file-upload-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#f0ece3;border:1.5px solid #d4cec2;border-radius:8px;font-size:13px;color:#5a6e2a;cursor:pointer;transition:background .15s;user-select:none;white-space:nowrap;}
+.file-upload-btn:hover{background:#e6e0d2;}
+.file-upload-name{font-size:12px;color:#9a9588;word-break:break-all;}
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 /* Chips */
@@ -871,7 +875,45 @@ function rf(f,cl){
   if(f.t==='chips'){const sel=chips[f.id]||[];const cs=f.opts.map(o=>`<div class="chip${sel.includes(o)?' sel':''}" onclick="tChip('${f.id}','${o}',${!!f.multi})">${o}</div>`).join('');return`<div class="field"><label>${f.lbl}${req}</label><div class="chips" id="cw-${f.id}">${cs}</div></div>`;}
   if(f.t==='toggle'){const on=toggles[f.id]||false;return`<div class="tog-row" onclick="tSw('${f.id}')"><span class="tog-label">${f.lbl}</span><div class="sw${on?' on':''}" id="sw-${f.id}"></div></div>`;}
   if(f.t==='scale'){const v=scales[f.id]||null;let b='';for(let i=f.min;i<=f.max;i++)b+=`<button class="scn${v===i?' sel':''}" onclick="sSc('${f.id}',${i})">${i}</button>`;return`<div class="field"><label>${f.lbl}${req}</label><div class="scale-row">${b}</div><div class="scale-labels"><span>Nenhum</span><span>Máximo</span></div></div>`;}
+  if(f.t==='file'){
+    const uploaded=data[f.id]||'';
+    const fname=uploaded?uploaded.split('/').pop().replace(/^\d+_/,''):'';
+    return`<div class="field"><label>${f.lbl}${req}</label>
+      <div class="file-upload-wrap" id="fuw-${f.id}">
+        <label class="file-upload-btn" for="fi-${f.id}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          ${uploaded?'Trocar arquivo':'Adicionar arquivo'}
+        </label>
+        <input type="file" id="fi-${f.id}" style="display:none" onchange="_handleFileField('${f.id}',this)">
+        <span class="file-upload-name" id="fn-${f.id}">${fname?'✓ '+fname:''}</span>
+      </div>
+    </div>`;
+  }
   return'';
+}
+
+async function _handleFileField(id, input){
+  const file=input?.files?.[0];
+  if(!file) return;
+  const wrap=document.getElementById('fuw-'+id);
+  const nameEl=document.getElementById('fn-'+id);
+  if(nameEl) nameEl.textContent='Enviando…';
+  if(sb&&_pid){
+    const safeName=file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_');
+    const path=`${_pid}/respostas/${Date.now()}_${safeName}`;
+    try{
+      const {error}=await sb.storage.from('anamnese-photos').upload(path,file,{cacheControl:'3600',upsert:false});
+      if(!error){
+        const {data:{publicUrl}}=sb.storage.from('anamnese-photos').getPublicUrl(path);
+        data[id]=publicUrl;
+        if(nameEl) nameEl.textContent='✓ '+file.name;
+        saveLocal(); return;
+      }
+    }catch(e){}
+  }
+  data[id]='[arquivo: '+file.name+']';
+  if(nameEl) nameEl.textContent='⚠ '+file.name+' (sem storage configurado)';
+  saveLocal();
 }
 
 function tChip(id,val,multi){
