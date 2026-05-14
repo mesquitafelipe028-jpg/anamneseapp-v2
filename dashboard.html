@@ -491,8 +491,7 @@ tr:hover td{background:var(--cream);}
   .fab-wrap{display:flex;}
   .app-main{margin-left:0;padding-bottom:calc(72px + env(safe-area-inset-bottom));}
   .app-header{display:flex;}
-  .view-footer{bottom:calc(60px + env(safe-area-inset-bottom));padding-bottom:12px;}
-  .view-container .dash-inner{padding-bottom:calc(140px + env(safe-area-inset-bottom)) !important;}
+  .view-container .dash-inner{padding-bottom:calc(100px + env(safe-area-inset-bottom)) !important;}
 }
 @media(min-width:900px){
   .app-header{display:none;}
@@ -516,12 +515,12 @@ tr:hover td{background:var(--cream);}
 .view-header h1{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;}
 .btn-back{min-width:44px;min-height:44px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);border-radius:8px;flex-shrink:0;}
 .btn-back:hover{background:var(--cream);}
-.view-footer{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:260;}
+.view-footer{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:350;}
 .view-footer .btn-save-profile{flex:0;white-space:nowrap;}
 .view-footer .btn-logout{flex:1;text-align:center;display:flex;align-items:center;justify-content:center;}
 @media(min-width:900px){
   .view-header{top:0;}
-  .view-footer{left:240px;position:sticky;margin-top:24px;border-top:none;background:none;padding:0;}
+  .view-footer{left:240px;}
   .view-container{padding-bottom:0;}
 }
 /* ── EVOLUÇÃO / CHARTS ── */
@@ -1097,8 +1096,12 @@ function getViewFromURL(){
 function hideView(){
   const vc = document.getElementById('viewContainer');
   if(vc) vc.style.display = 'none';
-  const fabWrap = document.getElementById('fabWrap');
-  if(fabWrap && window.innerWidth < 900) fabWrap.style.display = 'flex';
+  if(window.innerWidth < 900){
+    const fabWrap = document.getElementById('fabWrap');
+    if(fabWrap) fabWrap.style.display = 'flex';
+    const bNav = document.querySelector('.bottom-nav');
+    if(bNav) bNav.style.display = 'block';
+  }
 }
 window.addEventListener('popstate', e=>{
   const st = e.state;
@@ -1122,6 +1125,8 @@ function _renderView(view, params={}){
   vc.innerHTML = '<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
   const fabWrap = document.getElementById('fabWrap');
   if(fabWrap) fabWrap.style.display = 'none';
+  const bNav = document.querySelector('.bottom-nav');
+  if(bNav) bNav.style.display = 'none';
   switch(view){
     case 'novo-cliente':   renderViewNovoCliente(params); break;
     case 'editar-cliente': renderViewEditarCliente(params); break;
