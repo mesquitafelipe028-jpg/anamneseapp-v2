@@ -8,6 +8,7 @@
     { "src": "/manifest.json","dest": "/manifest.json"  },
     { "src": "/icon.svg",     "dest": "/icon.svg"       },
     { "src": "/config.js",    "dest": "/config.js"      },
+    { "src": "/portal",       "dest": "/portal.html"    },
     { "src": "/avaliacao",    "dest": "/avaliacao.html" },
     { "src": "/anamnese",     "dest": "/anamnese.html"  },
     { "src": "/dashboard",    "dest": "/dashboard.html" },

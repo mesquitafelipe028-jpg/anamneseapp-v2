@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#6b7a42">
+<title>Portal do Cliente — AnamneseApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/config.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0;--white:#ffffff;--ink:#1a1814;--muted:#9a9588;
+  --border:#e4e0d8;--olive:#6b7a42;--gold:#a8893a;--cream:#f0ece3;--danger:#c0392b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{overflow-x:hidden;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+
+/* ── LOADING / DENIED ── */
+.full-center{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;}
+.logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;color:var(--olive);margin-bottom:8px;}
+.logo span{font-style:normal;color:var(--ink);}
+.spin{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--olive);border-radius:50%;animation:sp .7s linear infinite;margin:24px auto 0;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.denied-icon{font-size:48px;margin-bottom:16px;}
+.denied-title{font-family:'Instrument Serif',serif;font-size:26px;font-weight:400;color:var(--ink);margin-bottom:10px;}
+.denied-desc{font-size:14px;color:var(--muted);line-height:1.7;max-width:360px;}
+
+/* ── PORTAL LAYOUT ── */
+#portal{display:none;}
+.portal-header{background:var(--ink);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:50;}
+.portal-logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:18px;color:#fff;}
+.portal-logo span{font-style:normal;color:var(--olive);}
+.portal-client-name{font-size:13px;color:rgba(255,255,255,.6);text-align:right;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.portal-main{max-width:720px;margin:0 auto;padding:24px 16px 60px;}
+
+/* ── CARDS ── */
+.portal-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:16px;}
+.portal-card-title{font-family:'Instrument Serif',serif;font-size:20px;font-weight:400;color:var(--ink);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.portal-card-title svg{color:var(--olive);}
+
+/* ── DADOS DO CLIENTE ── */
+.data-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:12px;}
+.data-row:last-child{border-bottom:none;}
+.data-key{color:var(--muted);flex-shrink:0;}
+.data-val{color:var(--ink);font-weight:500;text-align:right;word-break:break-word;}
+
+/* ── AVALIAÇÕES ── */
+.aval-item{border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.aval-item-hd{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer;transition:background .15s;gap:10px;}
+.aval-item-hd:hover{background:var(--cream);}
+.aval-item-date{font-size:13px;font-weight:600;color:var(--ink);}
+.aval-item-mod{font-size:11px;color:var(--muted);}
+.aval-chevron{font-size:16px;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+.aval-chevron.open{transform:rotate(180deg);}
+.aval-item-body{display:none;padding:14px 16px;border-top:1px solid var(--border);background:var(--bg);}
+.aval-item-body.open{display:block;}
+.aval-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;}
+@media(min-width:480px){.aval-metrics{grid-template-columns:repeat(3,1fr);}}
+.aval-metric{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center;}
+.aval-metric-val{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;color:var(--ink);}
+.aval-metric-lbl{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.5px;text-transform:uppercase;}
+.btn-pdf{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid var(--olive);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--olive);background:none;cursor:pointer;transition:all .2s;}
+.btn-pdf:hover{background:var(--olive);color:#fff;}
+
+/* ── METAS ── */
+.goal-card-p{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
+.goal-title-p{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:8px;}
+.goal-cat-p{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;}
+.gc-peso{background:rgba(70,100,150,.1);color:#4664a0;}
+.gc-gordura{background:rgba(200,100,20,.1);color:#c86414;}
+.gc-circunferencia{background:rgba(130,50,150,.1);color:#823296;}
+.gc-vo2{background:rgba(107,122,66,.12);color:var(--olive);}
+.gc-forca{background:rgba(192,57,43,.1);color:#c0392b;}
+.gc-outro{background:var(--cream);color:var(--muted);}
+.prog-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s;}
+.gp-low{background:#c0392b;}.gp-mid{background:var(--gold);}.gp-high{background:var(--olive);}
+.prog-vals{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+
+/* ── EVOLUÇÃO ── */
+.metric-sel-p{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.metric-btn-p{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;min-height:32px;}
+.metric-btn-p.active{background:var(--olive);border-color:var(--olive);color:#fff;}
+.metric-btn-p:hover:not(.active){border-color:var(--olive);color:var(--olive);}
+.chart-wrap-p{position:relative;height:200px;}
+@media(min-width:600px){.chart-wrap-p{height:260px;}}
+.chart-empty-p{text-align:center;padding:32px 0;color:var(--muted);font-size:13px;}
+
+/* ── ANAMNESES ── */
+.anam-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;gap:10px;}
+.anam-row:last-child{border-bottom:none;}
+.badge-s{padding:3px 8px;border-radius:12px;font-size:10px;font-weight:600;}
+.s-nova{background:rgba(107,122,66,.12);color:var(--olive);}
+.s-lida{background:rgba(154,149,136,.12);color:var(--muted);}
+.s-arquivada{background:rgba(26,24,20,.07);color:var(--ink);}
+
+.empty-p{text-align:center;padding:32px 0;color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingScreen" class="full-center">
+  <div class="logo">Anamnese<span>App</span></div>
+  <div style="font-size:13px;color:var(--muted);margin-top:4px">Portal do Cliente</div>
+  <div class="spin"></div>
+</div>
+
+<!-- ACESSO NEGADO -->
+<div id="deniedScreen" class="full-center" style="display:none">
+  <div class="denied-icon">🔒</div>
+  <div class="denied-title">Link inválido ou expirado</div>
+  <div class="denied-desc">Este link de acesso não é válido ou já expirou. Solicite um novo link ao seu profissional.</div>
+</div>
+
+<!-- PORTAL -->
+<div id="portal">
+  <header class="portal-header">
+    <div class="portal-logo">Anamnese<span>App</span></div>
+    <div class="portal-client-name" id="portalClientName"></div>
+  </header>
+
+  <main class="portal-main">
+
+    <!-- SEÇÃO 1: Meus dados -->
+    <div class="portal-card">
+      <div class="portal-card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Meus dados
+      </div>
+      <div id="secDados"><div class="empty-p">Carregando…</div></div>
+    </div>
+
+    <!-- SEÇÃO 2: Minhas avaliações -->
+    <div class="portal-card">
+      <div class="portal-card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Minhas avaliações
+      </div>
+      <div id="secAvals"><div class="empty-p">Carregando…</div></div>
+    </div>
+
+    <!-- SEÇÃO 3: Minha evolução -->
+    <div class="portal-card">
+      <div class="portal-card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Minha evolução
+      </div>
+      <div class="metric-sel-p" id="metricSelP">
+        <button class="metric-btn-p active" onclick="loadPortalChart('peso',this)">Peso</button>
+        <button class="metric-btn-p" onclick="loadPortalChart('gordura',this)">% Gordura</button>
+        <button class="metric-btn-p" onclick="loadPortalChart('imc',this)">IMC</button>
+        <button class="metric-btn-p" onclick="loadPortalChart('cintura',this)">Cintura</button>
+        <button class="metric-btn-p" onclick="loadPortalChart('vo2max',this)">VO2 Máx</button>
+        <button class="metric-btn-p" onclick="loadPortalChart('preensao',this)">Preensão</button>
+      </div>
+      <div class="chart-wrap-p"><canvas id="portalChart"></canvas></div>
+      <div class="chart-empty-p" id="portalChartEmpty" style="display:none"></div>
+    </div>
+
+    <!-- SEÇÃO 4: Minhas metas -->
+    <div class="portal-card">
+      <div class="portal-card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        Minhas metas
+      </div>
+      <div id="secMetas"><div class="empty-p">Carregando…</div></div>
+    </div>
+
+    <!-- SEÇÃO 5: Minhas anamneses -->
+    <div class="portal-card">
+      <div class="portal-card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Minhas anamneses
+      </div>
+      <div id="secAnam"><div class="empty-p">Carregando…</div></div>
+    </div>
+
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:24px">
+      AnamneseApp · Portal do Cliente · Dados privados e protegidos
+    </div>
+  </main>
+</div>
+
+<script>
+// ── INIT ──────────────────────────────────────────────────────────
+const _SBU = window.SUPABASE_URL  || '';
+const _SBA = window.SUPABASE_ANON || '';
+const sb   = (_SBU && _SBA) ? supabase.createClient(_SBU, _SBA) : null;
+
+const params    = new URLSearchParams(location.search);
+const clientId  = params.get('client_id') || '';
+const token     = params.get('token')     || '';
+
+let _portalChart = null;
+let _portalAvals = [];
+
+const _METRIC_LBL = {
+  peso:'Peso (kg)', gordura:'% Gordura', imc:'IMC (kg/m²)',
+  cintura:'Cintura (cm)', vo2max:'VO2 Máx (ml/kg/min)', preensao:'Preensão (kg)'
+};
+const _CAT_LBL = {peso:'Peso',gordura:'Gordura',circunferencia:'Circunf.',vo2:'VO2',forca:'Força',outro:'Outro'};
+const _CAT_CLS = {peso:'gc-peso',gordura:'gc-gordura',circunferencia:'gc-circunferencia',vo2:'gc-vo2',forca:'gc-forca',outro:'gc-outro'};
+const _ST_LBL  = {nova:'Nova',lida:'Lida',arquivada:'Arquivada'};
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _show(id){ document.getElementById(id).style.display=''; }
+function _hide(id){ document.getElementById(id).style.display='none'; }
+
+// ── VERIFY TOKEN ──────────────────────────────────────────────────
+(async()=>{
+  if(!sb || !clientId || !token){
+    _hide('loadingScreen'); _show('deniedScreen'); return;
+  }
+  const {data, error} = await sb.from('clients')
+    .select('*')
+    .eq('id', clientId)
+    .eq('portal_token', token)
+    .gt('portal_token_expires_at', new Date().toISOString())
+    .maybeSingle();
+
+  if(error || !data){
+    _hide('loadingScreen'); _show('deniedScreen'); return;
+  }
+
+  _hide('loadingScreen');
+  _show('portal');
+  document.getElementById('portalClientName').textContent = data.name || '';
+  document.title = `Portal de ${data.name || 'Cliente'} — AnamneseApp`;
+
+  renderDados(data);
+
+  // Carrega o resto em paralelo
+  const [avalsRes, metasRes, anamRes] = await Promise.all([
+    sb.from('assessments')
+      .select(`id,created_at,modality,status,notes,
+        assessment_biometrics(peso_kg,imc,percentual_gordura_bio),
+        assessment_circumferences(cintura_cm),
+        assessment_skinfolds(percentual_gordura),
+        assessment_vo2(vo2max_estimado),
+        assessment_strength(preensao_d_kg,preensao_e_kg)`)
+      .eq('client_id', clientId)
+      .eq('status', 'concluida')
+      .order('created_at', {ascending: false}),
+    sb.from('client_goals')
+      .select('*')
+      .eq('client_id', clientId)
+      .eq('status', 'ativa')
+      .order('created_at', {ascending: false}),
+    sb.from('anamneses')
+      .select('id,created_at,status,mode,patient_name')
+      .eq('client_id', clientId)
+      .order('created_at', {ascending: false})
+  ]);
+
+  _portalAvals = avalsRes.data || [];
+  renderAvals(_portalAvals);
+  renderMetas(metasRes.data || []);
+  renderAnam(anamRes.data || []);
+  loadPortalChart('peso', document.querySelector('#metricSelP .metric-btn-p.active'));
+})();
+
+// ── SEÇÃO 1: DADOS ────────────────────────────────────────────────
+function renderDados(c){
+  const sex = {M:'Masculino',F:'Feminino',outro:'Outro'}[c.sex]||'—';
+  const dob  = c.dob ? new Date(c.dob+'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const upd  = c.updated_at ? new Date(c.updated_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+  document.getElementById('secDados').innerHTML = `
+    <div class="data-row"><span class="data-key">Nome</span><span class="data-val">${esc(c.name)}</span></div>
+    ${c.objetivo?`<div class="data-row"><span class="data-key">Objetivo</span><span class="data-val">${esc(c.objetivo)}</span></div>`:''}
+    ${c.phone?`<div class="data-row"><span class="data-key">Telefone</span><span class="data-val">${esc(c.phone)}</span></div>`:''}
+    ${c.email?`<div class="data-row"><span class="data-key">E-mail</span><span class="data-val">${esc(c.email)}</span></div>`:''}
+    <div class="data-row"><span class="data-key">Nascimento</span><span class="data-val">${dob}</span></div>
+    <div class="data-row"><span class="data-key">Sexo</span><span class="data-val">${sex}</span></div>
+    <div class="data-row"><span class="data-key">Última atualização</span><span class="data-val">${upd}</span></div>`;
+}
+
+// ── SEÇÃO 2: AVALIAÇÕES ───────────────────────────────────────────
+function renderAvals(avals){
+  const el = document.getElementById('secAvals');
+  if(!avals.length){ el.innerHTML='<div class="empty-p">Nenhuma avaliação concluída.</div>'; return; }
+  el.innerHTML = avals.map((a,i)=>{
+    const bio  = a.assessment_biometrics?.[0]  || {};
+    const circ = a.assessment_circumferences?.[0] || {};
+    const skin = a.assessment_skinfolds?.[0]   || {};
+    const vo2  = a.assessment_vo2?.[0]          || {};
+    const dt   = new Date(a.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+    const mod  = a.modality==='online'?'Online':'Presencial';
+    const gordura = skin.percentual_gordura ?? bio.percentual_gordura_bio;
+    const metrics = [
+      bio.peso_kg!=null       ? {v:bio.peso_kg,l:'Peso (kg)'}          : null,
+      bio.imc!=null           ? {v:parseFloat(bio.imc).toFixed(1),l:'IMC'} : null,
+      gordura!=null           ? {v:parseFloat(gordura).toFixed(1)+'%',l:'% Gordura'} : null,
+      circ.cintura_cm!=null   ? {v:circ.cintura_cm,l:'Cintura (cm)'}   : null,
+      vo2.vo2max_estimado!=null?{v:parseFloat(vo2.vo2max_estimado).toFixed(1),l:'VO2 Máx'}: null,
+    ].filter(Boolean);
+    const metricsHtml = metrics.length ? `<div class="aval-metrics">${metrics.map(m=>`
+      <div class="aval-metric"><div class="aval-metric-val">${m.v}</div><div class="aval-metric-lbl">${m.l}</div></div>`).join('')}</div>` : '';
+    const obsHtml = a.notes ? `<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6"><strong>Observações:</strong> ${esc(a.notes)}</div>` : '';
+    return `<div class="aval-item">
+      <div class="aval-item-hd" onclick="toggleAval(${i})">
+        <div>
+          <div class="aval-item-date">${dt}</div>
+          <div class="aval-item-mod">${mod}</div>
+        </div>
+        <span class="aval-chevron" id="chev-${i}">⌄</span>
+      </div>
+      <div class="aval-item-body" id="aval-body-${i}">
+        ${metricsHtml}
+        ${obsHtml}
+        <button class="btn-pdf" onclick="downloadAvalPDF(${i},'${dt}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Baixar PDF
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleAval(i){
+  const body=document.getElementById('aval-body-'+i);
+  const chev=document.getElementById('chev-'+i);
+  const open=body.classList.toggle('open');
+  if(chev) chev.classList.toggle('open',open);
+}
+function downloadAvalPDF(i, dt){
+  const a = _portalAvals[i];
+  if(!a){ return; }
+  const bio  = a.assessment_biometrics?.[0]  || {};
+  const circ = a.assessment_circumferences?.[0] || {};
+  const skin = a.assessment_skinfolds?.[0]   || {};
+  const vo2  = a.assessment_vo2?.[0]          || {};
+  const str  = a.assessment_strength?.[0]    || {};
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const OLIVE=[107,122,66],DARK=[26,24,20],MID=[122,118,104],LIGHT=[228,224,216];
+  const PW=210,ML=16,MR=16;
+  let y=20;
+  doc.setFillColor(...OLIVE);doc.rect(0,0,PW,3,'F');
+  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.setTextColor(...DARK);
+  doc.text('RELATÓRIO DE AVALIAÇÃO',PW/2,y+8,{align:'center'});
+  doc.setFontSize(11);doc.setFont('helvetica','normal');doc.setTextColor(...MID);
+  doc.text(dt,PW/2,y+16,{align:'center'});
+  y+=28;
+  const row=(k,v)=>{
+    if(v==null||v==='') return;
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(...MID);
+    doc.text(k.toUpperCase(),ML,y);
+    doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(...DARK);
+    doc.text(String(v),PW-MR,y,{align:'right'});
+    doc.setDrawColor(...LIGHT);doc.setLineWidth(.2);doc.line(ML,y+3,PW-MR,y+3);
+    y+=10;
+  };
+  row('Peso',bio.peso_kg?bio.peso_kg+' kg':null);
+  row('IMC',bio.imc?parseFloat(bio.imc).toFixed(1)+' kg/m²':null);
+  row('% Gordura (bio)',bio.percentual_gordura_bio?bio.percentual_gordura_bio+'%':null);
+  row('% Gordura (dobras)',skin.percentual_gordura?parseFloat(skin.percentual_gordura).toFixed(1)+'%':null);
+  row('Cintura',circ.cintura_cm?circ.cintura_cm+' cm':null);
+  row('VO2 Máx',vo2.vo2max_estimado?parseFloat(vo2.vo2max_estimado).toFixed(1)+' ml/kg/min':null);
+  if(str.preensao_d_kg||str.preensao_e_kg){
+    row('Preensão Direita',str.preensao_d_kg?str.preensao_d_kg+' kg':null);
+    row('Preensão Esquerda',str.preensao_e_kg?str.preensao_e_kg+' kg':null);
+  }
+  if(a.notes){y+=4;doc.setFontSize(9);doc.setTextColor(...MID);doc.text('OBSERVAÇÕES',ML,y);y+=6;
+    doc.setFontSize(10);doc.setTextColor(...DARK);doc.setFont('helvetica','normal');
+    const lines=doc.splitTextToSize(a.notes,PW-ML-MR);doc.text(lines,ML,y);
+  }
+  doc.setFillColor(...OLIVE);doc.rect(0,294,PW,3,'F');
+  doc.save('avaliacao-'+dt.replace(/\//g,'-')+'.pdf');
+}
+
+// ── SEÇÃO 3: EVOLUÇÃO ─────────────────────────────────────────────
+function loadPortalChart(metric, btnEl){
+  if(btnEl){
+    document.querySelectorAll('#metricSelP .metric-btn-p').forEach(b=>b.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
+  const canvas=document.getElementById('portalChart');
+  const emptyEl=document.getElementById('portalChartEmpty');
+  if(!canvas||!emptyEl) return;
+  const points=_portalAvals.map(a=>{
+    const bio=a.assessment_biometrics?.[0]||{};
+    const circ=a.assessment_circumferences?.[0]||{};
+    const skin=a.assessment_skinfolds?.[0]||{};
+    const vo2=a.assessment_vo2?.[0]||{};
+    const str=a.assessment_strength?.[0]||{};
+    let val=null;
+    if(metric==='peso')    val=bio.peso_kg??null;
+    if(metric==='gordura') val=skin.percentual_gordura??bio.percentual_gordura_bio??null;
+    if(metric==='imc')     val=bio.imc??null;
+    if(metric==='cintura') val=circ.cintura_cm??null;
+    if(metric==='vo2max')  val=vo2.vo2max_estimado??null;
+    if(metric==='preensao'){
+      const d=parseFloat(str.preensao_d_kg),e2=parseFloat(str.preensao_e_kg);
+      if(!isNaN(d)&&!isNaN(e2)) val=+((d+e2)/2).toFixed(1);
+      else if(!isNaN(d)) val=d; else if(!isNaN(e2)) val=e2;
+    }
+    return val!=null?{date:new Date(a.created_at),val:parseFloat(val)}:null;
+  }).filter(Boolean).sort((a,b)=>a.date-b.date);
+  if(_portalChart){_portalChart.destroy();_portalChart=null;}
+  if(!points.length){
+    canvas.style.display='none';emptyEl.style.display='block';
+    emptyEl.textContent='Nenhum dado de '+(_METRIC_LBL[metric]||metric)+' nas avaliações.';return;
+  }
+  if(points.length<2){
+    canvas.style.display='none';emptyEl.style.display='block';
+    emptyEl.textContent='Faça pelo menos 2 avaliações para ver a evolução.';return;
+  }
+  canvas.style.display='block';emptyEl.style.display='none';
+  const labels=points.map(p=>p.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'}));
+  const values=points.map(p=>p.val);
+  _portalChart=new Chart(canvas,{
+    type:'line',
+    data:{labels,datasets:[{
+      label:_METRIC_LBL[metric]||metric,data:values,
+      borderColor:'#6b7a42',backgroundColor:'rgba(107,122,66,0.1)',
+      borderWidth:2.5,pointBackgroundColor:'#6b7a42',
+      pointRadius:5,pointHoverRadius:7,fill:true,tension:0.35
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:ctx=>ctx[0].label,
+        label:ctx=>(_METRIC_LBL[metric]||metric)+': '+ctx.parsed.y
+      }}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:11},color:'#9a9588'}},
+        y:{grid:{color:'rgba(0,0,0,0.06)'},ticks:{font:{size:11},color:'#9a9588'}}
+      }
+    }
+  });
+}
+
+// ── SEÇÃO 4: METAS ────────────────────────────────────────────────
+function renderMetas(goals){
+  const el=document.getElementById('secMetas');
+  if(!goals.length){el.innerHTML='<div class="empty-p">Nenhuma meta ativa no momento.</div>';return;}
+  el.innerHTML=goals.map(g=>{
+    const base=parseFloat(g.baseline_value)||0;
+    const target=parseFloat(g.target_value)||0;
+    const cur=parseFloat(g.current_value??g.baseline_value)||0;
+    const range=target-base;
+    const pct=range===0?null:Math.max(0,Math.min(100,((cur-base)/range)*100));
+    const pctR=pct!=null?Math.round(pct):null;
+    const fillCls=pct==null?'':pct<30?'gp-low':pct<70?'gp-mid':'gp-high';
+    const unit=g.target_unit?' '+g.target_unit:'';
+    return `<div class="goal-card-p">
+      <span class="goal-cat-p ${_CAT_CLS[g.category]||'gc-outro'}">${_CAT_LBL[g.category]||'Outro'}</span>
+      <div class="goal-title-p">${esc(g.title)}</div>
+      ${pct!=null?`<div class="prog-bg"><div class="prog-fill ${fillCls}" style="width:${pctR}%"></div></div>
+      <div class="prog-vals">
+        <span>Atual: <strong>${cur+unit}</strong></span>
+        <span><strong>${pctR}%</strong></span>
+        <span>Meta: <strong>${target+unit}</strong></span>
+      </div>`:''}
+      ${g.deadline?`<div style="font-size:11px;color:var(--muted);margin-top:6px">⏱ Prazo: ${new Date(g.deadline+'T00:00:00').toLocaleDateString('pt-BR')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── SEÇÃO 5: ANAMNESES ────────────────────────────────────────────
+function renderAnam(anams){
+  const el=document.getElementById('secAnam');
+  if(!anams.length){el.innerHTML='<div class="empty-p">Nenhuma anamnese encontrada.</div>';return;}
+  el.innerHTML='<div>'+anams.map(a=>{
+    const st=a.status||'nova';
+    const dt=new Date(a.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+    const mod=a.mode==='online'?'Online':'Presencial';
+    return `<div class="anam-row">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--ink)">${dt}</div>
+        <div style="font-size:11px;color:var(--muted)">${mod}</div>
+      </div>
+      <span class="badge-s s-${st}">${{nova:'Nova',lida:'Lida',arquivada:'Arquivada'}[st]||st}</span>
+    </div>`;
+  }).join('')+'</div>';
+}
+</script>
+</body>
+</html>
