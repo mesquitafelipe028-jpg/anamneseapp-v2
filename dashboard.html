@@ -778,6 +778,10 @@ tr:hover td{background:var(--cream);}
       <p class="fe-tip">Edite as perguntas abaixo. As alterações são <strong>salvas automaticamente</strong> em 2 segundos. Visualize o resultado em:
         <a id="fePreviewLink" href="#" target="_blank" style="color:var(--olive);text-decoration:none;font-weight:500">abrir formulário →</a>
       </p>
+      <div id="feSpecialtyNote" style="background:rgba(107,122,66,.07);border:1px solid rgba(107,122,66,.2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--ink);display:none">
+        <strong>Especialidade detectada:</strong> <span id="feSpecialtyName"></span> — o link de anamnese inclui automaticamente <code id="feSpecialtyParam"></code>.
+        O formulário customizável abaixo é exibido apenas para a especialidade <strong>Personal Trainer</strong>. Especialidades como Nutricionista, Fisioterapeuta e Psicólogo usam formulários fixos otimizados para cada área.
+      </div>
       <div class="fe-mode-tabs">
         <button class="fe-mode-tab active" id="feModeOnline"     onclick="setFeMode('online')">Consultoria Online</button>
         <button class="fe-mode-tab"        id="feModePresencial" onclick="setFeMode('presencial')">Atendimento Presencial</button>
@@ -1014,9 +1018,10 @@ async function loadDashboard(){
   console.log('[loadDashboard] profId=', profId, 'user=', user.email);
   // Sidebar: nome do profissional
   if(profData?.name) document.getElementById('sidebarProfName').textContent = profData.name;
-  // shareLink (home section)
+  // shareLink com specialty
+  const _specParam = profData?.specialty && profData.specialty !== 'personal' ? '&specialty='+profData.specialty : '';
   document.getElementById('shareLink').textContent =
-    window.location.origin + '/anamnese?pid=' + (profId || '');
+    window.location.origin + '/anamnese?pid=' + (profId || '') + _specParam;
 
   if(profData){
     document.getElementById('pfName').value      = profData.name || '';
@@ -1189,7 +1194,7 @@ async function saveClientFromView(sendLink=false){
   allClients.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
   updateCliStats(); renderClients(allClients);
   if(sendLink){
-    const link = `${location.origin}/anamnese?pid=${profId}&client_id=${data.id}`;
+    const link = _anamLink('&client_id='+data.id);
     navigator.clipboard.writeText(link).then(()=>showToast('Cliente criado e link copiado!'));
   } else { showToast('Cliente criado!'); }
   navigateTo('cliente',{id:data.id});
@@ -2406,7 +2411,16 @@ async function loadFormConfig(){
   formDraft.online     = data?.online_config     || buildDefaultDraft('online');
   formDraft.presencial = data?.presencial_config || buildDefaultDraft('presencial');
   const lnk=document.getElementById('fePreviewLink');
-  if(lnk) lnk.href=window.location.origin+'/anamnese?pid='+(profId||'');
+  if(lnk) lnk.href=_anamLink();
+  // Aviso de especialidade
+  const spec=profData?.specialty;
+  const SNAMES={personal:'Personal Trainer',nutri:'Nutricionista',fisio:'Fisioterapeuta',pilates:'Pilates',psico:'Psicólogo(a)',estetica:'Esteticista',medico:'Médico(a)',outro:'Profissional de Saúde'};
+  const note=document.getElementById('feSpecialtyNote');
+  if(note && spec && spec!=='personal'){
+    document.getElementById('feSpecialtyName').textContent=SNAMES[spec]||spec;
+    document.getElementById('feSpecialtyParam').textContent='&specialty='+spec;
+    note.style.display='block';
+  } else if(note){ note.style.display='none'; }
   renderFormEditor();
 }
 function setFeMode(mode){
@@ -3529,7 +3543,7 @@ function closeClientProfile(e){
 }
 
 function copyClientAnamneseLink(clientId){
-  const link=`${window.location.origin}/anamnese?pid=${profId}&client_id=${clientId}`;
+  const link=_anamLink('&client_id='+clientId);
   navigator.clipboard.writeText(link).then(()=>showToast('Link copiado!'));
 }
 
@@ -3628,12 +3642,16 @@ function showToast(msg){
   document.getElementById('toastMsg').textContent=msg;
   t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),4000);
 }
+function _anamLink(extra=''){
+  const spec=profData?.specialty&&profData.specialty!=='personal'?'&specialty='+profData.specialty:'';
+  return window.location.origin+'/anamnese?pid='+(profId||'')+spec+extra;
+}
 function copyLink(){
-  const link = window.location.origin+'/anamnese?pid='+(profId||'');
+  const link=_anamLink();
   navigator.clipboard.writeText(link).then(()=>{
     const btn=document.querySelector('.btn-copy');
     btn.textContent='Copiado ✓';
-    setTimeout(()=>btn.textContent='Copiar link',2000);
+    setTimeout(()=>btn.textContent='Copiar',2000);
   });
 }
 

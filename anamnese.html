@@ -500,8 +500,9 @@ let _pendingDraft=null;
 let _SOc=null,_SPc=null; // versões customizadas pelo profissional
 const _pid=new URLSearchParams(window.location.search).get('pid')||null;
 const _clientId=new URLSearchParams(window.location.search).get('client_id')||null;
+const _specialty=new URLSearchParams(window.location.search).get('specialty')||'personal';
 let _clientName=null;
-const ss=()=>mode==='online'?(_SOc||SO):(_SPc||SP);
+const ss=()=>{const sb=SPECIALTY_BLOCKS[_specialty];if(sb)return sb;return mode==='online'?(_SOc||SO):(_SPc||SP);};
 const io=()=>mode==='online';
 const c=()=>io()?'o':'p';
 
@@ -854,6 +855,242 @@ const SP=[
     {t:'scale',id:'comprometimento',lbl:'Nível de comprometimento hoje (1–10)',min:1,max:10}
   ]}
 ];
+
+// ── ESPECIALIDADES ────────────────────────────────────────────────
+const SPECIALTY_NAMES={
+  personal:'Personal Trainer',nutri:'Nutricionista',fisio:'Fisioterapeuta',
+  pilates:'Pilates',psico:'Psicólogo(a)',estetica:'Esteticista',
+  medico:'Médico(a)',outro:'Profissional de Saúde'
+};
+
+const _ID={nome:{t:'text',id:'nome',lbl:'Nome completo',req:true}};
+const _FONE_EMAIL=[
+  {t:'row',cols:[{t:'date',id:'nasc',lbl:'Data de nascimento',req:true},{t:'text',id:'fone',lbl:'Telefone / WhatsApp',req:true}]},
+  {t:'text',id:'email',lbl:'E-mail'}
+];
+const _SEXO={t:'chips',id:'sexo',lbl:'Sexo biológico',req:true,opts:['Feminino','Masculino','Prefiro não informar']};
+
+const SO_NUTRI=[
+  {num:'01',title:'Identificação',fields:[_ID.nome,..._FONE_EMAIL,_SEXO,{t:'text',id:'profissao',lbl:'Profissão'}]},
+  {num:'02',title:'Objetivo nutricional',fields:[
+    {t:'chips',id:'obj_nutri',lbl:'Objetivo principal',req:true,multi:true,opts:['Emagrecer','Ganhar massa muscular','Melhorar saúde','Performance esportiva','Controlar doença','Outro']},
+    {t:'textarea',id:'obj_detalhe',lbl:'Descreva seu objetivo em detalhes'},
+    {t:'text',id:'prazo_nutri',lbl:'Prazo que tem em mente para resultados'},
+    {t:'scale',id:'motivacao_nutri',lbl:'Motivação hoje (1 = muito baixa, 10 = máxima)',min:1,max:10}
+  ]},
+  {num:'03',title:'Histórico alimentar',fields:[
+    {t:'text',id:'refeicoes_dia',lbl:'Quantas refeições faz por dia?'},
+    {t:'textarea',id:'horarios_refeicoes',lbl:'Horários aproximados das refeições'},
+    {t:'toggle',id:'prepara_comida',lbl:'Prepara a própria comida?'},
+    {t:'text',id:'come_fora',lbl:'Come fora de casa quantas vezes por semana?'},
+    {t:'textarea',id:'cafe_manha',lbl:'O que costuma comer no café da manhã?'},
+    {t:'textarea',id:'almoco',lbl:'O que costuma comer no almoço?'},
+    {t:'textarea',id:'jantar',lbl:'O que costuma comer no jantar?'},
+    {t:'textarea',id:'lanches',lbl:'Lanches ao longo do dia'}
+  ]},
+  {num:'04',title:'Preferências e restrições',fields:[
+    {t:'textarea',id:'nao_gosta',lbl:'Alimentos que não gosta ou não come'},
+    {t:'chips',id:'restricoes',lbl:'Restrições alimentares',multi:true,opts:['Intolerância à lactose','Intolerância ao glúten','Alergia a amendoim','Alergia a frutos do mar','Vegetariano','Vegano','Nenhuma']},
+    {t:'textarea',id:'alergias_detail',lbl:'Descreva alergias ou intolerâncias em detalhes'},
+    {t:'textarea',id:'preferidos',lbl:'Alimentos favoritos / que não abre mão'}
+  ]},
+  {num:'05',title:'Comportamento alimentar',fields:[
+    {t:'chips',id:'velocidade',lbl:'Come',opts:['Muito rápido','Moderado','Devagar']},
+    {t:'toggle',id:'belisca',lbl:'Belisca entre as refeições?'},
+    {t:'toggle',id:'come_ansiedade',lbl:'Tende a comer por ansiedade ou emoção?'},
+    {t:'text',id:'agua_litros',lbl:'Quantos litros de água bebe por dia?'},
+    {t:'chips',id:'bebidas',lbl:'Bebidas que consome regularmente',multi:true,opts:['Café','Chá','Refrigerante','Suco industrializado','Álcool','Energético']},
+    {t:'textarea',id:'comportamento_obs',lbl:'Outras observações sobre seu comportamento alimentar'}
+  ]},
+  {num:'06',title:'Suplementos e exames recentes',fields:[
+    {t:'textarea',id:'suplementos',lbl:'Suplementos em uso (tipo e dose)'},
+    {t:'textarea',id:'exame_glicose',lbl:'Glicose / Hemoglobina glicada (resultado recente)'},
+    {t:'textarea',id:'exame_colesterol',lbl:'Colesterol total, LDL, HDL, Triglicerídeos'},
+    {t:'textarea',id:'exame_hemograma',lbl:'Hemograma (se disponível)'},
+    {t:'textarea',id:'outros_exames',lbl:'Outros exames relevantes'}
+  ]},
+  {num:'07',title:'Histórico de dietas',fields:[
+    {t:'textarea',id:'dietas_anteriores',lbl:'Já fez dieta antes? Qual? Funcionou?'},
+    {t:'toggle',id:'acomp_nutri_anterior',lbl:'Já teve acompanhamento nutricional antes?'},
+    {t:'textarea',id:'nutri_anterior_obs',lbl:'Se sim — o que funcionou ou não funcionou?'}
+  ]},
+  {num:'08',title:'Saúde e hábitos',fields:[
+    {t:'textarea',id:'doencas',lbl:'Doenças ou condições de saúde'},
+    {t:'textarea',id:'meds',lbl:'Medicamentos em uso'},
+    {t:'toggle',id:'atividade_fisica',lbl:'Pratica atividade física regularmente?'},
+    {t:'text',id:'freq_atividade',lbl:'Se sim — qual e com que frequência?'},
+    {t:'row',cols:[{t:'text',id:'sono_h',lbl:'Horas de sono/noite'},{t:'chips',id:'estresse',lbl:'Nível de estresse',opts:['Baixo','Médio','Alto','Muito alto']}]}
+  ]},
+  {num:'09',title:'Dados antropométricos',fields:[
+    {t:'row',cols:[{t:'text',id:'peso',lbl:'Peso atual (kg)'},{t:'text',id:'altura',lbl:'Altura (cm)'}]},
+    {t:'row',cols:[{t:'text',id:'cintura_cm',lbl:'Cintura (cm)'},{t:'text',id:'quadril_cm',lbl:'Quadril (cm)'}]}
+  ]},
+  {num:'10',title:'Metas e expectativas',fields:[
+    {t:'textarea',id:'meta_nutri',lbl:'O que espera alcançar com o acompanhamento nutricional?'},
+    {t:'scale',id:'comprometimento',lbl:'Comprometimento com a reeducação alimentar (1–10)',min:1,max:10}
+  ]}
+];
+
+const SO_FISIO=[
+  {num:'01',title:'Identificação',fields:[_ID.nome,..._FONE_EMAIL,_SEXO,{t:'text',id:'profissao',lbl:'Profissão / Ocupação'}]},
+  {num:'02',title:'Queixa principal',fields:[
+    {t:'textarea',id:'queixa',lbl:'Descreva a queixa principal',req:true,hint:'O que está sentindo? Onde? Há quanto tempo?'},
+    {t:'text',id:'localizacao_dor',lbl:'Localização da dor ou desconforto'},
+    {t:'scale',id:'dor_eva',lbl:'Intensidade da dor agora — EVA (0 = sem dor, 10 = máximo)',min:0,max:10},
+    {t:'text',id:'dor_inicio',lbl:'Quando iniciou o problema?'},
+    {t:'textarea',id:'dor_piora',lbl:'O que piora a dor / desconforto?'},
+    {t:'textarea',id:'dor_melhora',lbl:'O que alivia a dor / desconforto?'},
+    {t:'chips',id:'dor_tipo',lbl:'Tipo de dor',multi:true,opts:['Aguda','Queimação','Formigamento','Pontada','Peso','Latejante','Irradiação']},
+    {t:'chips',id:'dor_quando',lbl:'Quando ocorre?',multi:true,opts:['Repouso','Movimento','Noite','Manhã','Contínua','Ao esforço']}
+  ]},
+  {num:'03',title:'Histórico de lesões e cirurgias',fields:[
+    {t:'textarea',id:'lesoes_anteriores',lbl:'Lesões anteriores (região e ano aproximado)'},
+    {t:'textarea',id:'cirurgias',lbl:'Cirurgias (tipo e ano)'},
+    {t:'textarea',id:'fraturas',lbl:'Fraturas ou acidentes relevantes'},
+    {t:'toggle',id:'internacao',lbl:'Alguma internação recente?'}
+  ]},
+  {num:'04',title:'Medicamentos e exames',fields:[
+    {t:'textarea',id:'meds',lbl:'Medicamentos em uso (nome e dose)'},
+    {t:'textarea',id:'exames_imagem',lbl:'Exames de imagem (raio-X, ressonância, ultrassom — descreva resultados)'},
+    {t:'textarea',id:'diagnostico_medico',lbl:'Diagnóstico médico (se houver)'}
+  ]},
+  {num:'05',title:'Atividade física e funcionalidade',fields:[
+    {t:'toggle',id:'pratica_esporte',lbl:'Pratica atividade física ou esporte atualmente?'},
+    {t:'text',id:'esporte_tipo',lbl:'Se sim — qual e com que frequência?'},
+    {t:'chips',id:'trabalho_tipo',lbl:'Trabalho predominantemente',opts:['Sentado','Em pé','Físico pesado','Variado','Não trabalho']},
+    {t:'toggle',id:'sobe_escada',lbl:'Consegue subir e descer escadas sem dificuldade?'},
+    {t:'toggle',id:'sentar_chao',lbl:'Consegue sentar no chão e levantar sem apoio?'},
+    {t:'toggle',id:'carregar_peso',lbl:'Consegue carregar peso (sacolas, crianças) sem dor?'},
+    {t:'textarea',id:'limitacoes_func',lbl:'Atividades do dia a dia limitadas pela queixa'}
+  ]},
+  {num:'06',title:'Objetivos',fields:[
+    {t:'chips',id:'obj_fisio',lbl:'Objetivo principal',req:true,multi:true,opts:['Eliminar a dor','Recuperar movimento','Retornar ao esporte','Pós-cirurgia','Prevenção','Outro']},
+    {t:'textarea',id:'meta_fisio',lbl:'O que espera alcançar com o tratamento?'},
+    {t:'scale',id:'comprometimento',lbl:'Comprometimento com o tratamento (1–10)',min:1,max:10}
+  ]},
+  {num:'07',title:'Dados posturais',fields:[
+    {t:'chips',id:'desvios_posturais',lbl:'Desvios posturais conhecidos',multi:true,opts:['Escoliose','Hipercifose','Hiperlordose lombar','Hiperlordose cervical','Joelho varo','Joelho valgo','Pé plano','Pé cavo','Não sei']},
+    {t:'textarea',id:'obs_posturais',lbl:'Outras observações sobre postura ou marcha'}
+  ]},
+  {num:'08',title:'Qualidade de vida',fields:[
+    {t:'scale',id:'qv_dor',lbl:'Quanto a dor afeta sua qualidade de vida? (0 = nada, 10 = totalmente)',min:0,max:10},
+    {t:'scale',id:'qv_sono',lbl:'A dor perturba seu sono? (0 = nunca, 10 = sempre)',min:0,max:10},
+    {t:'scale',id:'qv_humor',lbl:'A dor afeta seu humor? (0 = nada, 10 = muito)',min:0,max:10},
+    {t:'textarea',id:'obs_finais',lbl:'Outras informações que queira compartilhar'}
+  ]}
+];
+
+const SO_PILATES=[
+  {num:'01',title:'Identificação',fields:[_ID.nome,..._FONE_EMAIL,_SEXO,{t:'text',id:'profissao',lbl:'Profissão'}]},
+  {num:'02',title:'Experiência com Pilates',fields:[
+    {t:'toggle',id:'pilates_anterior',lbl:'Já praticou Pilates antes?'},
+    {t:'text',id:'tempo_pilates',lbl:'Se sim — por quanto tempo?'},
+    {t:'chips',id:'nivel_pilates',lbl:'Como se considera em relação ao Pilates?',opts:['Iniciante','Intermediário','Avançado']},
+    {t:'textarea',id:'exp_anterior',lbl:'Descreva sua experiência com Pilates ou outras práticas corporais'}
+  ]},
+  {num:'03',title:'Objetivos',fields:[
+    {t:'chips',id:'obj_pilates',lbl:'Objetivo principal',req:true,multi:true,opts:['Flexibilidade','Força e tônus','Postura','Reabilitação','Emagrecimento','Bem-estar','Respiração','Retorno pós-lesão','Outro']},
+    {t:'textarea',id:'meta_pilates',lbl:'Descreva o que espera alcançar'},
+    {t:'scale',id:'comprometimento',lbl:'Comprometimento com a prática (1–10)',min:1,max:10}
+  ]},
+  {num:'04',title:'Restrições e condição física',fields:[
+    {t:'textarea',id:'restricoes_mov',lbl:'Restrições de movimento, dores (região e intensidade)'},
+    {t:'textarea',id:'lesoes_hist',lbl:'Histórico de lesões ou cirurgias'},
+    {t:'textarea',id:'doencas_pilates',lbl:'Condições de saúde (hérnia, osteoporose, gestação, etc.)'},
+    {t:'textarea',id:'meds',lbl:'Medicamentos em uso'},
+    {t:'chips',id:'nivel_cond',lbl:'Condicionamento físico atual',opts:['Muito sedentário','Pouco ativo','Moderado','Ativo','Muito ativo']},
+    {t:'toggle',id:'gestante_pilates',lbl:'Está grávida?'}
+  ]},
+  {num:'05',title:'Preferências de aula',fields:[
+    {t:'chips',id:'formato_aula',lbl:'Formato preferido',multi:true,opts:['Individual','Dupla','Grupo pequeno (até 4)','Sem preferência']},
+    {t:'chips',id:'equipamentos',lbl:'Preferência de equipamentos',multi:true,opts:['Máquinas (Reformer, Cadillac…)','Solo (Mat Pilates)','Ambos','Sem preferência']},
+    {t:'chips',id:'horario_pref',lbl:'Horários de preferência',multi:true,opts:['Manhã','Tarde','Noite','Fins de semana']},
+    {t:'text',id:'freq_desejada',lbl:'Quantas vezes por semana pretende praticar?'}
+  ]}
+];
+
+const SO_PSICO=[
+  {num:'01',title:'Identificação',fields:[
+    _ID.nome,..._FONE_EMAIL,
+    {t:'chips',id:'sexo',lbl:'Como você se identifica?',opts:['Homem','Mulher','Não-binário','Prefiro não informar']},
+    {t:'text',id:'profissao',lbl:'Profissão / Ocupação'},
+    {t:'chips',id:'moradia',lbl:'Mora com',opts:['Sozinho(a)','Cônjuge / parceiro(a)','Família','Amigos','Outro']}
+  ]},
+  {num:'02',title:'Motivo da consulta',fields:[
+    {t:'textarea',id:'motivo',lbl:'O que motivou você a buscar atendimento psicológico?',req:true},
+    {t:'textarea',id:'dificuldades',lbl:'Quais dificuldades está enfrentando no momento?'},
+    {t:'text',id:'desde_quando',lbl:'Há quanto tempo sente isso?'},
+    {t:'chips',id:'areas_afetadas',lbl:'Áreas afetadas',multi:true,opts:['Trabalho / estudos','Relacionamentos','Saúde','Família','Autoestima','Ansiedade','Humor','Sono','Outro']}
+  ]},
+  {num:'03',title:'Histórico de tratamentos',fields:[
+    {t:'toggle',id:'terapia_anterior',lbl:'Já fez terapia antes?'},
+    {t:'textarea',id:'terapia_detalhe',lbl:'Se sim — por quanto tempo e o que funcionou?'},
+    {t:'toggle',id:'psiquiatra',lbl:'Já foi ou é acompanhado por psiquiatra?'},
+    {t:'textarea',id:'medicacao_psico',lbl:'Medicação psiquiátrica em uso (nome e dose)'},
+    {t:'toggle',id:'internacao_psico',lbl:'Já passou por internação psiquiátrica?'}
+  ]},
+  {num:'04',title:'Situação atual',fields:[
+    {t:'chips',id:'trabalho_sit',lbl:'Situação profissional atual',opts:['Empregado','Autônomo','Desempregado','Estudante','Aposentado','Outro']},
+    {t:'chips',id:'relacionamento',lbl:'Situação afetiva',opts:['Solteiro(a)','Namorando','Casado(a)','Divorciado(a)','Viúvo(a)','Prefiro não informar']},
+    {t:'textarea',id:'situacao_obs',lbl:'Algo importante sobre sua situação que queira compartilhar?'}
+  ]},
+  {num:'05',title:'Sono e bem-estar',fields:[
+    {t:'row',cols:[{t:'text',id:'sono_h',lbl:'Horas de sono/noite'},{t:'chips',id:'sono_q',lbl:'Qualidade do sono',opts:['Ótima','Boa','Regular','Ruim','Péssima']}]},
+    {t:'toggle',id:'pesadelos',lbl:'Tem pesadelos ou insônia frequentes?'},
+    {t:'chips',id:'apetite',lbl:'Como está seu apetite?',opts:['Normal','Aumentado','Diminuído','Muito irregular']},
+    {t:'chips',id:'energia',lbl:'Energia no dia a dia',opts:['Alta','Moderada','Baixa','Muito baixa']},
+    {t:'chips',id:'alcool_psico',lbl:'Consumo de álcool',opts:['Não consumo','Ocasional','Fins de semana','Frequente','Diário']},
+    {t:'toggle',id:'outras_subst',lbl:'Faz uso de outras substâncias?'},
+    {t:'textarea',id:'subst_detalhe',lbl:'Se sim — pode descrever? (campo confidencial)'}
+  ]},
+  {num:'06',title:'Rede de apoio e objetivos',fields:[
+    {t:'chips',id:'apoio',lbl:'Tem pessoas de confiança para conversar?',opts:['Sim, várias','Sim, poucas','Não muito','Não']},
+    {t:'textarea',id:'apoio_quem',lbl:'Quem são suas principais fontes de apoio?'},
+    {t:'textarea',id:'obj_terapia',lbl:'O que espera alcançar com a terapia?',req:true}
+  ]},
+  {num:'07',title:'Escala de bem-estar',fields:[
+    {t:'scale',id:'bw_satisfacao',lbl:'Satisfação geral com sua vida (1 = muito insatisfeito, 5 = muito satisfeito)',min:1,max:5},
+    {t:'scale',id:'bw_estresse',lbl:'Estresse na última semana (1 = nenhum, 5 = extremo)',min:1,max:5},
+    {t:'scale',id:'bw_ansiedade',lbl:'Ansiedade na última semana (1 = nenhuma, 5 = extrema)',min:1,max:5},
+    {t:'scale',id:'bw_humor',lbl:'Qualidade do seu humor geral (1 = muito ruim, 5 = excelente)',min:1,max:5},
+    {t:'scale',id:'bw_relacoes',lbl:'Qualidade dos seus relacionamentos (1 = muito ruim, 5 = excelente)',min:1,max:5}
+  ]}
+];
+
+const SO_ESTETICA=[
+  {num:'01',title:'Identificação',fields:[_ID.nome,..._FONE_EMAIL,_SEXO,{t:'text',id:'profissao',lbl:'Profissão'}]},
+  {num:'02',title:'Tipo de pele e rotina',fields:[
+    {t:'chips',id:'tipo_pele',lbl:'Como você classifica sua pele?',req:true,opts:['Oleosa','Seca','Mista','Normal','Sensível','Não sei']},
+    {t:'toggle',id:'usa_protetor',lbl:'Usa protetor solar diariamente?'},
+    {t:'chips',id:'exposicao_solar',lbl:'Exposição solar habitual',opts:['Mínima (indoor)','Moderada','Alta (ao ar livre)']},
+    {t:'textarea',id:'skincare_atual',lbl:'Rotina atual de skincare (produtos que usa)'},
+    {t:'textarea',id:'limpeza',lbl:'Como faz a limpeza facial? (frequência e produtos)'}
+  ]},
+  {num:'03',title:'Principais queixas',fields:[
+    {t:'chips',id:'queixas_estetic',lbl:'Queixas principais',req:true,multi:true,opts:['Acne / espinhas','Manchas / melasma','Rugas / linhas de expressão','Flacidez facial','Flacidez corporal','Celulite','Gordura localizada','Estrias','Olheiras','Poros dilatados','Outro']},
+    {t:'textarea',id:'queixas_detalhe',lbl:'Descreva onde estão localizadas e há quanto tempo'},
+    {t:'scale',id:'incomodo',lbl:'Quanto te incomoda? (1 = pouco, 10 = muito)',min:1,max:10}
+  ]},
+  {num:'04',title:'Saúde e histórico',fields:[
+    {t:'textarea',id:'alergias_estetic',lbl:'Alergias ou sensibilidades conhecidas (cosméticos, ativos…)'},
+    {t:'textarea',id:'doencas_pele',lbl:'Doenças de pele (psoríase, rosácea, dermatite…)'},
+    {t:'chips',id:'hormonios',lbl:'Uso de hormônios',opts:['Anticoncepcional','TRH','Nenhum','Outro']},
+    {t:'textarea',id:'meds',lbl:'Medicamentos que podem afetar a pele (isotretinoína, corticoides…)'},
+    {t:'toggle',id:'gravida_estetic',lbl:'Está grávida ou amamentando?'}
+  ]},
+  {num:'05',title:'Procedimentos anteriores',fields:[
+    {t:'textarea',id:'proced_anteriores',lbl:'Procedimentos estéticos já realizados (botox, preenchimento, peeling, laser…)'},
+    {t:'textarea',id:'reacoes_anteriores',lbl:'Alguma reação adversa a procedimentos anteriores?'},
+    {t:'chips',id:'freq_proced',lbl:'Com que frequência faz procedimentos estéticos?',opts:['Primeira vez','Raramente','Algumas vezes ao ano','Mensalmente','Mais de 1x ao mês']}
+  ]},
+  {num:'06',title:'Objetivos',fields:[
+    {t:'textarea',id:'obj_estetic',lbl:'O que espera alcançar com o tratamento?',req:true},
+    {t:'text',id:'prazo_estetic',lbl:'Tem alguma data especial ou prazo em mente?'},
+    {t:'scale',id:'comprometimento',lbl:'Comprometimento com o tratamento e cuidados em casa (1–10)',min:1,max:10}
+  ]}
+];
+
+const SPECIALTY_BLOCKS={nutri:SO_NUTRI,fisio:SO_FISIO,pilates:SO_PILATES,psico:SO_PSICO,estetica:SO_ESTETICA};
 
 // Retorna autocomplete e inputmode corretos por campo
 function fieldAttrs(id){
@@ -1366,9 +1603,11 @@ async function loadProfBadge(){
     if(!prof)return;
     const el=document.getElementById('profBadge');
     if(!el)return;
-    el.innerHTML=`<div class="prof-badge-tag">Seu Personal</div>
+    const specName=SPECIALTY_NAMES[_specialty]||SPECIALTY_NAMES[prof.specialty]||prof.specialty||'Personal Trainer';
+    const badgeTag=_specialty==='psico'?'Seu Psicólogo(a)':_specialty==='nutri'?'Sua Nutricionista':_specialty==='fisio'?'Sua Fisioterapeuta':_specialty==='estetica'?'Sua Esteticista':_specialty==='pilates'?'Seu Professor(a) de Pilates':'Seu Personal';
+    el.innerHTML=`<div class="prof-badge-tag">${badgeTag}</div>
       <div class="prof-badge-name">${prof.name||''}</div>
-      ${prof.specialty?`<div class="prof-badge-spec">${prof.specialty}</div>`:''}`;
+      <div class="prof-badge-spec">${specName}</div>`;
     el.style.display='block';
     if(prof.name) document.title=`Anamnese — ${prof.name}`;
     // Pré-preenche dados do cliente se veio de link personalizado
