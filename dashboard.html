@@ -1283,7 +1283,8 @@ async function renderViewCliente(params={}){
   const ini = _cliInitial(client.name);
   const meta = [client.phone,client.email,client.objetivo].filter(Boolean).map(esc).join(' · ')||'Sem informações adicionais';
   vc.innerHTML = _vHd(client.name,
-    `<button class="btn-view" style="margin-left:auto;white-space:nowrap" onclick="navigateTo('editar-cliente',{id:'${clientId}'})">Editar</button>`
+    `<button class="btn-view" style="white-space:nowrap;display:flex;align-items:center;gap:4px" onclick="generateClientReport('${clientId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>PDF</button>
+     <button class="btn-view" style="margin-left:4px;white-space:nowrap" onclick="navigateTo('editar-cliente',{id:'${clientId}'})">Editar</button>`
   ) + `
   <div class="dash-inner">
     <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border);flex-wrap:wrap">
@@ -1366,6 +1367,332 @@ function switchCliViewTab(tab){
   document.getElementById('cliTabAnam').style.display  = tab==='anam'  ?'':'none';
   document.getElementById('cliTabAval').style.display  = tab==='aval'  ?'':'none';
   document.getElementById('cliTabMetas').style.display = tab==='metas' ?'':'none';
+}
+
+// ── RELATÓRIO COMPLETO PDF DO CLIENTE ────────────────────────────
+async function generateClientReport(clientId){
+  showToast('Gerando relatório…');
+  const client = allClients.find(c=>c.id===clientId)||{};
+
+  const [anamRes, asmRes, goalsRes] = await Promise.all([
+    sb.from('anamneses').select('*').eq('client_id',clientId).order('created_at',{ascending:true}),
+    sb.from('assessments').select(`*,
+      assessment_biometrics(*),assessment_circumferences(*),
+      assessment_skinfolds(*),assessment_vo2(*),assessment_strength(*)`)
+      .eq('client_id',clientId).order('created_at',{ascending:true}),
+    sb.from('client_goals').select('*').eq('client_id',clientId).order('created_at',{ascending:false})
+  ]);
+  const anams = anamRes.data||[];
+  const asms  = asmRes.data||[];
+  const goals = goalsRes.data||[];
+
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const PW=210,PH=297,ML=16,MR=16,CW=PW-ML-MR;
+  const OLIVE=[107,122,66],DARK=[26,24,20],MID=[122,118,104],LIGHT=[228,224,216],BG=[247,245,240],GREEN=[39,174,96],RED=[192,57,43];
+  const todayStr = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const profName = profData?.name || 'Profissional';
+  let y=0, pageNum=1;
+
+  const SEX={M:'Masculino',F:'Feminino',outro:'Outro'};
+  function calcAge(dob){if(!dob)return null;const d=new Date(dob+'T00:00:00'),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a;}
+  function fmtDate(s){return s?new Date(s).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}):'';}
+
+  function drawFooter(){
+    doc.setDrawColor(...LIGHT);doc.setLineWidth(0.25);doc.line(ML,PH-12,PW-MR,PH-12);
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(...MID);
+    doc.text(profName+' · Gerado em '+todayStr,ML,PH-7);
+    doc.text('Pág. '+pageNum,PW-MR,PH-7,{align:'right'});
+  }
+  function newPage(){
+    drawFooter();doc.addPage();pageNum++;
+    doc.setFillColor(...BG);doc.rect(0,0,PW,PH,'F');
+    doc.setFillColor(...OLIVE);doc.rect(0,0,PW,2,'F');
+    y=20;
+  }
+  function checkY(n){if(y+n>PH-18)newPage();}
+  function sectionHd(title){
+    checkY(18);
+    doc.setFillColor(...OLIVE);doc.rect(ML,y,2,12,'F');
+    doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...OLIVE);
+    doc.text('SEÇÃO',ML+5,y+4.5,{charSpace:1.5});
+    doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(...DARK);
+    doc.text(title.toUpperCase(),ML+5,y+11);
+    y+=16;
+  }
+  function row(lbl,val,alt=false){
+    checkY(9);
+    if(alt){doc.setFillColor(248,246,242);doc.rect(ML,y,CW,8,'F');}
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...MID);
+    doc.text(lbl,ML+3,y+5.5);
+    const v=String(val||'—');
+    doc.setFontSize(9);doc.setFont('helvetica','normal');
+    doc.setTextColor(...(val&&val!=='—'?DARK:LIGHT));
+    doc.text(v,PW-MR-3,y+5.5,{align:'right'});
+    doc.setDrawColor(...LIGHT);doc.setLineWidth(0.15);doc.line(ML,y+8,ML+CW,y+8);
+    y+=8;
+  }
+  function twoCol(pairs){
+    const hw=CW/2-2;
+    for(let i=0;i<pairs.length;i+=2){
+      checkY(9);
+      const [l1,v1]=pairs[i];const p2=pairs[i+1];
+      if(i%4===2){doc.setFillColor(248,246,242);doc.rect(ML,y,CW,8,'F');}
+      doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...MID);
+      doc.text(l1,ML+3,y+5.5);
+      doc.setFontSize(9);doc.setTextColor(...(v1&&v1!=='—'?DARK:LIGHT));
+      doc.text(String(v1||'—'),ML+hw,y+5.5,{align:'right'});
+      if(p2){
+        const [l2,v2]=p2;
+        doc.setFontSize(8);doc.setTextColor(...MID);
+        doc.text(l2,ML+hw+6,y+5.5);
+        doc.setFontSize(9);doc.setTextColor(...(v2&&v2!=='—'?DARK:LIGHT));
+        doc.text(String(v2||'—'),PW-MR-3,y+5.5,{align:'right'});
+      }
+      doc.setDrawColor(...LIGHT);doc.setLineWidth(0.15);doc.line(ML,y+8,ML+CW,y+8);
+      y+=8;
+    }
+  }
+
+  // ── CAPA ─────────────────────────────────────────────────────
+  doc.setFillColor(...BG);doc.rect(0,0,PW,PH,'F');
+  doc.setFillColor(...OLIVE);doc.rect(0,0,PW,3,'F');
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(...OLIVE);
+  doc.text(profName.toUpperCase(),PW/2,44,{align:'center',charSpace:1});
+  doc.setFontSize(26);doc.setFont('helvetica','bold');doc.setTextColor(...DARK);
+  doc.text('RELATÓRIO DO CLIENTE',PW/2,62,{align:'center'});
+  doc.setFontSize(16);doc.setFont('helvetica','normal');doc.setTextColor(...MID);
+  doc.text((client.name||'Cliente').toUpperCase(),PW/2,76,{align:'center',charSpace:1});
+  doc.setFillColor(...OLIVE);doc.rect(ML,88,CW,0.8,'F');
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(...MID);
+  doc.text('Gerado em '+todayStr,PW/2,98,{align:'center'});
+  if(client.objetivo){
+    doc.setFontSize(11);doc.setTextColor(...DARK);
+    doc.text('Objetivo: '+client.objetivo,PW/2,114,{align:'center'});
+  }
+  const stats=[];
+  if(anams.length)  stats.push(anams.length+' anamnese'+(anams.length>1?'s':''));
+  if(asms.length)   stats.push(asms.length+' avaliação'+(asms.length>1?'ões':''));
+  if(goals.length)  stats.push(goals.length+' meta'+(goals.length>1?'s':''));
+  if(stats.length){
+    doc.setFontSize(9);doc.setTextColor(...MID);
+    doc.text(stats.join(' · '),PW/2,126,{align:'center'});
+  }
+  doc.setFillColor(...OLIVE);doc.rect(0,PH-3,PW,3,'F');
+  drawFooter();
+
+  // ── DADOS PESSOAIS ────────────────────────────────────────────
+  doc.addPage();pageNum++;
+  doc.setFillColor(...BG);doc.rect(0,0,PW,PH,'F');
+  doc.setFillColor(...OLIVE);doc.rect(0,0,PW,2,'F');
+  y=20;
+  sectionHd('Dados pessoais');
+  const age=calcAge(client.dob);
+  row('Nome',client.name,false);
+  row('Data de nascimento',client.dob?fmtDate(client.dob)+(age?' ('+age+' anos)':''):'—',true);
+  row('Sexo',SEX[client.sex]||'—',false);
+  row('Telefone',client.phone||'—',true);
+  row('E-mail',client.email||'—',false);
+  row('Objetivo',client.objetivo||'—',true);
+  row('Observações',client.observacoes||'—',false);
+  row('Cadastrado em',fmtDate(client.created_at),true);
+
+  if(anams.length){
+    y+=8;
+    sectionHd('Última anamnese');
+    const la=anams[anams.length-1];
+    const ld=la.data||{};
+    row('Data',fmtDate(la.created_at),false);
+    row('Modalidade',la.mode==='online'?'Consultoria Online':'Atendimento Presencial',true);
+    const aFields=[['obj','Objetivo'],['nivel','Nível'],['estresse','Estresse'],
+      ['comprometimento','Comprometimento'],['peso','Peso'],['altura','Altura'],
+      ['diag','Diagnósticos'],['lesoes','Lesões'],['meds','Medicamentos']];
+    aFields.forEach(([k,lbl],i)=>{ if(ld[k]&&ld[k]!=='—') row(lbl,String(ld[k]),i%2===0); });
+  }
+
+  // ── HISTÓRICO DE AVALIAÇÕES ───────────────────────────────────
+  if(asms.length){
+    asms.forEach((a,ai)=>{
+      newPage();
+      sectionHd('Avaliação '+(ai+1)+' — '+fmtDate(a.created_at));
+      const bio  =a.assessment_biometrics?.[0]||{};
+      const circ =a.assessment_circumferences?.[0]||{};
+      const skin =a.assessment_skinfolds?.[0]||{};
+      const vo2  =a.assessment_vo2?.[0]||{};
+      const str  =a.assessment_strength?.[0]||{};
+      const gordura=skin.percentual_gordura??bio.percentual_gordura_bio;
+      row('Modalidade',a.modality==='online'?'Online':'Presencial',false);
+      row('Status',a.status==='concluida'?'Concluída':'Em andamento',true);
+      y+=4;
+      // Biometria
+      if(bio.peso_kg||bio.altura_cm||bio.imc){
+        doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...OLIVE);
+        doc.text('BIOMETRIA',ML,y);y+=6;
+        twoCol([
+          ['Peso',bio.peso_kg?bio.peso_kg+' kg':null],
+          ['Altura',bio.altura_cm?bio.altura_cm+' cm':null],
+          ['IMC',bio.imc?parseFloat(bio.imc).toFixed(1)+' kg/m²':null],
+          ['% Gordura (bio)',bio.percentual_gordura_bio?bio.percentual_gordura_bio+'%':null],
+          ['Massa Gorda',bio.massa_gorda_kg?bio.massa_gorda_kg+' kg':null],
+          ['Massa Magra',bio.massa_magra_kg?bio.massa_magra_kg+' kg':null],
+          ['Metabolismo Basal',bio.metabolismo_basal?bio.metabolismo_basal+' kcal':null],
+          ['% Gordura (dobras)',gordura?parseFloat(gordura).toFixed(1)+'%':null],
+        ].filter(([,v])=>v));
+        y+=4;
+      }
+      // Circunferências
+      const circPairs=[
+        ['Cintura',circ.cintura_cm?circ.cintura_cm+' cm':null],['Quadril',circ.quadril_cm?circ.quadril_cm+' cm':null],
+        ['Abdômen',circ.abdomen_cm?circ.abdomen_cm+' cm':null],['Tórax',circ.torax_cm?circ.torax_cm+' cm':null],
+        ['Braço D',circ.braco_d_cm?circ.braco_d_cm+' cm':null],['Braço E',circ.braco_e_cm?circ.braco_e_cm+' cm':null],
+        ['Coxa D',circ.coxa_d_cm?circ.coxa_d_cm+' cm':null],['Coxa E',circ.coxa_e_cm?circ.coxa_e_cm+' cm':null],
+      ].filter(([,v])=>v);
+      if(circPairs.length){
+        checkY(12);
+        doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...OLIVE);
+        doc.text('CIRCUNFERÊNCIAS',ML,y);y+=6;
+        twoCol(circPairs);y+=4;
+      }
+      // VO2
+      if(vo2.vo2max_estimado){
+        checkY(14);
+        doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...OLIVE);
+        doc.text('VO2 MÁX',ML,y);y+=6;
+        row('VO2 Máximo Estimado',parseFloat(vo2.vo2max_estimado).toFixed(1)+' ml/kg/min',false);
+        if(vo2.classificacao) row('Classificação',vo2.classificacao,true);
+        y+=4;
+      }
+      // Força
+      if(str.preensao_d_kg||str.preensao_e_kg){
+        checkY(14);
+        doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...OLIVE);
+        doc.text('FORÇA',ML,y);y+=6;
+        twoCol([
+          ['Preensão Direita',str.preensao_d_kg?str.preensao_d_kg+' kg':null],
+          ['Preensão Esquerda',str.preensao_e_kg?str.preensao_e_kg+' kg':null],
+        ].filter(([,v])=>v));y+=4;
+      }
+      if(a.notes){
+        checkY(16);
+        doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...OLIVE);
+        doc.text('OBSERVAÇÕES',ML,y);y+=6;
+        doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+        const lines=doc.splitTextToSize(a.notes,CW-4);
+        doc.text(lines,ML+3,y);y+=lines.length*5+4;
+      }
+    });
+  }
+
+  // ── EVOLUÇÃO COMPARATIVA ──────────────────────────────────────
+  if(asms.length>1){
+    newPage();
+    sectionHd('Evolução comparativa');
+    const metrics=[
+      {k:'peso',   lbl:'Peso (kg)',        get:(a)=>a.assessment_biometrics?.[0]?.peso_kg,         improve:'down'},
+      {k:'gordura',lbl:'% Gordura',         get:(a)=>a.assessment_skinfolds?.[0]?.percentual_gordura??a.assessment_biometrics?.[0]?.percentual_gordura_bio, improve:'down'},
+      {k:'imc',    lbl:'IMC (kg/m²)',       get:(a)=>a.assessment_biometrics?.[0]?.imc,              improve:'down'},
+      {k:'cintura',lbl:'Cintura (cm)',       get:(a)=>a.assessment_circumferences?.[0]?.cintura_cm,  improve:'down'},
+      {k:'vo2',    lbl:'VO2 Máx (ml/kg/min)',get:(a)=>a.assessment_vo2?.[0]?.vo2max_estimado,        improve:'up'},
+      {k:'forca',  lbl:'Preensão média (kg)',get:(a)=>{const s=a.assessment_strength?.[0]||{};const d=parseFloat(s.preensao_d_kg),e2=parseFloat(s.preensao_e_kg);if(!isNaN(d)&&!isNaN(e2))return+((d+e2)/2).toFixed(1);if(!isNaN(d))return d;if(!isNaN(e2))return e2;return null;},improve:'up'},
+    ];
+    // Cabeçalho da tabela
+    const shown=asms.slice(0,4); // máx 4 avaliações lado a lado
+    const colW=Math.floor((CW-40)/shown.length);
+    checkY(12);
+    doc.setFillColor(...OLIVE);doc.rect(ML,y,CW,9,'F');
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+    doc.text('MÉTRICA',ML+3,y+6);
+    shown.forEach((a,i)=>{
+      doc.text('Aval. '+(i+1)+'\n'+fmtDate(a.created_at),ML+40+i*colW+colW/2,y+4.5,{align:'center'});
+    });
+    doc.text('VARIAÇÃO',PW-MR-3,y+6,{align:'right'});
+    y+=9;
+    metrics.forEach((m,mi)=>{
+      const vals=shown.map(a=>{const v=m.get(a);return v!=null?parseFloat(v):null;});
+      const hasData=vals.some(v=>v!=null);if(!hasData)return;
+      checkY(9);
+      if(mi%2===1){doc.setFillColor(248,246,242);doc.rect(ML,y,CW,9,'F');}
+      doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...DARK);
+      doc.text(m.lbl,ML+3,y+6);
+      vals.forEach((v,i)=>{
+        doc.setTextColor(...(v!=null?DARK:LIGHT));
+        doc.text(v!=null?String(parseFloat(v).toFixed(1)):'—',ML+40+i*colW+colW/2,y+6,{align:'center'});
+      });
+      // Variação total (último - primeiro não nulo)
+      const first=vals.find(v=>v!=null);
+      const last=[...vals].reverse().find(v=>v!=null);
+      if(first!=null&&last!=null&&first!==last){
+        const diff=parseFloat((last-first).toFixed(1));
+        const improved=(m.improve==='down'&&diff<0)||(m.improve==='up'&&diff>0);
+        doc.setTextColor(...(improved?GREEN:RED));
+        doc.setFont('helvetica','bold');
+        doc.text((diff>0?'+':'')+diff,PW-MR-3,y+6,{align:'right'});
+      } else {
+        doc.setTextColor(...MID);doc.setFont('helvetica','normal');
+        doc.text('—',PW-MR-3,y+6,{align:'right'});
+      }
+      doc.setDrawColor(...LIGHT);doc.setLineWidth(0.15);doc.line(ML,y+9,ML+CW,y+9);
+      y+=9;
+    });
+    y+=6;
+    doc.setFontSize(7);doc.setFont('helvetica','normal');
+    doc.setFillColor(...GREEN);doc.rect(ML,y,4,4,'F');
+    doc.setTextColor(...MID);doc.text('= melhora',ML+6,y+3.5);
+    doc.setFillColor(...RED);doc.rect(ML+30,y,4,4,'F');
+    doc.text('= piora',ML+36,y+3.5);
+    y+=10;
+  }
+
+  // ── METAS ─────────────────────────────────────────────────────
+  if(goals.length){
+    newPage();
+    sectionHd('Metas');
+    const CAT={peso:'Peso',gordura:'Gordura',circunferencia:'Circ.',vo2:'VO2',forca:'Força',outro:'Outro'};
+    const STLBL={ativa:'Ativa',concluida:'Concluída',pausada:'Pausada',cancelada:'Cancelada'};
+    goals.forEach((g,gi)=>{
+      checkY(22);
+      const base=parseFloat(g.baseline_value)||0;
+      const target=parseFloat(g.target_value)||0;
+      const cur=parseFloat(g.current_value??g.baseline_value)||0;
+      const range=target-base;
+      const pct=range===0?null:Math.max(0,Math.min(100,((cur-base)/range)*100));
+      const unit=g.target_unit?' '+g.target_unit:'';
+      doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(...DARK);
+      doc.text((gi+1)+'. '+g.title,ML,y);
+      doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...MID);
+      doc.text('Status: '+(STLBL[g.status]||g.status)+(g.category?' · Categoria: '+(CAT[g.category]||g.category):''),ML,y+5);
+      y+=8;
+      if(pct!=null){
+        doc.setFontSize(8);doc.setTextColor(...MID);
+        doc.text('Atual: '+(cur+unit)+' → Meta: '+(target+unit)+' ('+Math.round(pct)+'%)',ML,y);
+        y+=5;
+        const bw=Math.min(CW,120);
+        doc.setFillColor(...LIGHT);doc.rect(ML,y,bw,4,'F');
+        const fillColor=pct<30?RED:pct<70?[168,137,58]:OLIVE;
+        doc.setFillColor(...fillColor);doc.rect(ML,y,bw*(pct/100),4,'F');
+        y+=7;
+      }
+      if(g.deadline){
+        doc.setFontSize(8);doc.setTextColor(...MID);
+        doc.text('Prazo: '+fmtDate(g.deadline),ML,y);y+=5;
+      }
+      if(g.description){
+        doc.setFontSize(8);doc.setTextColor(...MID);
+        const lines=doc.splitTextToSize('Obs: '+g.description,CW);
+        doc.text(lines,ML,y);y+=lines.length*4;
+      }
+      doc.setDrawColor(...LIGHT);doc.setLineWidth(0.2);doc.line(ML,y+2,ML+CW,y+2);
+      y+=6;
+    });
+  }
+
+  drawFooter();
+
+  // Salva
+  const clientNameSafe=(client.name||'Cliente').replace(/[^a-zA-Z0-9À-ɏ\s]/g,'').trim().replace(/\s+/g,'_');
+  const dateSafe=new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  doc.save('Relatorio_'+clientNameSafe+'_'+dateSafe+'.pdf');
+  showToast('Relatório gerado!');
 }
 
 // ── PORTAL DO CLIENTE ────────────────────────────────────────────
