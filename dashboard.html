@@ -21,6 +21,10 @@
   --bg:#f7f5f0;--white:#ffffff;--ink:#1a1814;--muted:#9a9588;
   --border:#e4e0d8;--olive:#6b7a42;--gold:#a8893a;--cream:#f0ece3;--danger:#c0392b;
   --nav-bg:#1a1814;--nav-active:rgba(107,122,66,0.3);--nav-text:rgba(255,255,255,0.6);--nav-text-active:#6b7a42;
+  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-pill:20px;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-6:24px;--sp-8:32px;--sp-12:48px;
+  --shadow-sm:0 1px 4px rgba(0,0,0,.08);--shadow-md:0 4px 16px rgba(0,0,0,.1);--shadow-lg:0 8px 32px rgba(0,0,0,.15);--shadow-olive:0 4px 16px rgba(107,122,66,.25);
+  --text-xs:11px;--text-sm:12px;--text-base:14px;--text-md:16px;--text-lg:20px;--text-xl:24px;--text-2xl:32px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{overflow-x:hidden;max-width:100vw;touch-action:manipulation;-webkit-overflow-scrolling:touch;scroll-padding-top:120px;}
@@ -59,7 +63,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .dash-inner{max-width:1080px;margin:0 auto;padding:28px 24px;}
 
 /* ── TABS ── */
-.dash-tabs{display:flex;gap:2px;background:var(--cream);border-radius:10px;padding:4px;margin-bottom:28px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.dash-tabs{display:flex;gap:2px;background:var(--cream);border-radius:var(--r-md);padding:4px;margin-bottom:28px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .dash-tabs::-webkit-scrollbar{display:none;}
 .dash-tab{flex:0 0 auto;padding:10px 16px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:8px;transition:all .2s;min-height:44px;white-space:nowrap;}
 .dash-tab.active{background:var(--white);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08);}
@@ -78,7 +82,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 
 /* ── STATS ── */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
-.stat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:20px 18px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:20px 18px;}
 .stat-val{font-family:'Instrument Serif',serif;font-size:clamp(24px,6vw,36px);font-weight:400;color:var(--ink);line-height:1;}
 .stat-lbl{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.5px;}
 .stat-card.highlight{background:var(--olive);}
@@ -153,11 +157,11 @@ tr:hover td{background:var(--cream);}
 /* ── NOTES ── */
 .notes-area{width:100%;padding:12px 14px;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;resize:vertical;min-height:80px;transition:border-color .2s;line-height:1.6;}
 .notes-area:focus{border-color:var(--olive);}
-.btn-save-notes{padding:9px 18px;background:var(--olive);color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;min-height:44px;}
+.btn-save-notes{padding:9px 18px;background:var(--olive);color:#fff;border:none;border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;min-height:44px;}
 .btn-save-notes:hover{opacity:.88;}
 
 /* ── UPLOAD ── */
-.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;min-height:44px;}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--r-md);padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;min-height:44px;}
 .upload-zone:hover{border-color:var(--olive);background:rgba(107,122,66,.03);}
 .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .upload-zone-label{font-size:13px;color:var(--muted);margin-bottom:2px;}
@@ -203,10 +207,16 @@ tr:hover td{background:var(--cream);}
 .spinner-wrap{text-align:center;padding:48px;color:var(--muted);font-size:13px;}
 .spin{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--olive);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 12px;}
 @keyframes sp{to{transform:rotate(360deg);}}
-.toast{position:fixed;bottom:24px;right:24px;z-index:500;background:var(--ink);color:#fff;border-radius:10px;padding:14px 20px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s ease;pointer-events:none;}
+.skeleton{background:linear-gradient(90deg,var(--cream) 25%,var(--border) 50%,var(--cream) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-line{height:14px;border-radius:4px;margin-bottom:8px;}
+.skel-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:16px;margin-bottom:10px;}
+.skel-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0;}
+.skel-row{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.toast{position:fixed;bottom:24px;right:24px;z-index:500;background:var(--ink);color:#fff;border-radius:var(--r-md);padding:14px 20px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .3s ease;pointer-events:none;}
 .toast.show{transform:translateY(0);opacity:1;}
 .toast-dot{width:8px;height:8px;border-radius:50%;background:#6bcb77;flex-shrink:0;}
-.btn-delete{padding:9px 16px;background:none;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;min-height:44px;}
+.btn-delete{padding:9px 16px;background:none;border:1px solid var(--border);border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;min-height:44px;}
 .btn-delete:hover{border-color:var(--danger);color:var(--danger);}
 .btn-new-ficha{padding:8px 16px;background:var(--olive);color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;min-height:44px;white-space:nowrap;}
 .btn-new-ficha:hover{opacity:.88;}
@@ -453,7 +463,7 @@ tr:hover td{background:var(--cream);}
 .home-act-sub{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:5px;}
 .home-act-time{font-size:11px;color:var(--muted);flex-shrink:0;}
 /* ── HOME ALERT ── */
-.home-alert{background:rgba(107,122,66,.08);border:1px solid rgba(107,122,66,.25);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
+.home-alert{background:rgba(107,122,66,.08);border:1px solid rgba(107,122,66,.25);border-radius:var(--r-md);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
 .home-alert-text{font-size:13px;color:var(--olive);font-weight:500;}
 .btn-home-alert{padding:7px 14px;background:var(--olive);color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;white-space:nowrap;}
 .btn-home-alert:hover{opacity:.88;}
@@ -541,7 +551,7 @@ tr:hover td{background:var(--cream);}
 .goal-card:hover{border-color:var(--olive);}
 .goal-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
 .goal-title{font-size:14px;font-weight:600;color:var(--ink);line-height:1.4;}
-.goal-cat{padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0;}
+.goal-cat{padding:3px 8px;border-radius:var(--r-md);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0;}
 .gc-peso{background:rgba(70,100,150,.1);color:#4664a0;}
 .gc-gordura{background:rgba(200,100,20,.1);color:#c86414;}
 .gc-circunferencia{background:rgba(130,50,150,.1);color:#823296;}
@@ -566,7 +576,7 @@ tr:hover td{background:var(--cream);}
 .goal-form-card{background:var(--cream);border:1.5px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
 .goal-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:540px){.goal-form-grid{grid-template-columns:1fr;}}
-.checkin-form-card{background:rgba(107,122,66,.06);border:1.5px solid rgba(107,122,66,.2);border-radius:10px;padding:14px;margin-bottom:12px;}
+.checkin-form-card{background:rgba(107,122,66,.06);border:1.5px solid rgba(107,122,66,.2);border-radius:var(--r-md);padding:14px;margin-bottom:12px;}
 
 /* ── AUTOCOMPLETE ── */
 .ac-wrap{position:relative;}
@@ -1058,7 +1068,7 @@ async function checkSchema(){
   if(!missing.length) return;
   const banner = document.createElement('div');
   banner.id = 'schemaBanner';
-  banner.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.7;';
+  banner.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;border-radius:var(--r-md);padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.7;';
   banner.innerHTML = '<strong>⚠️ Schema incompleto detectado:</strong><ul style="margin:6px 0 0 18px">'
     + missing.map(m=>`<li>${m}</li>`).join('') + '</ul>'
     + '<button onclick="this.parentElement.remove()" style="margin-top:8px;background:none;border:none;font-size:12px;color:#856404;cursor:pointer;text-decoration:underline">Dispensar</button>';
@@ -1138,6 +1148,11 @@ function _renderView(view, params={}){
     case 'nova-avaliacao': renderViewNovaAvaliacao(params); break;
     default: goBack();
   }
+}
+function _skelCards(n=3){
+  return Array.from({length:n},()=>`<div class="skel-card">
+    <div class="skel-row"><div class="skeleton skel-avatar"></div><div style="flex:1"><div class="skeleton skel-line" style="width:60%"></div><div class="skeleton skel-line" style="width:40%"></div></div></div>
+  </div>`).join('');
 }
 function _vHd(title, rightBtn=''){
   return `<div class="view-header">
@@ -2181,7 +2196,7 @@ function renderViewFicha(params={}){
     <div class="pf" style="margin-bottom:12px"><label>Telefone</label>
       <input type="tel" id="editFone" value="${esc(row.patient_phone||d.fone||'')}" inputmode="tel" style="background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;width:100%;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;min-height:44px;color:var(--ink);transition:border-color .2s" onfocus="this.style.borderColor='var(--olive)'" onblur="this.style.borderColor='var(--border)'">
     </div>
-    <button onclick="saveEdit()" style="padding:9px 18px;background:var(--olive);color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;min-height:44px">Salvar edição</button>
+    <button onclick="saveEdit()" style="padding:9px 18px;background:var(--olive);color:#fff;border:none;border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;min-height:44px">Salvar edição</button>
   </div>`;
   if(row.client_id){
     html+=`<div style="margin-bottom:12px">
@@ -2830,11 +2845,10 @@ function renderEmpty(){
 
 // ── AVALIAÇÕES ───────────────────────────────────────────────
 async function loadAvaliacoes(){
+  document.getElementById('avalTableContent').innerHTML = _skelCards(3);
   console.log('carregando avaliacoes');
   if(!profId){ renderAvalEmpty(); return; }
   console.log('profId:', profId);
-  document.getElementById('avalTableContent').innerHTML =
-    '<div class="spinner-wrap"><div class="spin"></div>Carregando avaliações…</div>';
   const {data, error} = await sb
     .from('assessments')
     .select('id,patient_name,patient_phone,status,modality,created_at,client_id')
@@ -3081,7 +3095,7 @@ function _openModalLegacy(id){
       <label>Telefone</label>
       <input type="tel" id="editFone" value="${(row.patient_phone||d.fone||'').replace(/"/g,'&quot;')}" autocomplete="tel" inputmode="tel" style="background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;width:100%;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;min-height:44px;color:var(--ink);transition:border-color .2s;" onfocus="this.style.borderColor='var(--olive)'" onblur="this.style.borderColor='var(--border)'">
     </div>
-    <button onclick="saveEdit()" style="padding:9px 18px;background:var(--olive);color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;min-height:44px;">Salvar edição</button>
+    <button onclick="saveEdit()" style="padding:9px 18px;background:var(--olive);color:#fff;border:none;border-radius:var(--r-sm);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;min-height:44px;">Salvar edição</button>
   </div>`;
 
   // Link para perfil do cliente, se vinculado
@@ -3440,9 +3454,8 @@ function showConfirm(msg, onOk){
 
 // ── CLIENTES ─────────────────────────────────────────────────
 async function loadClients(){
+  document.getElementById('clientContent').innerHTML = _skelCards(3);
   if(!profId){ renderCliEmpty(); return; }
-  document.getElementById('clientContent').innerHTML =
-    '<div class="spinner-wrap"><div class="spin"></div>Carregando clientes…</div>';
   // Tenta usar a view clients_summary; fallback para tabela clients
   let {data, error} = await sb
     .from('clients_summary')
