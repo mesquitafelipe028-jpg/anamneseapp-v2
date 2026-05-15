@@ -1,7 +1,8 @@
-const CACHE = 'anamneseapp-v3'; // bump para forçar invalidação do cache antigo
-const SHELL = ['/', '/anamnese', '/dashboard', '/config.js', '/manifest.json', '/icon.svg'];
+const CACHE = 'anamneseapp-v4'; // bump para forçar invalidação do cache antigo
+const SHELL = ['/', '/anamnese', '/dashboard', '/avaliacao', '/portal', '/config.js', '/manifest.json', '/icon.svg'];
 const CDN = [
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap',
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap'

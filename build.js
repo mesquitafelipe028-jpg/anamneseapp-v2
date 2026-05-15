@@ -10,9 +10,13 @@ const url  = process.env.SUPABASE_URL;
 const anon = process.env.SUPABASE_ANON;
 
 if (!url || !anon) {
-  console.warn('[build] SUPABASE_URL ou SUPABASE_ANON não definidas.');
-  console.warn('[build] Pulando geração de config.js — usando arquivo local existente.');
-  process.exit(0);
+  if (fs.existsSync(path.join(__dirname, 'config.js'))) {
+    console.warn('[build] Usando config.js local existente (env vars não definidas).');
+    process.exit(0);
+  }
+  console.error('[build] ERRO: SUPABASE_URL e SUPABASE_ANON são obrigatórias no Vercel.');
+  console.error('[build] Configure as variáveis de ambiente no painel do Vercel.');
+  process.exit(1);
 }
 
 const tplPath = path.join(__dirname, 'config.template.js');

@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#6b7a42">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.svg">
 <title>Portal do Cliente — AnamneseApp</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,8 +22,9 @@
   --border:#e4e0d8;--olive:#6b7a42;--gold:#a8893a;--cream:#f0ece3;--danger:#c0392b;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{overflow-x:hidden;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+html{overflow-x:hidden;scroll-padding-top:80px;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding-bottom:env(safe-area-inset-bottom);}
+button{min-height:44px;}
 
 /* ── LOADING / DENIED ── */
 .full-center{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;}
@@ -480,6 +485,7 @@ function renderAnam(anams){
     </div>`;
   }).join('')+'</div>';
 }
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 </body>
 </html>

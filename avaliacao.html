@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#6b7a42">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.svg">
 <title>Avaliação Física — AnamneseApp</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -221,6 +224,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 
 /* ── PWA / iOS ── */
 *{-webkit-tap-highlight-color:transparent;}
+button,.btn-action,.btn-back,.btn-prev,.btn-next,.btn-info,.radio-opt,.protocol-header{min-height:44px;}
 .btn-action,.btn-back,.btn-prev,.btn-next,.ps,.proto-tab{user-select:none;-webkit-user-select:none;}
 @media(max-width:768px){
   input,select,textarea{font-size:max(16px,1em) !important;}
@@ -1463,17 +1467,20 @@ async function saveAll(){
       observacoes: D.observacoes_forca || null
     });
 
-    await upsertSub('assessment_mobility','mobility',{
-      overhead_squat_resultado: D.mob_squat||null,
-      overhead_squat_obs: {retroversao:D.mob_squat_retroversao, toracica:D.mob_squat_toracica, valgo:D.mob_squat_valgo, dor:D.mob_squat_dor, dor_local:D.mob_squat_dor_local, pisada:D.mob_squat_pisada},
-      mobilidade_ombro_d: D.mob_ombro_d||null,
-      mobilidade_ombro_e: D.mob_ombro_e||null,
-      toe_touch: D.mob_toe_touch||null,
-      elevacao_perna_d: D.mob_perna_d||null,
-      elevacao_perna_e: D.mob_perna_e||null,
-      tornozelo_resultado: D.mob_tornozelo||null,
-      observacoes_gerais: D.mob_obs||null
-    });
+    // assessment_mobility: tabela opcional — falha não bloqueia o save
+    try {
+      await upsertSub('assessment_mobility','mobility',{
+        overhead_squat_resultado: D.mob_squat||null,
+        overhead_squat_obs: {retroversao:D.mob_squat_retroversao, toracica:D.mob_squat_toracica, valgo:D.mob_squat_valgo, dor:D.mob_squat_dor, dor_local:D.mob_squat_dor_local, pisada:D.mob_squat_pisada},
+        mobilidade_ombro_d: D.mob_ombro_d||null,
+        mobilidade_ombro_e: D.mob_ombro_e||null,
+        toe_touch: D.mob_toe_touch||null,
+        elevacao_perna_d: D.mob_perna_d||null,
+        elevacao_perna_e: D.mob_perna_e||null,
+        tornozelo_resultado: D.mob_tornozelo||null,
+        observacoes_gerais: D.mob_obs||null
+      });
+    } catch(mobErr){ console.warn('[saveAll] assessment_mobility (rode mobility_strength_update.sql):', mobErr.message); }
 
     saveLS();
     showMsg('Avaliação salva com sucesso!','ok');
@@ -1864,6 +1871,7 @@ loadLS();
 render();
 if(_asmId && sb) loadExistingData();
 else if(_clientId && sb) prefillFromAnamnese();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 </body>
 </html>
