@@ -93,15 +93,51 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .proto-tabs{display:flex;gap:6px;margin-bottom:18px;}
 .proto-tab{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;text-align:center;}
 .proto-tab.active{background:var(--olive);border-color:var(--olive);color:#fff;}
-/* ── PROTOCOL CARROSSEL ── */
-.protocol-scroll{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:8px;scrollbar-width:none;margin-bottom:18px;}
-.protocol-scroll::-webkit-scrollbar{display:none;}
-.protocol-card{scroll-snap-align:start;min-width:130px;max-width:140px;padding:14px 10px;border:2px solid var(--border);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s;flex-shrink:0;background:var(--white);}
-.protocol-card:hover{border-color:var(--olive);}
-.protocol-card.active{border-color:var(--olive);background:rgba(107,122,66,.07);}
-.protocol-card-icon{font-size:22px;margin-bottom:6px;line-height:1;}
-.protocol-card-name{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px;}
-.protocol-card-desc{font-size:10px;color:var(--muted);line-height:1.4;}
+/* ── PROTOCOL LIST ── */
+.protocol-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.protocol-item{border:1.5px solid var(--border);border-radius:12px;overflow:hidden;transition:all .2s;background:var(--white)}
+.protocol-item.active{border-color:#6b7a42;box-shadow:0 2px 12px rgba(107,122,66,.15)}
+.protocol-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.protocol-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:var(--cream)}
+.protocol-item.active .protocol-icon{background:rgba(107,122,66,.12)}
+.protocol-info{flex:1;min-width:0}
+.protocol-name{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.protocol-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.protocol-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.5px}
+.badge-gold{background:rgba(168,137,58,.12);color:#a8893a}
+.badge-blue{background:rgba(59,130,246,.1);color:#3b82f6}
+.badge-green{background:rgba(107,122,66,.12);color:#6b7a42}
+.protocol-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.protocol-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:12px;color:transparent}
+.protocol-item.active .protocol-check{background:#6b7a42;border-color:#6b7a42;color:white}
+.btn-info{width:32px;height:32px;border-radius:50%;border:none;background:var(--cream);color:var(--muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.btn-info:hover{background:#6b7a42;color:white}
+.protocol-fields{padding:0 16px 16px;border-top:1px solid var(--cream);display:none;animation:fadeIn .2s ease}
+.protocol-item.active .protocol-fields{display:block}
+/* ── INSTRUCTION SHEET ── */
+.instr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.instr-overlay.open{display:flex}
+.instr-sheet{background:white;border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:0 0 env(safe-area-inset-bottom);animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.instr-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0}
+.instr-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.instr-title{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;color:var(--ink)}
+.instr-close{width:32px;height:32px;border:none;background:var(--cream);border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.instr-body{padding:20px}
+.instr-section{margin-bottom:20px}
+.instr-section-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#6b7a42;margin-bottom:10px}
+.instr-step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start}
+.instr-step-num{width:24px;height:24px;border-radius:50%;background:#6b7a42;color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.instr-step-text{font-size:14px;color:var(--ink);line-height:1.6}
+.instr-tip{background:rgba(107,122,66,.08);border-left:3px solid #6b7a42;border-radius:0 8px 8px 0;padding:12px 14px;margin:12px 0}
+.instr-tip-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:#6b7a42;margin-bottom:4px}
+.instr-tip-text{font-size:13px;color:var(--ink);line-height:1.5}
+.instr-equip{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.instr-equip-item{padding:5px 12px;background:var(--cream);border-radius:20px;font-size:12px;color:var(--ink)}
+.instr-ref{font-size:11px;color:var(--muted);font-style:italic;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
+.instr-contraind{background:rgba(192,57,43,.06);border-radius:8px;padding:12px;margin-top:8px}
+.instr-contraind-title{font-size:11px;font-weight:700;color:#c0392b;margin-bottom:6px}
+.instr-contraind-text{font-size:12px;color:var(--ink);line-height:1.5}
 /* Tabela de referência inline */
 .ref-table{width:100%;border-collapse:collapse;font-size:11px;margin:10px 0;}
 .ref-table th{background:var(--cream);padding:5px 8px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);}
@@ -207,6 +243,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 <div class="av-body" id="avBody"></div>
 
 <div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg"></span></div>
+
+<!-- INSTRUCTION SHEET -->
+<div class="instr-overlay" id="instrOverlay" onclick="closeInstrSheet()">
+  <div class="instr-sheet" onclick="event.stopPropagation()">
+    <div class="instr-handle"></div>
+    <div class="instr-header">
+      <div class="instr-title" id="instrTitle">Protocolo</div>
+      <button class="instr-close" onclick="closeInstrSheet()">×</button>
+    </div>
+    <div class="instr-body" id="instrBody"></div>
+  </div>
+</div>
 
 <script>
 const _SBU = window.SUPABASE_URL  || '';
@@ -677,24 +725,6 @@ function mod3(){
   const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}_mm"></div>`;
   const fna=(lbl,k,u='')=>`<div class="field"><label>${lbl}${u?' ('+u+')':''}</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
 
-  const PROTOS=[
-    {id:'jp7',  icon:'📐', name:'JP 7 Dobras',  desc:'Jackson-Pollock 7 pontos'},
-    {id:'jp3m', icon:'♂️', name:'JP 3 — Masc',  desc:'Peitoral, Abdômen, Coxa'},
-    {id:'jp3f', icon:'♀️', name:'JP 3 — Fem',   desc:'Tríceps, Suprailíaca, Coxa'},
-    {id:'dw4',  icon:'🔢', name:'Durnin-Wom.',  desc:'Bíceps, Tríceps, Sub, Sup'},
-    {id:'guedes',icon:'🇧🇷',name:'Guedes',       desc:'3 dobras - protocolo BR'},
-    {id:'faulkner',icon:'🧮',name:'Faulkner',   desc:'4 dobras sem densidade'},
-    {id:'petroski',icon:'📊',name:'Petroski',   desc:'4 equações por sexo'},
-    {id:'slaughter',icon:'👶',name:'Slaughter', desc:'Crianças e adolescentes'},
-    {id:'bio',  icon:'⚡',  name:'Bioimpedância',desc:'Registro de aparelho'},
-  ];
-
-  const carousel=PROTOS.map(pr=>`<div class="protocol-card${p===pr.id?' active':''}" onclick="setProto('${pr.id}')">
-    <div class="protocol-card-icon">${pr.icon}</div>
-    <div class="protocol-card-name">${pr.name}</div>
-    <div class="protocol-card-desc">${pr.desc}</div>
-  </div>`).join('');
-
   const dwTable=`<details style="margin-bottom:10px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Tabela coeficientes Durnin-Womersley</summary>
     <table class="ref-table"><thead><tr><th>Idade</th><th>A (M)</th><th>B (M)</th><th>A (F)</th><th>B (F)</th></tr></thead><tbody>
     <tr><td>17–19</td><td>1.1620</td><td>0.0630</td><td>1.1549</td><td>0.0678</td></tr>
@@ -705,29 +735,55 @@ function mod3(){
     </tbody></table></details>`;
 
   const fields={
-    jp7:`<div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Peitoral','peitoral')}${f('Axilar Média','axilar')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`,
-    jp3m:`<p class="proto-note">Pontos masculinos: Peitoral + Abdominal + Coxa</p><div class="grid2">${f('Peitoral','peitoral')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`,
-    jp3f:`<p class="proto-note">Pontos femininos: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div>`,
-    dw4:dwTable+`<div class="grid2">${f('Bíceps','biceps')}${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}</div>`,
-    guedes:sx==='M'?`<p class="proto-note">Masculino: Subescapular + Abdominal + Coxa</p><div class="grid2">${f('Subescapular','subescapular')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`:
-                    `<p class="proto-note">Feminino: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div>`,
-    faulkner:`<p class="proto-note">Tríceps + Subescapular + Suprailíaca + Abdominal</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}</div>`,
-    petroski:sx==='M'?`<p class="proto-note">Masculino: Tríceps + Subescapular + Suprailíaca + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Panturrilha','panturrilha')}</div>`:
-                      `<p class="proto-note">Feminino: Tríceps + Suprailíaca + Abdominal + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Panturrilha','panturrilha')}</div>`,
-    slaughter:`<p class="proto-note">⚠️ Protocolo para crianças e adolescentes (6–17 anos)${calcAge()&&calcAge()>17?' — idade do avaliado fora da faixa':''}</p><div class="grid2">${f('Tríceps','triceps')}${f('Panturrilha medial','panturrilha')}</div>`,
-    bio:`<p class="proto-note">Insira os valores fornecidos pelo aparelho de bioimpedância. Os campos serão sincronizados com o módulo de Biometria automaticamente.</p>
+    jp7:`<div style="padding-top:12px"><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Peitoral','peitoral')}${f('Axilar Média','axilar')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div></div>`,
+    jp3m:`<div style="padding-top:12px"><p class="proto-note">Pontos masculinos: Peitoral + Abdominal + Coxa</p><div class="grid2">${f('Peitoral','peitoral')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div></div>`,
+    jp3f:`<div style="padding-top:12px"><p class="proto-note">Pontos femininos: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div></div>`,
+    dw4:`<div style="padding-top:12px">${dwTable}<div class="grid2">${f('Bíceps','biceps')}${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}</div></div>`,
+    guedes:`<div style="padding-top:12px">${sx==='M'?`<p class="proto-note">Masculino: Subescapular + Abdominal + Coxa</p><div class="grid2">${f('Subescapular','subescapular')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`:`<p class="proto-note">Feminino: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div>`}</div>`,
+    faulkner:`<div style="padding-top:12px"><p class="proto-note">Tríceps + Subescapular + Suprailíaca + Abdominal</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}</div></div>`,
+    petroski:`<div style="padding-top:12px">${sx==='M'?`<p class="proto-note">Masculino: Tríceps + Subescapular + Suprailíaca + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Panturrilha','panturrilha')}</div>`:`<p class="proto-note">Feminino: Tríceps + Suprailíaca + Abdominal + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Panturrilha','panturrilha')}</div>`}</div>`,
+    slaughter:`<div style="padding-top:12px"><p class="proto-note">⚠️ Protocolo para crianças e adolescentes (6–17 anos)${calcAge()&&calcAge()>17?' — idade do avaliado fora da faixa':''}</p><div class="grid2">${f('Tríceps','triceps')}${f('Panturrilha medial','panturrilha')}</div></div>`,
+    bio:`<div style="padding-top:12px"><p class="proto-note">Insira os valores fornecidos pelo aparelho de bioimpedância.</p>
       <div class="grid2">
         ${fna('% Gordura','bio_pct_gordura','%')}${fna('Massa Gorda','bio_massa_gorda','kg')}
         ${fna('Massa Magra','bio_massa_magra','kg')}${fna('Água Corporal','bio_agua','%')}
         ${fna('Massa Óssea','bio_ossa','kg')}${fna('Metabolismo Basal','bio_metabolismo','kcal')}
-      </div>`
+      </div></div>`
   };
+
+  const PROTOS_D=[
+    {id:'jp7',     icon:'📐', name:'JP 7 Dobras',     meta:'Jackson-Pollock',    precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'jp3m',    icon:'♂️', name:'JP 3 — Masc',     meta:'3 pontos masculino', precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'jp3f',    icon:'♀️', name:'JP 3 — Fem',      meta:'3 pontos feminino',  precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'dw4',     icon:'🔢', name:'Durnin-Womersley', meta:'4 dobras',           precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'guedes',  icon:'🇧🇷', name:'Guedes',          meta:'Protocolo BR',       precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'faulkner',icon:'🧮', name:'Faulkner',         meta:'4 dobras direto',    precision:'Moderada',          tipo:'Campo',       badge:'badge-blue'},
+    {id:'petroski',icon:'📊', name:'Petroski',          meta:'4 equações',        precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'slaughter',icon:'👶',name:'Slaughter-Lohman', meta:'6–17 anos',          precision:'Alta',              tipo:'Campo',       badge:'badge-gold'},
+    {id:'bio',     icon:'⚡', name:'Bioimpedância',    meta:'Registro de aparelho',precision:'Moderada',         tipo:'Rastreamento',badge:'badge-blue'},
+  ];
+
+  const checkSVG=`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 6 5 9 10 3"/></svg>`;
+
+  const list=PROTOS_D.map(pr=>`<div class="protocol-item${p===pr.id?' active':''}" id="pid_${pr.id}">
+    <div class="protocol-header" onclick="setProto('${pr.id}')">
+      <div class="protocol-icon">${pr.icon}</div>
+      <div class="protocol-info">
+        <div class="protocol-name">${pr.name}</div>
+        <div class="protocol-meta"><span class="protocol-badge ${pr.badge}">${pr.precision}</span><span>${pr.tipo}</span></div>
+      </div>
+      <div class="protocol-right">
+        <button class="btn-info" onclick="showProtocolInfo('dobras','${pr.id}');event.stopPropagation()">ℹ</button>
+        <div class="protocol-check">${p===pr.id?checkSVG:''}</div>
+      </div>
+    </div>
+    <div class="protocol-fields">${fields[pr.id]||''}<div class="result-box" id="dobrasBox_${pr.id}" style="display:none;margin-top:10px"></div></div>
+  </div>`).join('');
 
   return `<div class="av-card">
     <div class="av-card-title">Dobras Cutâneas</div>
     <div class="av-card-sub">Selecione o protocolo e preencha os campos</div>
-    <div class="protocol-scroll">${carousel}</div>
-    ${fields[p]||''}
+    <div class="protocol-list">${list}</div>
     <div class="result-box" id="dobrasBox" style="display:none;margin-top:14px"></div>
     ${navHTML(true)}
   </div>`;
@@ -821,25 +877,6 @@ function removePhoto(key, e){
 function mod5(){
   const p=D.protocolo_vo2||'cooper';
 
-  const PROTOS=[
-    {id:'cooper',   icon:'🏃', name:'Cooper 12min', desc:'Corrida 12 minutos'},
-    {id:'rockport', icon:'🚶', name:'Rockport 1mi',  desc:'Caminhada 1 milha'},
-    {id:'harvard',  icon:'🪜', name:'Banco Harvard', desc:'Step test 3 min'},
-    {id:'balke',    icon:'⏱️', name:'Balke 15min',   desc:'Corrida 15 minutos'},
-    {id:'bruce',    icon:'🏋️', name:'Bruce',          desc:'Esteira incremental'},
-    {id:'astrand',  icon:'🚴', name:'Astrand',        desc:'Bicicleta ergométrica'},
-    {id:'yoyo',     icon:'📡', name:'Yo-Yo Test',     desc:'Shuttle progressivo'},
-    {id:'ukk',      icon:'🚶‍♀️', name:'UKK 2km',       desc:'Caminhada 2 km'},
-    {id:'pacer',    icon:'🔊', name:'Beep Test',      desc:'Shuttle 20 metros'},
-    {id:'fc_repouso',icon:'❤️',name:'FC Repouso',    desc:'Apenas FC de repouso'},
-  ];
-
-  const carousel=PROTOS.map(pr=>`<div class="protocol-card${p===pr.id?' active':''}" onclick="setVO2Proto('${pr.id}')">
-    <div class="protocol-card-icon">${pr.icon}</div>
-    <div class="protocol-card-name">${pr.name}</div>
-    <div class="protocol-card-desc">${pr.desc}</div>
-  </div>`).join('');
-
   const bruceTable=`<details style="margin-bottom:10px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Estágios do protocolo Bruce</summary>
     <table class="ref-table"><thead><tr><th>Estágio</th><th>Tempo (min)</th><th>Velocidade</th><th>Inclinação</th></tr></thead><tbody>
     <tr><td>1</td><td>0–3</td><td>2.7 km/h</td><td>10%</td></tr>
@@ -859,53 +896,82 @@ function mod5(){
     </tbody></table></details>`;
 
   const fields={
-    cooper:`<div class="field"><label>Distância percorrida (m)</label>
+    cooper:`<div style="padding-top:12px"><div class="field"><label>Distância percorrida (m)</label>
       <input type="number" inputmode="decimal" placeholder="Ex: 2200" data-f="cooper_distancia">
-      <div class="hint">Distância em metros corridos em 12 minutos</div></div>`,
-    rockport:`<div class="grid2">
+      <div class="hint">Distância em metros corridos em 12 minutos</div></div></div>`,
+    rockport:`<div style="padding-top:12px"><div class="grid2">
       <div class="field"><label>Tempo — minutos</label><input type="number" inputmode="numeric" placeholder="Min" data-f="rockport_tempo_min"></div>
       <div class="field"><label>Tempo — segundos</label><input type="number" inputmode="numeric" placeholder="Seg" data-f="rockport_tempo_sec"></div>
     </div>
-    <div class="field"><label>FC ao final (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 160" data-f="rockport_fc"></div>`,
-    harvard:`<div class="field"><label>FC após 1 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 92" data-f="harvard_fc1"></div>
+    <div class="field"><label>FC ao final (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 160" data-f="rockport_fc"></div></div>`,
+    harvard:`<div style="padding-top:12px"><div class="field"><label>FC após 1 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 92" data-f="harvard_fc1"></div>
       <div class="field"><label>FC após 2 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 80" data-f="harvard_fc2"></div>
-      <div class="field"><label>FC após 3 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 72" data-f="harvard_fc3"></div>`,
-    balke:`<div class="field"><label>Distância percorrida (m)</label>
+      <div class="field"><label>FC após 3 min (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 72" data-f="harvard_fc3"></div></div>`,
+    balke:`<div style="padding-top:12px"><div class="field"><label>Distância percorrida (m)</label>
       <input type="number" inputmode="decimal" placeholder="Ex: 2500" data-f="balke_distancia">
-      <div class="hint">Distância em metros corridos em 15 minutos</div></div>`,
-    bruce:bruceTable+`<div class="field"><label>Tempo total até exaustão (min)</label>
+      <div class="hint">Distância em metros corridos em 15 minutos</div></div></div>`,
+    bruce:`<div style="padding-top:12px">${bruceTable}<div class="field"><label>Tempo total até exaustão (min)</label>
       <input type="number" step="0.1" inputmode="decimal" placeholder="Ex: 10.5" data-f="bruce_tempo">
-      <div class="hint">Inclua frações de minuto (ex: 9.5 = 9min 30s)</div></div>`,
-    astrand:astrandTable+`<div class="grid2">
+      <div class="hint">Inclua frações de minuto (ex: 9.5 = 9min 30s)</div></div></div>`,
+    astrand:`<div style="padding-top:12px">${astrandTable}<div class="grid2">
       <div class="field"><label>Carga (Watts)</label><input type="number" inputmode="decimal" placeholder="Ex: 100" data-f="astrand_carga"></div>
       <div class="field"><label>FC estado estável (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 140" data-f="astrand_fc"></div>
-    </div><p class="proto-note">Pedalada em cadência constante por 6 min com carga ajustada para FC 120–170 bpm</p>`,
-    yoyo:`<div class="grid2">
+    </div><p class="proto-note">Pedalada em cadência constante por 6 min com carga ajustada para FC 120–170 bpm</p></div>`,
+    yoyo:`<div style="padding-top:12px"><div class="grid2">
       <div class="field"><label>Nível (1 ou 2)</label>
         <select data-f="yoyo_nivel"><option value="1">Nível 1 (Resistência)</option><option value="2">Nível 2 (Recuperação)</option></select>
       </div>
       <div class="field"><label>Último estágio completado</label><input type="number" inputmode="numeric" placeholder="Ex: 14" data-f="yoyo_estagio"></div>
-    </div>`,
-    ukk:`<div class="grid2">
+    </div></div>`,
+    ukk:`<div style="padding-top:12px"><div class="grid2">
       <div class="field"><label>Tempo — minutos</label><input type="number" inputmode="numeric" placeholder="Min" data-f="ukk_tempo_min"></div>
       <div class="field"><label>Tempo — segundos</label><input type="number" inputmode="numeric" placeholder="Seg" data-f="ukk_tempo_sec"></div>
       <div class="field"><label>FC ao final (bpm)</label><input type="number" inputmode="numeric" placeholder="Ex: 130" data-f="ukk_fc"></div>
       <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="Ex: 70" data-f="ukk_peso"></div>
-    </div>`,
-    pacer:`<div class="grid2">
+    </div></div>`,
+    pacer:`<div style="padding-top:12px"><div class="grid2">
       <div class="field"><label>Último nível completado</label><input type="number" inputmode="numeric" placeholder="Ex: 8" data-f="pacer_nivel"></div>
       <div class="field"><label>Beeps no último nível</label><input type="number" inputmode="numeric" placeholder="Ex: 5" data-f="pacer_beeps"></div>
-    </div><p class="proto-note">Shuttle run de 20 metros com velocidade crescente a cada nível</p>`,
-    fc_repouso:`<div class="field"><label>FC de repouso (bpm)</label>
+    </div><p class="proto-note">Shuttle run de 20 metros com velocidade crescente a cada nível</p></div>`,
+    fc_repouso:`<div style="padding-top:12px"><div class="field"><label>FC de repouso (bpm)</label>
       <input type="number" inputmode="numeric" placeholder="Ex: 62" data-f="fc_repouso">
-      <div class="hint">Apenas registro — sem estimativa de VO2</div></div>`
+      <div class="hint">Apenas registro — sem estimativa de VO2</div></div></div>`
   };
+
+  const PROTOS_V=[
+    {id:'cooper',    icon:'🏃', name:'Cooper 12 min',       meta:'Corrida 12 min',      precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'rockport',  icon:'🚶', name:'Rockport 1 milha',    meta:'Caminhada 1 milha',   precision:'Moderada',          tipo:'Campo',       badge:'badge-blue'},
+    {id:'harvard',   icon:'🪜', name:'Banco de Harvard',    meta:'Step test',           precision:'Moderada',          tipo:'Campo',       badge:'badge-blue'},
+    {id:'balke',     icon:'⏱️', name:'Balke 15 min',        meta:'Corrida 15 min',      precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'bruce',     icon:'🏋️', name:'Bruce — Esteira',     meta:'Protocolo incremental',precision:'Muito Alta',       tipo:'Laboratório', badge:'badge-gold'},
+    {id:'astrand',   icon:'🚴', name:'Åstrand-Rhyming',     meta:'Bicicleta ergométrica',precision:'Alta',             tipo:'Laboratório', badge:'badge-gold'},
+    {id:'yoyo',      icon:'📡', name:'Yo-Yo Teste',         meta:'Shuttle progressivo', precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'ukk',       icon:'🚶‍♀️',name:'UKK 2km Caminhada',  meta:'Caminhada 2 km',      precision:'Moderada',          tipo:'Campo',       badge:'badge-blue'},
+    {id:'pacer',     icon:'🔊', name:'PACER / Beep Test',   meta:'Shuttle 20 metros',   precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'fc_repouso',icon:'❤️', name:'FC de Repouso',       meta:'Apenas FC',           precision:'Baixa (estimativa)',tipo:'Rastreamento',badge:'badge-blue'},
+  ];
+
+  const checkSVG=`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 6 5 9 10 3"/></svg>`;
+
+  const list=PROTOS_V.map(pr=>`<div class="protocol-item${p===pr.id?' active':''}" id="piv_${pr.id}">
+    <div class="protocol-header" onclick="setVO2Proto('${pr.id}')">
+      <div class="protocol-icon">${pr.icon}</div>
+      <div class="protocol-info">
+        <div class="protocol-name">${pr.name}</div>
+        <div class="protocol-meta"><span class="protocol-badge ${pr.badge}">${pr.precision}</span><span>${pr.tipo}</span></div>
+      </div>
+      <div class="protocol-right">
+        <button class="btn-info" onclick="showProtocolInfo('vo2','${pr.id}');event.stopPropagation()">ℹ</button>
+        <div class="protocol-check">${p===pr.id?checkSVG:''}</div>
+      </div>
+    </div>
+    <div class="protocol-fields">${fields[pr.id]||''}</div>
+  </div>`).join('');
 
   return `<div class="av-card">
     <div class="av-card-title">VO2 Máximo</div>
     <div class="av-card-sub">Selecione o protocolo de teste</div>
-    <div class="protocol-scroll">${carousel}</div>
-    ${fields[p]||''}
+    <div class="protocol-list">${list}</div>
     <div class="result-box" id="vo2Box" style="display:none;margin-top:14px"></div>
     ${navHTML(true)}
   </div>`;
@@ -1361,6 +1427,149 @@ function showToast(msg){
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2800);
 }
+
+// ── INSTRUCTION SHEET ─────────────────────────────────────────
+const instrucoes_vo2={
+  cooper:{icon:'🏃',name:'Cooper 12 min',equip:['Pista de atletismo ou local plano','Cronômetro','Trena ou GPS'],precision:'Alta',tipo:'Campo',
+    passos:['Aqueça por 5–10 minutos com caminhada e alongamento leve','Ao sinal, corra o máximo possível durante 12 minutos exatos','Mantenha ritmo constante — evite arrancar rápido no início','Ao final dos 12 minutos, marque a distância percorrida','Insira a distância total em metros no campo abaixo'],
+    tip:{label:'Dica profissional',texto:'Instrua o avaliado a manter pace constante. O erro mais comum é começar rápido e terminar caminhando, o que subestima o resultado real.'},
+    contraind:'Não recomendado para sedentários sem avaliação médica prévia, cardiopatas ou pessoas com ortopedia limitante.',
+    ref:'Cooper KH. A means of assessing maximal oxygen intake. JAMA. 1968'},
+  balke:{icon:'⏱️',name:'Balke 15 min',equip:['Pista de atletismo','Cronômetro','Trena ou GPS'],precision:'Alta',tipo:'Campo',
+    passos:['Aqueça por 5–10 minutos','Corra pelo máximo de tempo possível durante 15 minutos','Mantenha a velocidade mais alta que conseguir sustentar','Ao finalizar, registre a distância total percorrida em metros'],
+    tip:{label:'Diferença do Cooper',texto:'O Balke usa 15 minutos em vez de 12. Por ser mais longo, tende a ser mais preciso para corredores experientes mas mais exigente para sedentários.'},
+    contraind:'Mesmas contraindicações do Cooper. Exige condicionamento mínimo.',
+    ref:'Balke B, Ware RW. An experimental study of physical fitness. US Armed Forces Med J. 1959'},
+  bruce:{icon:'🏋️',name:'Bruce — Esteira',equip:['Esteira ergométrica com controle de velocidade e inclinação','Monitor de FC','Cronômetro'],precision:'Muito Alta',tipo:'Laboratório',
+    passos:['Configure a esteira conforme a tabela de estágios Bruce','Inicie no Estágio 1: 2.7 km/h a 10% de inclinação','A cada 3 minutos avance para o próximo estágio','Continue até exaustão voluntária ou critério de interrupção','Registre o tempo total em minutos no campo abaixo'],
+    tip:{label:'Tabela de Estágios',texto:'E1: 2.7km/h 10% | E2: 4.0km/h 12% | E3: 5.5km/h 14% | E4: 6.8km/h 16% | E5: 8.0km/h 18% | E6: 8.9km/h 20% | E7: 9.7km/h 22%'},
+    contraind:'Contraindicado para hipertensos severos não controlados, IAM recente, arritmias instáveis. Recomenda médico presente.',
+    ref:'Bruce RA. Maximal oxygen intake and nomographic assessment. Am Heart J. 1971'},
+  astrand:{icon:'🚴',name:'Åstrand-Rhyming',equip:['Bicicleta ergométrica calibrada','Monitor de frequência cardíaca','Cronômetro'],precision:'Alta',tipo:'Laboratório',
+    passos:['Ajuste a carga conforme sexo: homens 100–200W, mulheres 50–100W','Pedale em cadência constante de 50–60 rpm por 6 minutos','Nos últimos 2 minutos meça a FC em estado estável (2 medições)','Use a média das 2 medições de FC','Insira a carga em Watts e a FC média — o sistema aplica o fator de correção por idade automaticamente'],
+    tip:{label:'Estado estável',texto:'A FC está em estado estável quando a variação entre as medições do 5º e 6º minuto é menor que 5 bpm. Se não estabilizar, prolongue o teste.'},
+    contraind:'Ajustar carga conforme condicionamento. Sedentários iniciam com carga menor.',
+    ref:'Åstrand PO, Ryhming I. A nomogram for calculation of aerobic capacity. J Appl Physiol. 1954'},
+  rockport:{icon:'🚶',name:'Rockport 1 milha',equip:['Pista de 400m ou local plano de 1 milha (1609m)','Cronômetro','Monitor de FC ou palpação imediata'],precision:'Moderada',tipo:'Campo',
+    passos:['Marque 1 milha (1609 metros) em superfície plana','Caminhe o mais rápido possível sem correr','Ao cruzar a linha de chegada, anote o tempo imediatamente','Meça a FC nos primeiros 15 segundos após chegar (multiplique por 4)','Insira tempo, FC e peso abaixo'],
+    tip:{label:'Para quem usar',texto:'Ideal para idosos, sedentários iniciantes e pessoas com limitações ortopédicas. Menos preciso para atletas.'},
+    contraind:'Sem contraindicações específicas além das gerais. Seguro para populações especiais.',
+    ref:'Kline GM et al. Estimation of VO2max from a one-mile track walk. Med Sci Sports Exerc. 1987'},
+  harvard:{icon:'🪜',name:'Banco de Harvard',equip:['Banco de 50cm (homens) ou 43cm (mulheres)','Metrônomo a 120 bpm','Cronômetro','Pulsímetro'],precision:'Moderada',tipo:'Campo',
+    passos:['Suba e desça o banco em ritmo de 30 ciclos/min (metrônomo a 120bpm) por 5 minutos','Cada ciclo: pé esquerdo sobe, pé direito sobe, pé esquerdo desce, pé direito desce','Ao parar, aguarde 1 minuto e meça a FC por 30 segundos (FC1)','Aguarde mais 30 seg, meça por 30 seg (FC2). Aguarde mais 30 seg, meça (FC3)','Calcule: Índice = 30000 / (FC1+FC2+FC3)'],
+    tip:{label:'Interrupção antecipada',texto:'Se o avaliado não conseguir manter o ritmo por mais de 20 segundos consecutivos, interrompa e registre o tempo efetivo realizado.'},
+    contraind:'Cuidado com pessoas com problemas nos joelhos ou tornozelos. Banco alto pode ser difícil para baixa estatura.',
+    ref:'Brouha L et al. The step test: A simple method of measuring physical fitness. Rev Can Biol. 1943'},
+  yoyo:{icon:'📡',name:'Yo-Yo Teste',equip:['Espaço de 20 metros plano','Cones ou marcas','Áudio do teste Yo-Yo (beeps)','Smartphone ou caixa de som'],precision:'Alta',tipo:'Campo',
+    passos:['Marque duas linhas paralelas com 20 metros de distância','O avaliado corre de uma linha à outra no ritmo dos beeps','A velocidade aumenta progressivamente a cada estágio','O teste termina quando o avaliado falha 2 vezes em alcançar a linha','Registre o último estágio e número de beeps completados'],
+    tip:{label:'Nível 1 vs Nível 2',texto:'Nível 1 começa mais devagar, ideal para população geral e atletas recreacionais. Nível 2 começa mais intenso, para atletas de alto rendimento.'},
+    contraind:'Alta intensidade. Não recomendado para sedentários. Exige aquecimento adequado.',
+    ref:'Bangsbo J, Iaia FM, Krustrup P. The Yo-Yo intermittent recovery test. Sports Med. 2008'},
+  ukk:{icon:'🚶‍♀️',name:'UKK 2km Caminhada',equip:['Percurso plano de 2 km','Cronômetro','Monitor de FC'],precision:'Moderada',tipo:'Campo',
+    passos:['Aqueça por 5 minutos com caminhada leve','Ao sinal, caminhe 2km o mais rápido possível sem correr','Ao cruzar os 2km, anote o tempo e meça a FC imediatamente','Insira os dados abaixo — peso e altura serão usados na fórmula'],
+    tip:{label:'Para quem é indicado',texto:'Desenvolvido para adultos de 20–65 anos com baixo condicionamento. Excelente para rastreamento em saúde pública e reabilitação.'},
+    contraind:'Seguro para a maioria das populações. Preferível ao Cooper para idosos e obesos.',
+    ref:'Oja P et al. A 2-km walking test for assessing the cardiorespiratory fitness. Int J Sports Med. 1991'},
+  pacer:{icon:'🔊',name:'PACER / Beep Test 20m',equip:['Espaço de 20 metros','Cones','Áudio do PACER (beeps específicos)'],precision:'Alta',tipo:'Campo',
+    passos:['Marque 2 linhas com exatamente 20 metros de distância','Ao primeiro beep, corra de uma linha à outra antes do próximo beep','A velocidade aumenta a cada minuto (nível)','O teste termina quando o avaliado não alcança a linha por 2 vezes consecutivas','Registre o último nível e última rodada completada'],
+    tip:{label:'Diferença do Yo-Yo',texto:'O PACER é contínuo (sem pausa de recuperação). O Yo-Yo tem 10 segundos de recuperação. Para crianças e adolescentes use o FitnessGram PACER.'},
+    contraind:'Alta intensidade. Contraindicado para sedentários severos sem adaptação prévia.',
+    ref:'Léger LA, Lambert J. A maximal multistage 20-m shuttle run test to predict VO2max. Eur J Appl Physiol. 1982'},
+  fc_repouso:{icon:'❤️',name:'FC de Repouso',equip:['Monitor de FC ou palpação','5 minutos de repouso prévio'],precision:'Baixa (estimativa)',tipo:'Rastreamento',
+    passos:['Avaliado deve estar em repouso por pelo menos 5 minutos','Preferencialmente pela manhã, antes de se levantar','Palpe o pulso radial ou use pulsímetro por 60 segundos','Registre a FC abaixo — será usada apenas como dado auxiliar'],
+    tip:{label:'Limitação',texto:'A FC de repouso isolada não estima VO2max com precisão. Use apenas quando nenhum outro protocolo for viável. Valores abaixo de 60 bpm indicam bom condicionamento aeróbico.'},
+    contraind:'Sem contraindicações.',
+    ref:'ACSM. Guidelines for Exercise Testing and Prescription. 10th Ed. 2018'}
+};
+
+const instrucoes_dobras={
+  jp7:{icon:'📐',name:'Jackson-Pollock 7 Dobras',equip:['Compasso de dobras cutâneas (adipômetro)','Caneta dermográfica','Assistente para marcar os pontos'],precision:'Alta',tipo:'Campo',
+    passos:['Marque os 7 pontos anatômicos com caneta dermográfica: tríceps, subescapular, peitoral, axilar média, suprailíaca, abdominal e coxa','Realize a medida do lado direito do corpo, com o avaliado em posição ortostática','Pince a dobra com o polegar e indicador, paralela ao eixo natural da pele','Aplique o compasso a 1 cm dos dedos e leia em 2 segundos','Realize 3 medições por ponto e use a mediana'],
+    tip:{label:'Técnica de pinçamento',texto:'Use sempre a mesma mão dominante. A dobra deve ser pinçada firmemente mas sem comprimir o músculo. A variação entre medidas não deve ultrapassar 2mm.'},
+    contraind:'Sem contraindicações. Evitar em pele lesionada ou inflamada nos locais de medição.',
+    ref:'Jackson AS, Pollock ML. Generalized equations for predicting body density. Br J Nutr. 1978'},
+  jp3m:{icon:'♂️',name:'JP 3 Dobras — Masculino',equip:['Adipômetro','Caneta dermográfica'],precision:'Alta',tipo:'Campo',
+    passos:['Peitoral: dobra diagonal na linha axilar anterior, a 1/3 da distância entre axila e mamilo','Abdominal: dobra vertical a 2 cm lateral à cicatriz umbilical','Coxa: dobra vertical na face anterior da coxa, ponto médio entre o joelho e a virilha','Realize 3 medições por ponto e use a mediana','Aplique a fórmula JP3 masculina'],
+    tip:{label:'Aplicação',texto:'O JP3 masculino é mais rápido e com boa correlação ao JP7. Indicado para triagens e avaliações de rotina em academias.'},
+    contraind:'Verificar se o avaliado é do sexo masculino — há equação separada para o feminino.',
+    ref:'Jackson AS, Pollock ML. Practical assessment of body composition. Phys Sportsmed. 1985'},
+  jp3f:{icon:'♀️',name:'JP 3 Dobras — Feminino',equip:['Adipômetro','Caneta dermográfica'],precision:'Alta',tipo:'Campo',
+    passos:['Tríceps: dobra vertical na face posterior do braço, ponto médio entre acrômio e olécrano','Suprailíaca: dobra diagonal imediatamente acima da crista ilíaca','Coxa: dobra vertical na face anterior da coxa, ponto médio entre o joelho e a virilha','Realize 3 medições por ponto e use a mediana','Aplique a fórmula JP3 feminina'],
+    tip:{label:'Aplicação',texto:'O JP3 feminino seleciona pontos de maior deposição de gordura em mulheres. Boa correlação ao JP7 em populações adultas.'},
+    contraind:'Verificar se a avaliada é do sexo feminino — há equação separada para o masculino.',
+    ref:'Jackson AS, Pollock ML. Practical assessment of body composition. Phys Sportsmed. 1985'},
+  dw4:{icon:'🔢',name:'Durnin-Womersley 4 Dobras',equip:['Adipômetro','Tabela de coeficientes por faixa etária'],precision:'Alta',tipo:'Campo',
+    passos:['Bíceps: dobra vertical na face anterior do braço, ponto médio','Tríceps: dobra vertical na face posterior do braço, ponto médio','Subescapular: dobra diagonal a 2 cm abaixo do ângulo inferior da escápula','Suprailíaca: dobra diagonal acima da crista ilíaca','Some as 4 dobras e aplique log10, depois use os coeficientes A e B da tabela conforme idade e sexo'],
+    tip:{label:'Coeficientes por idade',texto:'Consulte a tabela Durnin-Womersley inline. A precisão depende da faixa etária correta — use a idade atual do avaliado.'},
+    contraind:'Protocolo validado para adultos de 17 a 72 anos. Aplicar tabela de idade correta.',
+    ref:'Durnin JV, Womersley J. Body fat assessed from total body density. Br J Nutr. 1974'},
+  guedes:{icon:'🇧🇷',name:'Guedes',equip:['Adipômetro','Caneta dermográfica'],precision:'Alta',tipo:'Campo',
+    passos:['Masculino — medir subescapular, abdominal e coxa (mesmos locais anatômicos do JP)','Feminino — medir tríceps, suprailíaca e coxa','Realize 3 medições por ponto e use a mediana','Some as 3 dobras e aplique o log10 na fórmula Guedes'],
+    tip:{label:'Protocolo brasileiro',texto:'Desenvolvido e validado para população brasileira por Guedes (1994). Tende a ter menor erro sistemático em brasileiros do que protocolos norte-americanos.'},
+    contraind:'Sem contraindicações específicas.',
+    ref:'Guedes DP, Guedes JERP. Subsídios para elaboração de programas de avaliação. Rev Paul Ed Fís. 1994'},
+  faulkner:{icon:'🧮',name:'Faulkner',equip:['Adipômetro'],precision:'Moderada',tipo:'Campo',
+    passos:['Medir tríceps, subescapular, suprailíaca e abdominal','Some as 4 dobras','Aplique diretamente a fórmula linear sem calcular densidade corporal'],
+    tip:{label:'Fórmula direta',texto:'Faulkner não usa a fórmula de Siri (densidade). O percentual é estimado diretamente pela soma, o que simplifica o cálculo mas pode perder precisão em extremos de adiposidade.'},
+    contraind:'Menos preciso para atletas com baixo percentual ou obesos grau 2+.',
+    ref:'Faulkner JA. Physiology of swimming. Res Q. 1968'},
+  petroski:{icon:'📊',name:'Petroski',equip:['Adipômetro','Fita métrica (para alguns pontos)'],precision:'Alta',tipo:'Campo',
+    passos:['Masculino: medir tríceps, subescapular, suprailíaca e panturrilha medial','Feminino: medir tríceps, suprailíaca, abdominal e panturrilha medial','Para panturrilha: ponto de maior circunferência da face medial','Realize 3 medições e use a mediana','Aplique a equação Petroski correspondente ao sexo'],
+    tip:{label:'Qual equação usar',texto:'Petroski publicou 4 equações por sexo (I, II, III, IV). Use preferencialmente a equação I (mais validada). As demais têm variações em pontos anatômicos.'},
+    contraind:'Validado para adultos brasileiros. Checar sexo e equação correta.',
+    ref:'Petroski EL. Desenvolvimento e validação de equações generalizadas para estimativa da densidade corporal. Tese USM. 1995'},
+  slaughter:{icon:'👶',name:'Slaughter-Lohman',equip:['Adipômetro pediátrico (recomendado)'],precision:'Alta',tipo:'Campo',
+    passos:['⚠️ Verificar se a idade do avaliado está entre 6 e 17 anos','Medir tríceps: ponto médio face posterior do braço','Medir panturrilha medial: ponto de maior circunferência na face interna da perna','Some as 2 dobras','Aplique a fórmula conforme estágio puberal e sexo'],
+    tip:{label:'Estágio puberal',texto:'Para meninos pré-púberes use fórmula 1; púberes e pós-púberes use fórmula 2. Para meninas use a mesma fórmula independente do estágio.'},
+    contraind:'Restrito a 6–17 anos. Não usar em adultos — a fórmula não é válida fora dessa faixa.',
+    ref:'Slaughter MH et al. Skinfold equations for estimation of body fatness in children and youth. Hum Biol. 1988'},
+  bio:{icon:'⚡',name:'Bioimpedância',equip:['Aparelho de bioimpedância (BIA)','Eletrodos (se multifaixo)','Balança'],precision:'Moderada',tipo:'Rastreamento',
+    passos:['Oriente o avaliado: jejum de 4h, sem atividade física nas últimas 12h, sem álcool nas últimas 24h','Hidratação normal — não avaliar em estado de desidratação','Avaliado deitado em decúbito dorsal por 5 minutos antes da medição','Limpar a pele nos pontos de contato dos eletrodos','Registrar os valores fornecidos pelo aparelho nos campos abaixo'],
+    tip:{label:'Boas práticas',texto:'A bioimpedância é muito sensível ao estado de hidratação. Padronizar horário (preferencialmente manhã) e condições para comparações longitudinais.'},
+    contraind:'Contraindicado para portadores de marcapasso. Cuidado com gestantes.',
+    ref:'Kyle UG et al. Bioelectrical impedance analysis — Part I: review of principles and methods. Clin Nutr. 2004'}
+};
+
+function showProtocolInfo(tipo, protocolo){
+  const dados = tipo==='vo2' ? instrucoes_vo2[protocolo] : instrucoes_dobras[protocolo];
+  if(!dados) return;
+  document.getElementById('instrTitle').textContent = dados.icon+' '+dados.name;
+  const equipHTML = dados.equip.map(e=>`<span class="instr-equip-item">${e}</span>`).join('');
+  const passosHTML = dados.passos.map((p,i)=>`<div class="instr-step"><div class="instr-step-num">${i+1}</div><div class="instr-step-text">${p}</div></div>`).join('');
+  document.getElementById('instrBody').innerHTML=`
+    <div class="instr-section">
+      <div class="instr-section-title">Equipamentos</div>
+      <div class="instr-equip">${equipHTML}</div>
+    </div>
+    <div class="instr-section">
+      <div class="instr-section-title">Protocolo passo a passo</div>
+      ${passosHTML}
+    </div>
+    ${dados.tip?`<div class="instr-tip"><div class="instr-tip-label">${dados.tip.label}</div><div class="instr-tip-text">${dados.tip.texto}</div></div>`:''}
+    ${dados.contraind?`<div class="instr-contraind"><div class="instr-contraind-title">⚠ Contraindicações</div><div class="instr-contraind-text">${dados.contraind}</div></div>`:''}
+    <div class="instr-ref">${dados.ref}</div>`;
+  const overlay = document.getElementById('instrOverlay');
+  overlay.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeInstrSheet(){
+  document.getElementById('instrOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// Swipe down to close instruction sheet
+(function(){
+  let _ty=0;
+  document.addEventListener('touchstart',e=>{
+    if(!document.getElementById('instrOverlay').classList.contains('open')) return;
+    _ty=e.touches[0].clientY;
+  },{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(!document.getElementById('instrOverlay').classList.contains('open')) return;
+    if(e.changedTouches[0].clientY - _ty > 60) closeInstrSheet();
+  },{passive:true});
+})();
 
 // ── INIT ──────────────────────────────────────────────────────
 loadLS();
