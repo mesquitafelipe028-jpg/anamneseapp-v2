@@ -258,6 +258,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
   <div class="av-logo">Anamnese<span>App</span></div>
   <div class="av-patient">Avaliação — <strong id="hdrPatient">—</strong></div>
   <button class="btn-back" onclick="_goBackFromAval()">← Voltar</button>
+  <button onclick="deleteCurrentAval()" title="Excluir avaliação" style="padding:6px 10px;border:1px solid rgba(192,57,43,.4);border-radius:6px;background:none;color:#c0392b;cursor:pointer;font-size:13px;min-height:36px;margin-left:4px;transition:all .2s" onmouseover="this.style.background='#c0392b';this.style.color='#fff'" onmouseout="this.style.background='none';this.style.color='#c0392b'">🗑</button>
 </header>
 
 <div class="av-progress">
@@ -303,6 +304,14 @@ function _goBackFromAval(){
   } else {
     location.href = '/dashboard#avaliacoes';
   }
+}
+async function deleteCurrentAval(){
+  const id = _savedAsmId || _asmId;
+  if(!sb || !id){ alert('Nenhuma avaliação salva ainda — volte ao dashboard.'); return; }
+  if(!confirm('Excluir esta avaliação permanentemente? Todos os dados serão perdidos e esta ação não pode ser desfeita.')) return;
+  const {error} = await sb.from('assessments').delete().eq('id', id);
+  if(error){ alert('Erro ao excluir: '+error.message); return; }
+  _goBackFromAval();
 }
 
 document.getElementById('hdrPatient').textContent = _patientName;

@@ -478,6 +478,8 @@ tr:hover td{background:var(--cream);}
 .btn-upgrade{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:var(--olive);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px;}
 .btn-danger-logout{width:100%;padding:14px;background:none;border:1.5px solid var(--danger);border-radius:8px;color:var(--danger);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:4px;}
 .btn-danger-logout:hover{background:var(--danger);color:#fff;}
+.btn-del{padding:6px 10px;border:1px solid rgba(192,57,43,.35);border-radius:6px;background:none;color:var(--danger);cursor:pointer;font-size:13px;min-height:36px;min-width:36px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.btn-del:hover{background:var(--danger);color:#fff;border-color:var(--danger);}
 
 /* responsive */
 @media(min-width:900px){
@@ -1286,6 +1288,43 @@ async function deleteClientFromView(clientId){
   history.go(-2);
 }
 
+async function deleteAval(avalId){
+  showConfirm('Excluir esta avaliação permanentemente? Todos os dados serão perdidos.', async ()=>{
+    const {error} = await sb.from('assessments').delete().eq('id', avalId);
+    if(error){ showToast('Erro: '+error.message); return; }
+    allAvals = allAvals.filter(a=>a.id!==avalId);
+    updateAvalStats(); renderAvals(allAvals);
+    showToast('Avaliação excluída.');
+  });
+}
+async function deleteAvalFromClient(avalId, clientId){
+  showConfirm('Excluir esta avaliação permanentemente?', async ()=>{
+    const {error} = await sb.from('assessments').delete().eq('id', avalId);
+    if(error){ showToast('Erro: '+error.message); return; }
+    allAvals = allAvals.filter(a=>a.id!==avalId);
+    renderViewCliente({id: clientId});
+    showToast('Avaliação excluída.');
+  });
+}
+async function deleteAnamFromClient(anamId, clientId){
+  showConfirm('Excluir esta ficha permanentemente?', async ()=>{
+    const {error} = await sb.from('anamneses').delete().eq('id', anamId);
+    if(error){ showToast('Erro: '+error.message); return; }
+    allRows = allRows.filter(r=>r.id!==anamId);
+    updateStats(allRows); applyFilters();
+    renderViewCliente({id: clientId});
+    showToast('Ficha excluída.');
+  });
+}
+async function deleteGoal(goalId, clientId){
+  showConfirm('Excluir esta meta permanentemente?', async ()=>{
+    const {error} = await sb.from('client_goals').delete().eq('id', goalId);
+    if(error){ showToast('Erro: '+error.message); return; }
+    loadGoals(clientId);
+    showToast('Meta excluída.');
+  });
+}
+
 // ── VIEW: PERFIL DO CLIENTE ────────────────────────────────────
 async function renderViewCliente(params={}){
   const clientId = params.id;
@@ -1353,7 +1392,10 @@ async function renderViewCliente(params={}){
         <div class="cpv-record-main">${esc(a.patient_name||client.name)}</div>
         <div class="cpv-record-sub">${new Date(a.created_at).toLocaleDateString('pt-BR')} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></div>
       </div>
-      <button class="btn-view" onclick="navigateTo('ficha',{id:'${a.id}'})">Abrir</button>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn-view" onclick="navigateTo('ficha',{id:'${a.id}'})">Abrir</button>
+        <button class="btn-del" onclick="deleteAnamFromClient('${a.id}','${clientId}')" title="Excluir ficha">🗑</button>
+      </div>
     </div>`;
   }).join('')
   : `<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Nenhuma anamnese vinculada.</div>
@@ -1366,7 +1408,10 @@ async function renderViewCliente(params={}){
         <div class="cpv-record-main">${esc(av.patient_name||client.name)}</div>
         <div class="cpv-record-sub">${new Date(av.created_at).toLocaleDateString('pt-BR')} · ${av.modality||'presencial'} · ${st}</div>
       </div>
-      <button class="btn-view" onclick="location.href='${url}'">${av.status==='concluida'?'Ver':'Continuar'}</button>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn-view" onclick="location.href='${url}'">${av.status==='concluida'?'Ver':'Continuar'}</button>
+        <button class="btn-del" onclick="deleteAvalFromClient('${av.id}','${clientId}')" title="Excluir avaliação">🗑</button>
+      </div>
     </div>`;
   }).join('')
   : `<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Nenhuma avaliação vinculada.</div>
@@ -1955,10 +2000,11 @@ function renderGoals(goals,clientId){
         </div>
       </div>`:''}
       ${dl?`<div class="goal-deadline">⏱ ${dl}</div>`:''}
-      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
         <button class="btn-view" onclick="toggleGoalDetail('${g.id}')">Histórico</button>
         ${g.status==='ativa'?`<button class="btn-new-ficha" style="font-size:11px;padding:6px 12px"
           onclick="openCheckinForm('${g.id}','${esc(g.title).replace(/'/g,"\\'")}','${g.target_unit||''}','${clientId}')">+ Registrar progresso</button>`:''}
+        <button class="btn-del" style="margin-left:auto" onclick="deleteGoal('${g.id}','${clientId}')" title="Excluir meta">🗑</button>
       </div>
       <div id="ci-form-${g.id}" class="checkin-form-card" style="display:none;margin-top:10px">
         <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:10px">Registrar progresso</div>
@@ -2851,7 +2897,7 @@ function renderAvals(rows){
       <td><span class="badge-status ${stC}" style="cursor:default">${st}</span></td>
       <td style="display:flex;gap:6px">
         <button class="btn-view" onclick="location.href='${url}'">Ver / Editar</button>
-        <button class="btn-view" onclick="location.href='${url}'" title="Abrir para gerar PDF">PDF</button>
+        <button class="btn-del" onclick="deleteAval('${r.id}')" title="Excluir avaliação">🗑</button>
       </td>
     </tr>`;
   });
@@ -2879,7 +2925,7 @@ function renderAvalCards(rows){
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn-view" style="flex:1;text-align:center" onclick="location.href='${url}'">Ver / Editar</button>
-        <button class="btn-view" onclick="location.href='${url}'" title="Abrir para gerar PDF">PDF</button>
+        <button class="btn-del" onclick="deleteAval('${r.id}')" title="Excluir">🗑</button>
       </div>
     </div>`;
   });
