@@ -225,6 +225,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 @media(max-width:768px){
   input,select,textarea{font-size:max(16px,1em) !important;}
 }
+/* ── CLASSIFICATION BADGES ── */
+.classif-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;margin-left:8px;vertical-align:middle}
+.classif-excelente{background:rgba(107,122,66,.15);color:#3d6b2e}
+.classif-bom{background:rgba(59,130,246,.1);color:#1d4ed8}
+.classif-regular{background:rgba(234,179,8,.15);color:#854d0e}
+.classif-fraco{background:rgba(239,68,68,.12);color:#b91c1c}
+.classif-muito-fraco{background:rgba(127,29,29,.12);color:#7f1d1d}
+.classif-otimo{background:rgba(107,122,66,.15);color:#3d6b2e}
+.classif-aceitavel{background:rgba(234,179,8,.15);color:#854d0e}
+.classif-restrito{background:rgba(239,68,68,.12);color:#b91c1c}
+/* ── MOBILITY MODULE ── */
+.mob-test{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.mob-test-title{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--olive);margin-bottom:4px}
+.mob-test-desc{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.radio-group{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.radio-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;font-size:13px;color:var(--ink)}
+.radio-opt.sel{border-color:var(--olive);background:rgba(107,122,66,.07);font-weight:600}
+.radio-opt-label{display:flex;align-items:center;gap:8px;flex:1}
+.radio-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.radio-opt.sel .radio-dot{border-color:var(--olive);background:var(--olive)}
+.radio-opt.sel .radio-dot::after{content:'';width:6px;height:6px;border-radius:50%;background:white}
+.mob-card-info{background:rgba(107,122,66,.06);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--ink);line-height:1.6}
+.checkbox-group{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.checkbox-opt{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;color:var(--ink)}
+.checkbox-opt input[type=checkbox]{width:16px;height:16px;accent-color:var(--olive)}
 </style>
 </head>
 <body>
@@ -282,7 +307,7 @@ function _goBackFromAval(){
 
 document.getElementById('hdrPatient').textContent = _patientName;
 
-const MODULES = ['Biometria','Circunferências','Dobras Cutâneas','Postural','VO2 Máx','Força'];
+const MODULES = ['Biometria','Mobilidade','Circunferências','Dobras Cutâneas','Postural','VO2 Máx','Força'];
 let currentMod = 1; // 1-indexed
 let _savedAsmId = _asmId; // atualizado após primeiro save
 
@@ -292,7 +317,14 @@ let D = {
   // mod1 biometrics
   peso_kg:'', altura_cm:'', percentual_gordura_bio:'', massa_gorda_kg:'',
   massa_magra_kg:'', agua_corporal_pct:'', metabolismo_basal:'',
-  // mod2 circumferences
+  // mod2 mobility (new)
+  mob_squat:'', mob_squat_retroversao:false, mob_squat_toracica:false, mob_squat_valgo:false, mob_squat_dor:false, mob_squat_dor_local:'', mob_squat_pisada:false,
+  mob_ombro_d:'', mob_ombro_e:'',
+  mob_toe_touch:'',
+  mob_perna_d:'', mob_perna_e:'',
+  mob_tornozelo:'',
+  mob_obs:'',
+  // mod3 circumferences
   pescoco_cm:'', ombro_cm:'', torax_cm:'', cintura_cm:'', abdomen_cm:'',
   quadril_cm:'', braco_d_cm:'', braco_e_cm:'', antebraco_d_cm:'', antebraco_e_cm:'',
   coxa_d_cm:'', coxa_e_cm:'', panturrilha_d_cm:'', panturrilha_e_cm:'',
@@ -309,14 +341,20 @@ let D = {
   rockport_tempo_min:'', rockport_tempo_sec:'', rockport_fc:'',
   harvard_fc1:'', harvard_fc2:'', harvard_fc3:'',
   fc_repouso:'',
-  // mod6 strength
+  // mod7 strength
   preensao_d_kg:'', preensao_e_kg:'',
   flexao_repeticoes:'', abdominal_repeticoes:'', agachamento_repeticoes:'',
   supino_peso:'', supino_reps:'',
   leg_peso:'',    leg_reps:'',
+  prancha_seg:'', prancha_postura:'',
+  salto_cm:'', salto_obs:'',
+  barra_reps:'', barra_pegada:'',
+  barra_iso_seg:'',
+  core_dir:false, core_esq:false, core_postura:'',
+  corrida2400_min:'', corrida2400_seg:'',
   observacoes_forca:'',
   // record IDs for upsert
-  _ids:{ biometrics:null, circumferences:null, skinfolds:null, posture:null, vo2:null, strength:null }
+  _ids:{ biometrics:null, circumferences:null, skinfolds:null, posture:null, vo2:null, strength:null, mobility:null }
 };
 
 const LS_KEY = 'avaliacao_' + (_asmId || 'new');
@@ -354,13 +392,26 @@ function bind(){
   document.querySelectorAll('[data-f]').forEach(el=>{
     const k = el.dataset.f;
     if(el.type === 'checkbox'){
-      el.checked = Array.isArray(D.desvios) && D.desvios.includes(k);
-      el.addEventListener('change', ()=>{
-        if(el.checked){ if(!D.desvios.includes(k)) D.desvios.push(k); }
-        else { D.desvios = D.desvios.filter(x=>x!==k); }
-        el.closest('.check-item').classList.toggle('checked', el.checked);
-        saveLS();
-      });
+      const isDesvio = k.startsWith('cabeca_')||k.startsWith('ombros_')||k.startsWith('coluna_')||k.startsWith('pelve_')||k.startsWith('joelho_')||k.startsWith('pe_');
+      if(isDesvio){
+        el.checked = Array.isArray(D.desvios) && D.desvios.includes(k);
+        el.addEventListener('change', ()=>{
+          if(el.checked){ if(!D.desvios.includes(k)) D.desvios.push(k); }
+          else { D.desvios = D.desvios.filter(x=>x!==k); }
+          el.closest('.check-item').classList.toggle('checked', el.checked);
+          saveLS();
+        });
+      } else {
+        el.checked = !!D[k];
+        el.addEventListener('change', ()=>{
+          D[k] = el.checked;
+          saveLS();
+          if(k==='mob_squat_dor'){
+            const dorLocal = document.getElementById('dorLocal');
+            if(dorLocal) dorLocal.style.display = el.checked ? '' : 'none';
+          }
+        });
+      }
     } else {
       el.value = D[k] || '';
       el.addEventListener('input', ()=>{ D[k]=el.value; saveLS(); onFieldChange(k); });
@@ -638,19 +689,35 @@ function calcAge(){
   return Math.floor(diff/31557600000);
 }
 
+function getClassifBadge(valor, faixas, idade){
+  const age = idade || calcAge() || 25;
+  const f = faixas.find(f => age >= f.a && age < f.b) || faixas[faixas.length-1];
+  if(valor >= f.exc) return `<span class="classif-badge classif-excelente">Excelente</span>`;
+  if(valor >= f.bom) return `<span class="classif-badge classif-bom">Bom</span>`;
+  if(valor >= f.reg) return `<span class="classif-badge classif-regular">Regular</span>`;
+  return `<span class="classif-badge classif-fraco">Fraco</span>`;
+}
+function showClassif(elId, valor, faixas){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  const v = parseFloat(valor);
+  if(!v || isNaN(v)){ el.innerHTML=''; return; }
+  el.innerHTML = getClassifBadge(v, faixas);
+}
+
 // ── MODULES RENDER ───────────────────────────────────────────
 function render(){
   renderProgress();
   const body = document.getElementById('avBody');
-  if(currentMod === 7){ renderFinal(); return; }
-  const fns = [null, mod1, mod2, mod3, mod4, mod5, mod6];
+  if(currentMod === 8){ renderFinal(); return; }
+  const fns = [null, mod1, mod2, mod3, mod4, mod5, mod6, mod7];
   body.innerHTML = fns[currentMod]();
   bind();
   // run calcs after render
   if(currentMod===1) calcIMC();
-  if(currentMod===3) calcDobras();
-  if(currentMod===5) calcVO2();
-  if(currentMod===6) calcRM();
+  if(currentMod===4) calcDobras();
+  if(currentMod===6) calcVO2();
+  if(currentMod===7) calcRM();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -699,8 +766,89 @@ function setSex(s){
   calcDobras(); calcVO2();
 }
 
-// ── MODULE 2 ─────────────────────────────────────────────────
+// ── MODULE 2 — MOBILIDADE ─────────────────────────────────────
 function mod2(){
+  const sx = D.patient_sex||'M';
+  function radioGroup(field, opts){
+    return `<div class="radio-group">`+opts.map(([val,lbl])=>`
+      <div class="radio-opt${D[field]===val?' sel':''}" onclick="mobSet('${field}','${val}',this)">
+        <div class="radio-dot"></div><span>${lbl}</span>
+      </div>`).join('')+`</div>`;
+  }
+  function biRadio(fieldD, fieldE, opts){
+    return `<div class="grid2">
+      <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">DIREITO</div>${radioGroup(fieldD, opts)}</div>
+      <div><div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">ESQUERDO</div>${radioGroup(fieldE, opts)}</div>
+    </div>`;
+  }
+  return `<div class="av-card">
+    <div class="av-card-title">Mobilidade e Funcionalidade</div>
+    <div class="av-card-sub">FMS + Testes Funcionais</div>
+
+    <div class="mob-test">
+      <div class="mob-test-title">1 — Agachamento com Bastão (Overhead Squat)</div>
+      <div class="mob-test-desc">Joelhos alinhados, coluna neutra, profundidade adequada, sem dor.</div>
+      ${radioGroup('mob_squat',[['bom','Bom'],['regular','Regular'],['ruim','Ruim']])}
+      <div style="font-size:11px;font-weight:600;color:var(--muted);margin:10px 0 6px">OBSERVAÇÕES</div>
+      <div class="checkbox-group">
+        ${[['mob_squat_retroversao','Retroversão de quadril'],['mob_squat_toracica','Mobilidade torácica limitada'],['mob_squat_valgo','Joelhos em valgo'],['mob_squat_pisada','Pisada instável']].map(([k,l])=>`
+        <label class="checkbox-opt"><input type="checkbox" data-f="${k}"> ${l}</label>`).join('')}
+        <label class="checkbox-opt"><input type="checkbox" data-f="mob_squat_dor"> Dor</label>
+        <div id="dorLocal" style="${D.mob_squat_dor?'':'display:none'}">
+          <input type="text" data-f="mob_squat_dor_local" placeholder="Onde?" style="margin-top:4px;width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px">
+        </div>
+      </div>
+    </div>
+
+    <div class="mob-test">
+      <div class="mob-test-title">2 — Mobilidade de Ombro</div>
+      <div class="mob-test-desc">Avaliar alcance sem dor — direito e esquerdo.</div>
+      ${biRadio('mob_ombro_d','mob_ombro_e',[['dor_nao','Dor, não alcançou'],['sem_dor_nao','Sem dor, não alcançou'],['alcancou','Alcançou']])}
+    </div>
+
+    <div class="mob-test">
+      <div class="mob-test-title">3 — Toe Touch (alcançar os pés)</div>
+      <div class="mob-test-desc">Movimento completo, curvaturas preservadas.</div>
+      ${radioGroup('mob_toe_touch',[['dor_joelho','Dor, não alcançou os joelhos'],['passou_joelho','Não alcançou o solo, mas passou dos joelhos'],['alcancou','Alcançou o solo']])}
+    </div>
+
+    <div class="mob-test">
+      <div class="mob-test-title">4 — Elevação Ativa de Pernas</div>
+      <div class="mob-test-desc">Controle de movimento e amplitude adequada.</div>
+      ${biRadio('mob_perna_d','mob_perna_e',[['dor_nao','Dor, não alcançou'],['sem_dor_nao','Sem dor, não alcançou'],['noventa','Alcançou 90 graus']])}
+    </div>
+
+    <div class="mob-test">
+      <div class="mob-test-title">5 — Mobilidade de Tornozelo (Bastão)</div>
+      <div class="mob-test-desc">Avaliado em posição de avanço (lunge), pé totalmente apoiado. Bastão vertical paralelo ao dedão do pé. Distância inicial = tamanho do punho. Flexionar joelho em direção ao bastão sem tirar o calcanhar.</div>
+      ${radioGroup('mob_tornozelo',[['otimo','Joelho ultrapassa o bastão além do punho'],['aceitavel','Joelho encosta no bastão até o punho'],['restrito','Joelho não encosta na medida do punho']])}
+      <div id="tornozBadge" style="margin-top:6px">${_tornozBadge()}</div>
+    </div>
+
+    <div class="field" style="margin-top:4px">
+      <label>Observações gerais</label>
+      <textarea data-f="mob_obs" placeholder="Observações sobre a mobilidade do avaliado…"></textarea>
+    </div>
+
+    ${navHTML(true)}
+  </div>`;
+}
+function _tornozBadge(){
+  const map={otimo:['Mobilidade ótima','classif-otimo'],aceitavel:['Mobilidade funcional aceitável','classif-aceitavel'],restrito:['Mobilidade restrita','classif-restrito']};
+  const v=D.mob_tornozelo; if(!v||!map[v]) return '';
+  return `<span class="classif-badge ${map[v][1]}">${map[v][0]}</span>`;
+}
+function mobSet(field, val, el){
+  D[field]=val; saveLS();
+  el.closest('.radio-group').querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('sel'));
+  el.classList.add('sel');
+  if(field==='mob_tornozelo'){
+    const b=document.getElementById('tornozBadge'); if(b) b.innerHTML=_tornozBadge();
+  }
+}
+
+// ── MODULE 3 ─────────────────────────────────────────────────
+function mod3(){
   const f=(lbl,k)=>`<div class="field"><label>${lbl} (cm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
   return `<div class="av-card">
     <div class="av-card-title">Circunferências</div>
@@ -718,8 +866,8 @@ function mod2(){
   </div>`;
 }
 
-// ── MODULE 3 ─────────────────────────────────────────────────
-function mod3(){
+// ── MODULE 4 ─────────────────────────────────────────────────
+function mod4(){
   const p=D.protocolo_dobras||'jp7';
   const sx=D.patient_sex||'M';
   const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}_mm"></div>`;
@@ -790,7 +938,7 @@ function mod3(){
 }
 function setProto(p){ D.protocolo_dobras=p; saveLS(); render(); }
 
-// ── MODULE 4 ─────────────────────────────────────────────────
+// ── MODULE 5 ─────────────────────────────────────────────────
 const DESVIOS = {
   'Cabeça':['cabeca_anterorizacao','cabeca_inclinacao','cabeca_rotacao'],
   'Ombros':['ombros_elevacao_d','ombros_elevacao_e','ombros_protracao','ombros_rot_interna'],
@@ -807,7 +955,7 @@ const DESVIOS_LABEL = {
   joelho_valgo_d:'Valgo D',joelho_valgo_e:'Valgo E',joelho_varo_d:'Varo D',joelho_varo_e:'Varo E',
   pe_pronacao_d:'Pronação D',pe_pronacao_e:'Pronação E',pe_supinacao_d:'Supinação D',pe_supinacao_e:'Supinação E'
 };
-function mod4(){
+function mod5(){
   const photos = [
     {key:'foto_anterior_url', lbl:'Anterior'},
     {key:'foto_posterior_url', lbl:'Posterior'},
@@ -873,8 +1021,8 @@ function removePhoto(key, e){
   D[key]=''; saveLS(); render();
 }
 
-// ── MODULE 5 ─────────────────────────────────────────────────
-function mod5(){
+// ── MODULE 6 ─────────────────────────────────────────────────
+function mod6(){
   const p=D.protocolo_vo2||'cooper';
 
   const bruceTable=`<details style="margin-bottom:10px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Estágios do protocolo Bruce</summary>
@@ -933,6 +1081,16 @@ function mod5(){
       <div class="field"><label>Último nível completado</label><input type="number" inputmode="numeric" placeholder="Ex: 8" data-f="pacer_nivel"></div>
       <div class="field"><label>Beeps no último nível</label><input type="number" inputmode="numeric" placeholder="Ex: 5" data-f="pacer_beeps"></div>
     </div><p class="proto-note">Shuttle run de 20 metros com velocidade crescente a cada nível</p></div>`,
+    corrida2400:`<div style="padding-top:12px">
+      <div class="field"><label>Tempo da corrida</label>
+        <div class="grid2">
+          <div class="field"><label>Minutos</label><input type="number" inputmode="numeric" placeholder="Ex: 11" data-f="corrida2400_min" oninput="calcCorrida2400()"></div>
+          <div class="field"><label>Segundos</label><input type="number" inputmode="numeric" max="59" placeholder="Ex: 30" data-f="corrida2400_seg" oninput="calcCorrida2400()"></div>
+        </div>
+        <div class="hint">Distância: 2400 metros (2,4 km)</div>
+      </div>
+      <div class="result-box" id="corrida2400Box" style="display:none;margin-top:10px"></div>
+    </div>`,
     fc_repouso:`<div style="padding-top:12px"><div class="field"><label>FC de repouso (bpm)</label>
       <input type="number" inputmode="numeric" placeholder="Ex: 62" data-f="fc_repouso">
       <div class="hint">Apenas registro — sem estimativa de VO2</div></div></div>`
@@ -948,6 +1106,7 @@ function mod5(){
     {id:'yoyo',      icon:'📡', name:'Yo-Yo Teste',         meta:'Shuttle progressivo', precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
     {id:'ukk',       icon:'🚶‍♀️',name:'UKK 2km Caminhada',  meta:'Caminhada 2 km',      precision:'Moderada',          tipo:'Campo',       badge:'badge-blue'},
     {id:'pacer',     icon:'🔊', name:'PACER / Beep Test',   meta:'Shuttle 20 metros',   precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
+    {id:'corrida2400',icon:'🏃‍♂️', name:'Corrida 2400m',      meta:'2,4 km cronometrado', precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
     {id:'fc_repouso',icon:'❤️', name:'FC de Repouso',       meta:'Apenas FC',           precision:'Baixa (estimativa)',tipo:'Rastreamento',badge:'badge-blue'},
   ];
 
@@ -978,20 +1137,122 @@ function mod5(){
 }
 function setVO2Proto(p){ D.protocolo_vo2=p; saveLS(); render(); }
 
-// ── MODULE 6 ─────────────────────────────────────────────────
-function mod6(){
+function calcCorrida2400(){
+  saveCurrentFields();
+  const box = document.getElementById('corrida2400Box');
+  if(!box) return;
+  const min = parseFloat(D.corrida2400_min)||0;
+  const seg = parseFloat(D.corrida2400_seg)||0;
+  if(!min && !seg){ box.style.display='none'; return; }
+  const totalMin = min + seg/60;
+  const age = calcAge()||25;
+  const TAB=[{a:20,b:30,exc:9.5,bom:11,reg:13},{a:30,b:40,exc:10,bom:11.5,reg:13.5},{a:40,b:50,exc:10.5,bom:12,reg:14},{a:50,b:999,exc:11,bom:12.5,reg:14.5}];
+  const f = TAB.find(f=>age>=f.a&&age<f.b)||TAB[TAB.length-1];
+  let cls,lbl;
+  if(totalMin<=f.exc){cls='classif-excelente';lbl='Excelente';}
+  else if(totalMin<=f.bom){cls='classif-bom';lbl='Bom';}
+  else if(totalMin<=f.reg){cls='classif-regular';lbl='Regular';}
+  else{cls='classif-fraco';lbl='Fraco';}
+  const mm=Math.floor(totalMin), ss=Math.round((totalMin-mm)*60);
+  box.style.display='block';
+  box.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font-size:15px;font-weight:700;color:var(--ink)">${mm}:${ss.toString().padStart(2,'0')} min</span>
+    <span class="classif-badge ${cls}">${lbl}</span>
+  </div><div style="font-size:11px;color:var(--muted);margin-top:4px">Corrida 2400m</div>`;
+}
+
+// ── MODULE 7 — FORÇA ─────────────────────────────────────────
+function mod7(){
+  const sx = D.patient_sex||'M';
+  const age = calcAge()||25;
+
+  // Classification tables
+  const PRANCHA=[{a:20,b:30,exc:150,bom:90,reg:60},{a:30,b:40,exc:120,bom:80,reg:50},{a:40,b:50,exc:90,bom:60,reg:40},{a:50,b:999,exc:60,bom:40,reg:30}];
+  const SALTO=[{a:20,b:30,exc:220,bom:200,reg:170},{a:30,b:40,exc:210,bom:190,reg:160},{a:40,b:50,exc:190,bom:170,reg:150},{a:50,b:999,exc:170,bom:150,reg:130}];
+  const BARRA_M=[{a:20,b:30,exc:12,bom:8,reg:4},{a:30,b:40,exc:10,bom:7,reg:3},{a:40,b:50,exc:8,bom:5,reg:2},{a:50,b:999,exc:6,bom:4,reg:1}];
+  const BARRA_F=[{a:20,b:30,exc:40,bom:30,reg:20},{a:30,b:40,exc:35,bom:25,reg:15},{a:40,b:50,exc:30,bom:20,reg:10},{a:50,b:999,exc:25,bom:15,reg:8}];
+  const ABDOM=[{a:20,b:30,exc:45,bom:35,reg:25},{a:30,b:40,exc:40,bom:30,reg:20},{a:40,b:50,exc:35,bom:25,reg:15},{a:50,b:999,exc:30,bom:20,reg:10}];
+  const FLEXAO=[{a:20,b:30,exc:40,bom:30,reg:20},{a:30,b:40,exc:35,bom:25,reg:15},{a:40,b:50,exc:30,bom:20,reg:10},{a:50,b:999,exc:25,bom:15,reg:8}];
+
   return `<div class="av-card">
-    <div class="av-card-title">Força</div>
-    <div class="av-card-sub">Testes de força e resistência muscular</div>
+    <div class="av-card-title">Força e Resistência</div>
+    <div class="av-card-sub">Testes de força, potência e resistência muscular</div>
+
+    <div class="av-card-sub" style="margin:0 0 10px">Preensão Manual</div>
     <div class="grid2">
       <div class="field"><label>Preensão D (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="preensao_d_kg"></div>
       <div class="field"><label>Preensão E (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="preensao_e_kg"></div>
     </div>
-    <div class="grid3">
-      <div class="field"><label>Flexão (reps)</label><input type="number" inputmode="numeric" placeholder="0" data-f="flexao_repeticoes"></div>
-      <div class="field"><label>Abdominal/min</label><input type="number" inputmode="numeric" placeholder="0" data-f="abdominal_repeticoes"></div>
-      <div class="field"><label>Agachamento/min</label><input type="number" inputmode="numeric" placeholder="0" data-f="agachamento_repeticoes"></div>
+
+    <div class="av-card-sub" style="margin:16px 0 10px">Prancha Ventral<span id="badge_prancha" style="margin-left:8px"></span></div>
+    <div class="field"><label>Tempo (segundos)</label>
+      <input type="number" inputmode="numeric" placeholder="Ex: 90" data-f="prancha_seg"
+        oninput="showClassif('badge_prancha',this.value,${JSON.stringify(PRANCHA)})">
     </div>
+    <div class="field"><label>Postura correta</label>
+      <div class="radio-group" style="flex-direction:row;gap:8px">
+        <div class="radio-opt${D.prancha_postura==='sim'?' sel':''}" onclick="D.prancha_postura='sim';saveLS();this.parentNode.querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('sel'));this.classList.add('sel')"><div class="radio-dot"></div><span>Sim</span></div>
+        <div class="radio-opt${D.prancha_postura==='nao'?' sel':''}" onclick="D.prancha_postura='nao';saveLS();this.parentNode.querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('sel'));this.classList.add('sel')"><div class="radio-dot"></div><span>Não</span></div>
+      </div>
+    </div>
+
+    <div class="av-card-sub" style="margin:16px 0 10px">Salto Horizontal<span id="badge_salto" style="margin-left:8px"></span></div>
+    <div class="field"><label>Distância (cm)</label>
+      <input type="number" inputmode="decimal" placeholder="Ex: 185" data-f="salto_cm"
+        oninput="showClassif('badge_salto',this.value,${JSON.stringify(SALTO)})">
+    </div>
+    <div class="field"><label>Execução</label>
+      <div class="radio-group" style="flex-direction:row;gap:8px">
+        <div class="radio-opt${D.salto_obs==='correta'?' sel':''}" onclick="D.salto_obs='correta';saveLS();this.parentNode.querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('sel'));this.classList.add('sel')"><div class="radio-dot"></div><span>Correta</span></div>
+        <div class="radio-opt${D.salto_obs==='compensacao'?' sel':''}" onclick="D.salto_obs='compensacao';saveLS();this.parentNode.querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('sel'));this.classList.add('sel')"><div class="radio-dot"></div><span>Compensação</span></div>
+      </div>
+    </div>
+
+    ${sx==='M'?`
+    <div class="av-card-sub" style="margin:16px 0 10px">Barra Fixa — Máximo de repetições<span id="badge_barra" style="margin-left:8px"></span></div>
+    <div class="field"><label>Repetições</label>
+      <input type="number" inputmode="numeric" placeholder="Ex: 8" data-f="barra_reps"
+        oninput="showClassif('badge_barra',this.value,${JSON.stringify(BARRA_M)})">
+    </div>
+    <div class="field"><label>Pegada</label>
+      <div class="radio-group" style="flex-direction:row;gap:8px">
+        <div class="radio-opt${D.barra_pegada==='pronada'?' sel':''}" onclick="D.barra_pegada='pronada';saveLS();this.parentNode.querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('sel'));this.classList.add('sel')"><div class="radio-dot"></div><span>Pronada</span></div>
+        <div class="radio-opt${D.barra_pegada==='supinada'?' sel':''}" onclick="D.barra_pegada='supinada';saveLS();this.parentNode.querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('sel'));this.classList.add('sel')"><div class="radio-dot"></div><span>Supinada</span></div>
+      </div>
+    </div>
+    `:`
+    <div class="av-card-sub" style="margin:16px 0 10px">Suspensão Isométrica — Queixo acima da barra<span id="badge_barra" style="margin-left:8px"></span></div>
+    <div class="field"><label>Tempo (segundos)</label>
+      <input type="number" inputmode="numeric" placeholder="Ex: 25" data-f="barra_iso_seg"
+        oninput="showClassif('badge_barra',this.value,${JSON.stringify(BARRA_F)})">
+    </div>
+    `}
+
+    <div class="av-card-sub" style="margin:16px 0 10px">Flexão de Braço (1 min)<span id="badge_flexao" style="margin-left:8px"></span></div>
+    <div class="field"><label>Repetições</label>
+      <input type="number" inputmode="numeric" placeholder="Ex: 25" data-f="flexao_repeticoes"
+        oninput="showClassif('badge_flexao',this.value,${JSON.stringify(FLEXAO)})">
+    </div>
+
+    <div class="av-card-sub" style="margin:16px 0 10px">Abdominal Remador (1 min)<span id="badge_abdom" style="margin-left:8px"></span></div>
+    <div class="field"><label>Repetições</label>
+      <input type="number" inputmode="numeric" placeholder="Ex: 35" data-f="abdominal_repeticoes"
+        oninput="showClassif('badge_abdom',this.value,${JSON.stringify(ABDOM)})">
+    </div>
+    <div class="field" style="display:none"><input data-f="agachamento_repeticoes"></div>
+
+    <div class="av-card-sub" style="margin:16px 0 10px">Core Antirotação (Pallof Press)</div>
+    <div class="checkbox-group" style="margin-bottom:8px">
+      <label class="checkbox-opt"><input type="checkbox" data-f="core_dir"> Lado direito concluiu (30s)</label>
+      <label class="checkbox-opt"><input type="checkbox" data-f="core_esq"> Lado esquerdo concluiu (30s)</label>
+    </div>
+    <div class="field"><label>Postura</label>
+      <div class="radio-group" style="flex-direction:row;gap:8px">
+        <div class="radio-opt${D.core_postura==='correta'?' sel':''}" onclick="D.core_postura='correta';saveLS();this.parentNode.querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('sel'));this.classList.add('sel')"><div class="radio-dot"></div><span>Correta</span></div>
+        <div class="radio-opt${D.core_postura==='compensou'?' sel':''}" onclick="D.core_postura='compensou';saveLS();this.parentNode.querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('sel'));this.classList.add('sel')"><div class="radio-dot"></div><span>Compensou</span></div>
+      </div>
+    </div>
+
     <div class="av-card-sub" style="margin:16px 0 10px">1RM Estimado — Fórmula Brzycki</div>
     <div class="grid2">
       <div class="field"><label>Supino — Peso (kg)</label><input type="number" step="0.5" inputmode="decimal" placeholder="0.0" data-f="supino_peso"></div>
@@ -1051,6 +1312,7 @@ function renderFinal(){
       <div class="av-card-sub">Confira os dados antes de salvar</div>
       <div class="summary-grid">
         ${sumCard('Biometria',[['Peso',D.peso_kg?D.peso_kg+' kg':'—'],['Altura',D.altura_cm?D.altura_cm+' cm':'—'],['IMC',imc!=='—'?imc+' kg/m²':'—'],['% Gordura Bio',D.percentual_gordura_bio?D.percentual_gordura_bio+'%':'—']])}
+        ${sumCard('Mobilidade',[['Agachamento',D.mob_squat||'—'],['Ombro D',D.mob_ombro_d||'—'],['Toe Touch',D.mob_toe_touch||'—'],['Tornozelo',D.mob_tornozelo||'—']])}
         ${sumCard('Circunferências',circKeys.map(([l,k])=>[l,D[k]?D[k]+' cm':'—']))}
         ${sumCard('Dobras Cutâneas',[['Protocolo',D.protocolo_dobras.toUpperCase()],['% Gordura',dobrasResult]])}
         ${sumCard('Postural',[['Fotos',[D.foto_anterior_url,D.foto_posterior_url,D.foto_lateral_d_url,D.foto_lateral_e_url].filter(Boolean).length+'/4'],['Desvios',D.desvios.length+' identificados']])}
@@ -1071,7 +1333,7 @@ function renderFinal(){
         Salvar e Concluir
       </button>
       <div style="padding-top:12px;border-top:1px solid var(--border);margin-top:4px;">
-        <button class="btn-prev" onclick="prevMod()" style="width:100%;text-align:center;">← Voltar ao módulo 6</button>
+        <button class="btn-prev" onclick="prevMod()" style="width:100%;text-align:center;">← Voltar ao módulo 7</button>
       </div>
     </div>`;
   window.scrollTo({top:0,behavior:'smooth'});
@@ -1184,7 +1446,24 @@ async function saveAll(){
       agachamento_repeticoes:int('agachamento_repeticoes'),
       rm_estimado_supino: rm(D.supino_peso, D.supino_reps),
       rm_estimado_leg:    rm(D.leg_peso,    D.leg_reps),
+      prancha_seg:        int('prancha_seg'),
+      salto_horizontal_cm:num('salto_cm'),
+      barra_fixa_reps:    int('barra_reps'),
+      barra_isometrica_seg:int('barra_iso_seg'),
+      core_antirotacao:   {dir:D.core_dir, esq:D.core_esq, postura:D.core_postura},
       observacoes: D.observacoes_forca || null
+    });
+
+    await upsertSub('assessment_mobility','mobility',{
+      overhead_squat_resultado: D.mob_squat||null,
+      overhead_squat_obs: {retroversao:D.mob_squat_retroversao, toracica:D.mob_squat_toracica, valgo:D.mob_squat_valgo, dor:D.mob_squat_dor, dor_local:D.mob_squat_dor_local, pisada:D.mob_squat_pisada},
+      mobilidade_ombro_d: D.mob_ombro_d||null,
+      mobilidade_ombro_e: D.mob_ombro_e||null,
+      toe_touch: D.mob_toe_touch||null,
+      elevacao_perna_d: D.mob_perna_d||null,
+      elevacao_perna_e: D.mob_perna_e||null,
+      tornozelo_resultado: D.mob_tornozelo||null,
+      observacoes_gerais: D.mob_obs||null
     });
 
     saveLS();
