@@ -54,34 +54,41 @@ alter table professionals enable row level security;
 alter table anamneses     enable row level security;
 alter table form_templates enable row level security;
 
-create policy if not exists "professionals: own rows"
+drop policy if exists "professionals: own rows" on professionals;
+create policy "professionals: own rows"
   on professionals for all using (auth.uid() = user_id);
 
-create policy if not exists "anamneses: public insert"
+drop policy if exists "anamneses: public insert" on anamneses;
+create policy "anamneses: public insert"
   on anamneses for insert with check (true);
 
-create policy if not exists "anamneses: professional reads own"
+drop policy if exists "anamneses: professional reads own" on anamneses;
+create policy "anamneses: professional reads own"
   on anamneses for select using (
     professional_id in (select id from professionals where user_id = auth.uid())
     or professional_id is null
   );
 
-create policy if not exists "anamneses: professional deletes own"
+drop policy if exists "anamneses: professional deletes own" on anamneses;
+create policy "anamneses: professional deletes own"
   on anamneses for delete using (
     professional_id in (select id from professionals where user_id = auth.uid())
     or professional_id is null
   );
 
-create policy if not exists "anamneses: professional updates own"
+drop policy if exists "anamneses: professional updates own" on anamneses;
+create policy "anamneses: professional updates own"
   on anamneses for update using (
     professional_id in (select id from professionals where user_id = auth.uid())
     or professional_id is null
   );
 
-create policy if not exists "form_templates: public select"
+drop policy if exists "form_templates: public select" on form_templates;
+create policy "form_templates: public select"
   on form_templates for select using (true);
 
-create policy if not exists "form_templates: owner all"
+drop policy if exists "form_templates: owner all" on form_templates;
+create policy "form_templates: owner all"
   on form_templates for all to authenticated
   using (professional_id in (select id from professionals where user_id = auth.uid()));
 
