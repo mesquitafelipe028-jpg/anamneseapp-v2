@@ -467,6 +467,19 @@ tr:hover td{background:var(--cream);}
 .home-alert-text{font-size:13px;color:var(--olive);font-weight:500;}
 .btn-home-alert{padding:7px 14px;background:var(--olive);color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;white-space:nowrap;}
 .btn-home-alert:hover{opacity:.88;}
+/* Atenção necessária */
+.atencao-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;margin-bottom:4px;}
+.atencao-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;transition:opacity .2s,transform .15s;border:1px solid transparent;}
+.atencao-item:hover{opacity:.85;transform:translateY(-1px);}
+.atencao-item:active{transform:translateY(0);}
+.atencao-nova{background:rgba(168,137,58,.1);border-color:rgba(168,137,58,.25);}
+.atencao-aval{background:rgba(107,122,66,.08);border-color:rgba(107,122,66,.2);}
+.atencao-inativo{background:rgba(100,114,160,.08);border-color:rgba(100,114,160,.2);}
+.atencao-icon{font-size:20px;flex-shrink:0;width:32px;text-align:center;}
+.atencao-info{flex:1;min-width:0;}
+.atencao-title{font-size:13px;font-weight:600;color:var(--ink);}
+.atencao-sub{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.atencao-chevron{font-size:18px;color:var(--muted);flex-shrink:0;}
 
 /* FAB */
 .fab-wrap{position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));right:20px;z-index:250;display:none;flex-direction:column-reverse;align-items:flex-end;gap:10px;}
@@ -688,6 +701,7 @@ tr:hover td{background:var(--cream);}
         </div>
         <button class="btn-copy" onclick="copyLink()">Copiar</button>
       </div>
+      <div id="homeAlertsSection" style="display:none"></div>
       <div class="section-hd" style="margin-top:24px">
         <h2>Atividade recente</h2>
       </div>
@@ -3707,6 +3721,81 @@ function createAvalForClient(clientId, clientName){
   openNewAval(clientId, clientName);
 }
 
+// ── HOME ALERTS ──────────────────────────────────────────────
+async function loadHomeAlerts(){
+  const el = document.getElementById('homeAlertsSection');
+  if(!el) return;
+
+  // fetch clients for alert computation (lightweight, local var only)
+  let clients = allClients.length ? allClients : [];
+  if(!clients.length && profId && sb){
+    let {data, error} = await sb.from('clients_summary')
+      .select('id,name,total_anamneses,total_avaliacoes,ultima_anamnese,ultima_avaliacao,created_at')
+      .eq('professional_id', profId);
+    if(error){
+      const res = await sb.from('clients').select('id,name,created_at').eq('professional_id', profId);
+      clients = (res.data||[]).map(c=>({...c, total_anamneses:0, total_avaliacoes:0, ultima_anamnese:null, ultima_avaliacao:null}));
+    } else {
+      clients = data || [];
+    }
+  }
+
+  const fichasNovas   = allRows.filter(r => r.status === 'nova');
+  const semAval       = clients.filter(c => c.total_avaliacoes === 0 && c.total_anamneses > 0);
+  const semContato    = clients.filter(c => {
+    const ultima = new Date(c.ultima_avaliacao || c.ultima_anamnese || c.created_at);
+    return (Date.now() - ultima) > 90*24*60*60*1000;
+  });
+
+  if(!fichasNovas.length && !semAval.length && !semContato.length){
+    el.style.display = 'none'; return;
+  }
+
+  const plural = (n, s, p) => `${n} ${n===1 ? s : p}`;
+  let html = `<div class="section-hd" style="margin-top:20px;margin-bottom:0"><h2>Atenção necessária</h2></div><div class="atencao-list">`;
+
+  if(fichasNovas.length){
+    html += `<div class="atencao-item atencao-nova" onclick="setSection('fichas')">
+      <div class="atencao-icon">📋</div>
+      <div class="atencao-info">
+        <div class="atencao-title">${plural(fichasNovas.length,'ficha nova não lida','fichas novas não lidas')}</div>
+        <div class="atencao-sub">Toque para gerenciar fichas</div>
+      </div>
+      <div class="atencao-chevron">›</div>
+    </div>`;
+  }
+
+  if(semAval.length){
+    const nomes = semAval.slice(0,2).map(c=>c.name.split(' ')[0]).join(', ')
+      + (semAval.length > 2 ? ` +${semAval.length-2}` : '');
+    html += `<div class="atencao-item atencao-aval" onclick="setSection('clientes')">
+      <div class="atencao-icon">💪</div>
+      <div class="atencao-info">
+        <div class="atencao-title">${plural(semAval.length,'cliente sem avaliação física','clientes sem avaliação física')}</div>
+        <div class="atencao-sub">${esc(nomes)}</div>
+      </div>
+      <div class="atencao-chevron">›</div>
+    </div>`;
+  }
+
+  if(semContato.length){
+    const nomes = semContato.slice(0,2).map(c=>c.name.split(' ')[0]).join(', ')
+      + (semContato.length > 2 ? ` +${semContato.length-2}` : '');
+    html += `<div class="atencao-item atencao-inativo" onclick="setSection('clientes')">
+      <div class="atencao-icon">⏰</div>
+      <div class="atencao-info">
+        <div class="atencao-title">${plural(semContato.length,'cliente sem contato há +90 dias','clientes sem contato há +90 dias')}</div>
+        <div class="atencao-sub">${esc(nomes)}</div>
+      </div>
+      <div class="atencao-chevron">›</div>
+    </div>`;
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+
 // ── HOME SECTION ─────────────────────────────────────────────
 function loadHomeSection(){
   const h = new Date().getHours();
@@ -3718,6 +3807,8 @@ function loadHomeSection(){
     const hoje = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     el('homeDate').textContent = hoje.charAt(0).toUpperCase() + hoje.slice(1);
   }
+  // Atenção necessária
+  loadHomeAlerts();
   // Alert banner: fichas com status nova
   const novasFichas = allRows.filter(r=>r.status==='nova');
   const banner = el('homeAlertBanner');
