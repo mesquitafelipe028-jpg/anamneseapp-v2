@@ -156,6 +156,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .result-box.good{background:rgba(107,122,66,.07);border-color:rgba(107,122,66,.25);}
 .result-box.great{background:rgba(39,174,96,.08);border-color:rgba(39,174,96,.3);}
 .result-box.great .result-label,.result-box.great .result-val{color:#27ae60;}
+.result-warn{background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.3);border-radius:var(--r-md);padding:14px 16px;color:#c0392b;font-size:13px;line-height:1.6;}
+/* badges classificação de gordura */
+.gc-essencial{background:rgba(59,130,246,.12);color:#1d4ed8;}
+.gc-atleta{background:rgba(39,174,96,.12);color:#16a34a;}
+.gc-fitness{background:rgba(107,122,66,.12);color:#4e5b2e;}
+.gc-aceitavel{background:rgba(234,179,8,.15);color:#854d0e;}
+.gc-obeso{background:rgba(192,57,43,.12);color:#b91c1c;}
 .proto-note{font-size:11px;color:var(--muted);background:var(--cream);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.5;}
 
 /* ── PHOTO UPLOAD ── */
@@ -473,37 +480,54 @@ function calcIMC(){
 }
 
 // ── DOBRAS ───────────────────────────────────────────────────
-function _siri(d){ return (495/d)-450; }
+// Validação: Homem 30 anos JP7 soma=80mm → esperado ~12-14% | Mulher 25 anos JP7 soma=90mm → esperado ~25-27%
+function _siri(d, sex){
+  const raw=(495/d)-450;
+  // Limites fisiológicos ACSM: homem mín 3%, mulher mín 10%, máx 50%
+  const floor=(sex==='F')?10:3;
+  if(raw<floor||raw>50) return null; // resultado fisiologicamente inválido
+  return raw;
+}
 function _classGordura(pct, sex){
-  // ACSM %G classification
+  // Classificação ACSM (2018)
   if(sex==='M'){
-    if(pct<6)  return 'Essencial';
-    if(pct<14) return 'Atleta';
-    if(pct<18) return 'Fitness';
-    if(pct<25) return 'Aceitável';
-    return 'Obesidade';
+    if(pct<=5)  return {label:'Essencial',    cls:'gc-essencial'};
+    if(pct<=13) return {label:'Atleta',        cls:'gc-atleta'};
+    if(pct<=17) return {label:'Fitness',       cls:'gc-fitness'};
+    if(pct<=25) return {label:'Aceitável',     cls:'gc-aceitavel'};
+    return              {label:'Obesidade',     cls:'gc-obeso'};
   } else {
-    if(pct<14) return 'Essencial';
-    if(pct<21) return 'Atleta';
-    if(pct<25) return 'Fitness';
-    if(pct<32) return 'Aceitável';
-    return 'Obesidade';
+    if(pct<=13) return {label:'Essencial',    cls:'gc-essencial'};
+    if(pct<=20) return {label:'Atleta',        cls:'gc-atleta'};
+    if(pct<=24) return {label:'Fitness',       cls:'gc-fitness'};
+    if(pct<=31) return {label:'Aceitável',     cls:'gc-aceitavel'};
+    return              {label:'Obesidade',     cls:'gc-obeso'};
   }
 }
-function _showDobrasResult(box, pct, soma, dens, extra){
+function _showDobrasResult(box, pct, soma, dens, extra, invalidDens){
   if(!box) return;
-  if(pct==null){ box.style.display='none'; return; }
+  // Resultado fisiologicamente inválido — mostra alerta
+  if(pct==null){
+    if(soma&&soma>0){
+      box.className='result-warn';
+      box.innerHTML=`⚠️ Resultado fora do intervalo fisiológico. Verifique os valores inseridos.<br>
+        Certifique-se que as dobras estão em <strong>milímetros</strong> (ex: 12.5, não 1.25).
+        ${invalidDens!=null?`<br><span style="font-size:11px;opacity:.8">Densidade calculada: ${invalidDens.toFixed(5)}</span>`:''}`;
+      box.style.display='block';
+    } else { box.style.display='none'; }
+    return;
+  }
   const sex=D.patient_sex||'M';
   const peso=parseFloat(D.peso_kg)||0;
-  const cls=_classGordura(pct,sex);
-  const boxCls=pct<(sex==='M'?18:25)?'good':pct<(sex==='M'?25:32)?'':'poor';
+  const {label:clsLabel,cls:clsCss}=_classGordura(pct,sex);
+  const boxCls=clsCss==='gc-essencial'||clsCss==='gc-atleta'?'great':clsCss==='gc-fitness'||clsCss==='gc-aceitavel'?'good':'poor';
   const mgKg=peso>0?(peso*pct/100).toFixed(1):null;
   const mmKg=peso>0&&mgKg?(peso-parseFloat(mgKg)).toFixed(1):null;
   box.className='result-box '+boxCls;
-  box.innerHTML=`<span class="result-label">Resultado</span><div>
-    <div class="result-val">${pct.toFixed(1)}% gordura · <strong>${cls}</strong></div>
-    <div class="result-class">${soma?'Σ '+soma.toFixed(1)+' mm':''} ${dens?'· D: '+dens.toFixed(4):''} ${extra||''}</div>
-    ${mgKg?`<div class="result-class" style="margin-top:3px">Massa gorda: ${mgKg} kg · Massa magra: ${mmKg} kg</div>`:''}
+  box.innerHTML=`<span class="result-label">% Gordura</span><div>
+    <div class="result-val">${pct.toFixed(1)}% <span class="classif-badge ${clsCss}" style="font-size:12px;vertical-align:middle">${clsLabel}</span></div>
+    <div class="result-class">${soma?'Σ '+soma.toFixed(1)+' mm':''} ${dens?'· D: '+dens.toFixed(5):''} ${extra||''}</div>
+    ${mgKg?`<div class="result-class" style="margin-top:4px">Massa gorda: <strong>${mgKg} kg</strong> · Massa magra: <strong>${mmKg} kg</strong></div>`:''}
   </div>`;
   box.style.display='flex';
   // Sincroniza com módulo 1
@@ -523,7 +547,13 @@ function calcDobras(){
   if(!box) return;
   const sex=D.patient_sex||'M'; const age=calcAge()||30;
   const proto=D.protocolo_dobras||'jp7';
-  const mm=k=>parseFloat(D[k+'_mm'])||0;
+  // Validação de entrada: dobras válidas entre 3mm e 80mm
+  // Valor <3 provavelmente foi digitado em cm (ex: 1.2 ao invés de 12)
+  const mm=k=>{
+    const val=parseFloat(D[k+'_mm'])||0;
+    if(val>0&&val<3) return 0; // muito pequeno — ignora (provável erro de unidade)
+    return val;
+  };
   let soma=0,dens=null,pct=null,extra='';
 
   if(proto==='jp7'){
@@ -532,67 +562,75 @@ function calcDobras(){
     if(soma>0){
       if(sex==='M') dens=1.112-(0.00043499*soma)+(0.00000055*soma*soma)-(0.00028826*age);
       else          dens=1.097-(0.00046971*soma)+(0.00000056*soma*soma)-(0.00012828*age);
-      pct=_siri(dens);
+      pct=_siri(dens,sex);
     }
   } else if(proto==='jp3m'){
     const v=[mm('peitoral'),mm('abdominal'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
-    if(soma>0){ dens=1.10938-(0.0008267*soma)+(0.0000016*soma*soma)-(0.0002574*age); pct=_siri(dens); }
+    if(soma>0){ dens=1.10938-(0.0008267*soma)+(0.0000016*soma*soma)-(0.0002574*age); pct=_siri(dens,sex); }
   } else if(proto==='jp3f'){
     const v=[mm('triceps'),mm('suprailiaca'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
-    if(soma>0){ dens=1.0994921-(0.0009929*soma)+(0.0000023*soma*soma)-(0.0001392*age); pct=_siri(dens); }
+    if(soma>0){ dens=1.0994921-(0.0009929*soma)+(0.0000023*soma*soma)-(0.0001392*age); pct=_siri(dens,sex); }
   } else if(proto==='dw4'){
     const bic=mm('biceps'),tri=mm('triceps'),sub=mm('subescapular'),sup=mm('suprailiaca');
     soma=bic+tri+sub+sup;
     if(soma>0){
       const logS=Math.log10(soma);
-      // Durnin-Womersley coefficients [ageMin, A_M, B_M, A_F, B_F]
       const DW=[[17,1.1620,0.0630,1.1549,0.0678],[20,1.1631,0.0632,1.1599,0.0717],[30,1.1422,0.0544,1.1423,0.0632],[40,1.1620,0.0700,1.1333,0.0612],[50,1.1715,0.0779,1.1339,0.0645]];
       const row=DW.reduce((b,r)=>age>=r[0]?r:b,DW[0]);
       if(sex==='M') dens=row[1]-(row[2]*logS); else dens=row[3]-(row[4]*logS);
-      pct=_siri(dens);
+      pct=_siri(dens,sex);
     }
   } else if(proto==='guedes'){
     if(sex==='M'){
       const v=[mm('subescapular'),mm('abdominal'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
-      if(soma>0){ dens=1.1714-(0.0671*Math.log10(soma)); pct=_siri(dens); }
+      if(soma>0){ dens=1.1714-(0.0671*Math.log10(soma)); pct=_siri(dens,sex); }
     } else {
       const v=[mm('triceps'),mm('suprailiaca'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
-      if(soma>0){ dens=1.1665-(0.0706*Math.log10(soma)); pct=_siri(dens); }
+      if(soma>0){ dens=1.1665-(0.0706*Math.log10(soma)); pct=_siri(dens,sex); }
     }
   } else if(proto==='faulkner'){
     soma=[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('abdominal')].reduce((a,b)=>a+b,0);
-    if(soma>0){ pct=sex==='M'?(soma*0.153)+5.783:(soma*0.213)+7.9; dens=null; }
+    if(soma>0){
+      const rawPct=sex==='M'?(soma*0.153)+5.783:(soma*0.213)+7.9;
+      const floor=sex==='F'?10:3;
+      pct=(rawPct>=floor&&rawPct<=50)?rawPct:null;
+      dens=null;
+    }
   } else if(proto==='petroski'){
     const peq=D.petroski_eq||'I';
     if(sex==='M'){
       const v=[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('panturrilha')]; soma=v.reduce((a,b)=>a+b,0);
-      if(soma>0){ dens=1.10726863-(0.00081201*soma)+(0.00000212*soma*soma)-(0.00041761*age); pct=_siri(dens); }
+      if(soma>0){ dens=1.10726863-(0.00081201*soma)+(0.00000212*soma*soma)-(0.00041761*age); pct=_siri(dens,sex); }
     } else {
       const h=parseFloat(D.altura_cm)||170;
       const v=[mm('triceps'),mm('suprailiaca'),mm('abdominal'),mm('panturrilha')]; soma=v.reduce((a,b)=>a+b,0);
       // Petroski (1995) Equação I Feminino: coeficiente S4² = 0.0000030 (3×10⁻⁶)
-      if(soma>0){ dens=1.0954-(0.0004699*soma)+(0.0000030*soma*soma)-(0.0001505*h); pct=_siri(dens); }
+      if(soma>0){ dens=1.0954-(0.0004699*soma)+(0.0000030*soma*soma)-(0.0001505*h); pct=_siri(dens,sex); }
     }
     extra='Petroski '+peq;
   } else if(proto==='slaughter'){
     const t=mm('triceps'),panturrilha=mm('panturrilha'); soma=t+panturrilha;
     const ageC=calcAge()||12;
     if(soma>0){
-      if(sex==='M') pct=ageC<12?(0.735*soma)+1.0:(0.610*soma)+5.1;
-      else          pct=(0.610*soma)+5.1;
+      const rawPct=sex==='M'?ageC<12?(0.735*soma)+1.0:(0.610*soma)+5.1:(0.610*soma)+5.1;
+      const floor=sex==='F'?10:3;
+      pct=(rawPct>=floor&&rawPct<=50)?rawPct:null;
       extra='(6–17 anos)'; dens=null;
     }
   } else if(proto==='bio'){
     const bio=parseFloat(D.bio_pct_gordura);
     if(bio>0){
       pct=bio; soma=0; dens=null;
-      // sync bioimpedance fields
       const fields=['bio_massa_gorda','bio_massa_magra','bio_agua','bio_metabolismo'];
       const db=['massa_gorda_kg','massa_magra_kg','agua_corporal_pct','metabolismo_basal'];
       fields.forEach((f,i)=>{ if(D[f]) D[db[i]]=D[f]; });
     }
   }
-  _showDobrasResult(box,pct,soma>0?soma:null,dens,extra);
+
+  // Alerta de somatório suspeito (< 15mm = provável erro de entrada)
+  if(soma>0&&soma<15&&pct!=null) extra=(extra?extra+' · ':'')+' ⚠️ Somatório muito baixo — confirme que os valores estão em mm';
+
+  _showDobrasResult(box,pct,soma>0?soma:null,dens,extra,dens&&pct==null?dens:null);
 }
 
 // ── VO2 ──────────────────────────────────────────────────────
@@ -900,7 +938,7 @@ function mod3(){
 function mod4(){
   const p=D.protocolo_dobras||'jp7';
   const sx=D.patient_sex||'M';
-  const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}_mm"></div>`;
+  const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="Ex: 12.5" data-f="${k}_mm"><div class="hint">Digite em milímetros (ex: 12.5 mm, não 1.25 cm)</div></div>`;
   const fna=(lbl,k,u='')=>`<div class="field"><label>${lbl}${u?' ('+u+')':''}</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
 
   const dwTable=`<details style="margin-bottom:10px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Tabela coeficientes Durnin-Womersley</summary>
@@ -1436,7 +1474,9 @@ async function saveAll(){
     if(soma7>0){
       if(sex==='M') dens=1.112-(0.00043499*soma7)+(0.00000055*soma7*soma7)-(0.00028826*age);
       else          dens=1.097-(0.00046971*soma7)+(0.00000056*soma7*soma7)-(0.00012828*age);
-      pctG=(495/dens)-450;
+      const rawPct=(495/dens)-450;
+      const floor=sex==='F'?10:3;
+      pctG=(rawPct>=floor&&rawPct<=50)?rawPct:null;
     }
     await upsertSub('assessment_skinfolds','skinfolds',{
       protocolo: D.protocolo_dobras,
