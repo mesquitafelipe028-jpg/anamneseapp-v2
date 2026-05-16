@@ -181,6 +181,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .modulo-relevante::after{content:'★ Relevante';font-size:10px;font-weight:700;background:rgba(107,122,66,.15);color:var(--olive);border-radius:20px;padding:2px 8px;margin-left:8px;vertical-align:middle}
 .proto-note{font-size:11px;color:var(--muted);background:var(--cream);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.5;}
 
+/* ── PROTO GRID (dobras) ── */
+.proto-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+@media(min-width:600px){.proto-grid{grid-template-columns:1fr 1fr 1fr;}}
+.proto-card{border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .2s;background:var(--white);text-align:left;width:100%;font-family:'DM Sans',sans-serif;}
+.proto-card:hover{border-color:var(--olive);background:rgba(107,122,66,.04);}
+.proto-card.active{border-color:var(--olive);background:rgba(107,122,66,.08);box-shadow:0 2px 8px rgba(107,122,66,.15);}
+.proto-card-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;line-height:1.3;}
+.proto-card-meta{font-size:11px;color:var(--muted);}
+.proto-card-badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:10px;margin-top:4px;text-transform:uppercase;}
+.proto-fields-area{background:var(--cream);border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid var(--border);}
+.proto-fields-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--olive);margin-bottom:12px;}
+
 /* ── PHOTO UPLOAD ── */
 .photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
 .photo-slot{border:2px dashed var(--border);border-radius:10px;aspect-ratio:3/4;position:relative;overflow:hidden;cursor:pointer;transition:border-color .2s;background:var(--cream);}
@@ -371,7 +383,7 @@ let D = {
   quadril_cm:'', braco_d_cm:'', braco_e_cm:'', antebraco_d_cm:'', antebraco_e_cm:'',
   coxa_d_cm:'', coxa_e_cm:'', panturrilha_d_cm:'', panturrilha_e_cm:'',
   // mod3 skinfolds
-  protocolo_dobras:'jp7',
+  protocolo_dobras:'pollock84_7',
   triceps_mm:'', subescapular_mm:'', peitoral_mm:'', axilar_mm:'',
   suprailiaca_mm:'', abdominal_mm:'', coxa_mm:'',
   // mod4 posture
@@ -483,7 +495,7 @@ function onFieldChange(k){
 }
 
 const _DOBRAS_FIELDS=['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm',
-  'biceps_mm','panturrilha_mm',
+  'biceps_mm','panturrilha_mm','circunf_abd_cm','quadril_cm',
   'bio_pct_gordura','bio_massa_gorda','bio_massa_magra','bio_agua','bio_metabolismo'];
 const _VO2_FIELDS=['cooper_distancia','rockport_tempo_min','rockport_tempo_sec','rockport_fc',
   'harvard_fc1','harvard_fc2','harvard_fc3','balke_distancia','bruce_tempo',
@@ -567,31 +579,23 @@ function _showDobrasResult(box, pct, soma, dens, extra, invalidDens, nFilled){
 
 function calcDobras(){
   saveCurrentFields();
-  const proto=D.protocolo_dobras||'jp7';
-  // Usa box específico do protocolo (dentro do seu container) com fallback ao genérico
+  const proto=D.protocolo_dobras||'pollock84_7';
   const box=document.getElementById('dobrasBox_'+proto)||document.getElementById('dobrasBox');
   if(!box) return;
   if(!D.patient_sex){ box.style.display='none'; return; }
   const sex=D.patient_sex||''; const age=calcAge()||30;
   const showMsg=msg=>{ box.className='result-warn'; box.innerHTML=msg; box.style.display='block'; };
   const mm=k=>{
-    // Escopa ao container do protocolo ativo para evitar IDs duplicados entre protocolos
-    const el=document.querySelector('#pid_'+proto+' [data-f="'+k+'_mm"]')
-           ||document.querySelector('[data-f="'+k+'_mm"]');
-    const rawV=el&&el.value!==''?parseFloat(el.value):(parseFloat(D[k+'_mm'])||0);
-    const v=isNaN(rawV)||rawV<=0?0:rawV;
+    const el=document.querySelector('[data-f="'+k+'_mm"]');
+    if(el&&el.value!=='') return parseFloat(el.value)||0;
+    const v=parseFloat(D[k+'_mm'])||0;
     if(v>80) console.warn('Dobra '+k+' = '+v+'mm parece alto. Valores típicos: 5-60mm');
     return v;
   };
   let soma=0,dens=null,pct=null,extra='',preenchidos=null;
 
-  if(proto==='jp7'){
-    const vals={
-      triceps:mm('triceps'),subescapular:mm('subescapular'),
-      peitoral:mm('peitoral'),axilar:mm('axilar'),
-      suprailiaca:mm('suprailiaca'),abdominal:mm('abdominal'),
-      coxa:mm('coxa')
-    };
+  if(proto==='pollock84_7'){
+    const vals={triceps:mm('triceps'),subescapular:mm('subescapular'),peitoral:mm('peitoral'),axilar:mm('axilar'),suprailiaca:mm('suprailiaca'),abdominal:mm('abdominal'),coxa:mm('coxa')};
     preenchidos=Object.values(vals).filter(v=>v>0).length;
     if(preenchidos<3){ showMsg('Preencha pelo menos 3 dobras para calcular.'); return; }
     soma=Object.values(vals).reduce((a,b)=>a+b,0);
@@ -600,23 +604,70 @@ function calcDobras(){
       else          dens=1.097-(0.00046971*soma)+(0.00000056*soma*soma)-(0.00012828*age);
       pct=_siri(dens,sex);
     }
-  } else if(proto==='jp3m'){
-    const v=[mm('peitoral'),mm('abdominal'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
-    if(soma>0){ dens=1.10938-(0.0008267*soma)+(0.0000016*soma*soma)-(0.0002574*age); pct=_siri(dens,sex); }
-  } else if(proto==='jp3f'){
-    const v=[mm('triceps'),mm('suprailiaca'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
-    if(soma>0){ dens=1.0994921-(0.0009929*soma)+(0.0000023*soma*soma)-(0.0001392*age); pct=_siri(dens,sex); }
-  } else if(proto==='dw4'){
+  } else if(proto==='pollock84_3'){
+    if(sex==='M'){
+      const v=[mm('peitoral'),mm('abdominal'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
+      if(soma>0){ dens=1.10938-(0.0008267*soma)+(0.0000016*soma*soma)-(0.0002574*age); pct=_siri(dens,sex); }
+    } else {
+      const v=[mm('triceps'),mm('suprailiaca'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
+      if(soma>0){ dens=1.0994921-(0.0009929*soma)+(0.0000023*soma*soma)-(0.0001392*age); pct=_siri(dens,sex); }
+    }
+    extra='Pollock 1984';
+  } else if(proto==='faulkner68'){
+    soma=[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('abdominal')].reduce((a,b)=>a+b,0);
+    if(soma>0){
+      const rawPct=sex==='M'?(soma*0.153)+5.783:(soma*0.213)+7.9;
+      const floor=sex==='F'?8:2;
+      pct=(rawPct>=floor&&rawPct<=60)?rawPct:null;
+      dens=null;
+      if(pct==null){ showMsg('⚠️ Resultado: '+rawPct.toFixed(1)+'% (fora do intervalo '+floor+'–60%). Verifique os valores em mm.'); return; }
+    }
+    extra='Faulkner 1968';
+  } else if(proto==='siri_brozek'){
     const bic=mm('biceps'),tri=mm('triceps'),sub=mm('subescapular'),sup=mm('suprailiaca');
     soma=bic+tri+sub+sup;
     if(soma>0){
       const logS=Math.log10(soma);
       const DW=[[17,1.1620,0.0630,1.1549,0.0678],[20,1.1631,0.0632,1.1599,0.0717],[30,1.1422,0.0544,1.1423,0.0632],[40,1.1620,0.0700,1.1333,0.0612],[50,1.1715,0.0779,1.1339,0.0645]];
-      const row=DW.reduce((b,r)=>age>=r[0]?r:b,DW[0]);
-      if(sex==='M') dens=row[1]-(row[2]*logS); else dens=row[3]-(row[4]*logS);
-      pct=_siri(dens,sex);
+      const drow=DW.reduce((b,r)=>age>=r[0]?r:b,DW[0]);
+      dens=sex==='M'?drow[1]-(drow[2]*logS):drow[3]-(drow[4]*logS);
+      const pctSiri=(495/dens)-450;
+      const pctBrozek=(457/dens)-414.8;
+      const floor=sex==='F'?8:2;
+      if(pctSiri<floor||pctSiri>60){ showMsg('⚠️ Siri: '+pctSiri.toFixed(1)+'% fora do intervalo '+floor+'–60%. Verifique os valores.'); return; }
+      const peso=parseFloat(D.peso_kg)||0;
+      const {label:clsLabel,cls:clsCss}=_classGordura(pctSiri,sex);
+      const boxCls=clsCss==='gc-essencial'||clsCss==='gc-atleta'?'great':clsCss==='gc-fitness'||clsCss==='gc-aceitavel'?'good':'poor';
+      box.className='result-box '+boxCls;
+      box.innerHTML='<div style="width:100%"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px"><span class="result-label">Siri & Brozek — Durnin-Womersley</span><span class="classif-badge '+clsCss+'">'+clsLabel+'</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">% Gordura (Siri)</div><div class="result-val" style="font-size:24px">'+pctSiri.toFixed(1)+'%</div></div><div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">% Gordura (Brozek)</div><div class="result-val" style="font-size:24px">'+pctBrozek.toFixed(1)+'%</div></div></div><div class="result-class" style="margin-top:4px">Σ '+soma.toFixed(1)+' mm \xb7 D: '+dens.toFixed(5)+'</div>'+(peso>0?'<div class="result-class" style="margin-top:4px">Siri → Massa gorda: <strong>'+(peso*pctSiri/100).toFixed(1)+' kg</strong></div>':'')+'</div>';
+      box.style.display='block';
+      D.percentual_gordura_bio=pctSiri.toFixed(1);
+      const pgEl=document.querySelector('[data-f="percentual_gordura_bio"]');
+      if(pgEl) pgEl.value=D.percentual_gordura_bio;
+      return;
     }
-  } else if(proto==='guedes'){
+  } else if(proto==='yuhasz'){
+    const f6=sex==='F'?[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('abdominal'),mm('coxa'),mm('biceps')]:[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('abdominal'),mm('coxa'),mm('peitoral')];
+    soma=f6.reduce((a,b)=>a+b,0);
+    if(soma>0){
+      const rawPct=sex==='F'?(soma*0.1548)+3.580:(soma*0.1051)+2.585;
+      const floor=sex==='F'?8:2;
+      pct=(rawPct>=floor&&rawPct<=60)?rawPct:null;
+      dens=null;
+      if(pct==null){ showMsg('⚠️ Resultado: '+rawPct.toFixed(1)+'% (fora do intervalo '+floor+'–60%). Verifique os valores.'); return; }
+    }
+    extra='Yuhasz';
+  } else if(proto==='petroski95'){
+    if(sex==='M'){
+      const v=[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('panturrilha')]; soma=v.reduce((a,b)=>a+b,0);
+      if(soma>0){ dens=1.10726863-(0.00081201*soma)+(0.00000212*soma*soma)-(0.00041761*age); pct=_siri(dens,sex); }
+    } else {
+      const h=parseFloat(D.altura_cm)||170;
+      const v=[mm('triceps'),mm('suprailiaca'),mm('abdominal'),mm('panturrilha')]; soma=v.reduce((a,b)=>a+b,0);
+      if(soma>0){ dens=1.0954-(0.0004699*soma)+(0.0000003*soma*soma)-(0.0001505*h); pct=_siri(dens,sex); }
+    }
+    extra='Petroski 1995';
+  } else if(proto==='guedes94'){
     if(sex==='M'){
       const v=[mm('subescapular'),mm('abdominal'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
       if(soma>0){ dens=1.1714-(0.0671*Math.log10(soma)); pct=_siri(dens,sex); }
@@ -624,47 +675,60 @@ function calcDobras(){
       const v=[mm('triceps'),mm('suprailiaca'),mm('coxa')]; soma=v.reduce((a,b)=>a+b,0);
       if(soma>0){ dens=1.1665-(0.0706*Math.log10(soma)); pct=_siri(dens,sex); }
     }
-  } else if(proto==='faulkner'){
-    soma=[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('abdominal')].reduce((a,b)=>a+b,0);
-    if(soma>0){
-      const rawPct=sex==='M'?(soma*0.153)+5.783:(soma*0.213)+7.9;
-      const floor=sex==='F'?8:2;
-      pct=(rawPct>=floor&&rawPct<=60)?rawPct:null;
-      dens=null;
-    }
-  } else if(proto==='petroski'){
-    const peq=D.petroski_eq||'I';
-    if(sex==='M'){
-      const v=[mm('triceps'),mm('subescapular'),mm('suprailiaca'),mm('panturrilha')]; soma=v.reduce((a,b)=>a+b,0);
-      if(soma>0){ dens=1.10726863-(0.00081201*soma)+(0.00000212*soma*soma)-(0.00041761*age); pct=_siri(dens,sex); }
-    } else {
-      const h=parseFloat(D.altura_cm)||170;
-      const v=[mm('triceps'),mm('suprailiaca'),mm('abdominal'),mm('panturrilha')]; soma=v.reduce((a,b)=>a+b,0);
-      // Petroski (1995) Equação I Feminino: coeficiente S4² = 0.0000030 (3×10⁻⁶)
-      if(soma>0){ dens=1.0954-(0.0004699*soma)+(0.0000030*soma*soma)-(0.0001505*h); pct=_siri(dens,sex); }
-    }
-    extra='Petroski '+peq;
-  } else if(proto==='slaughter'){
-    const t=mm('triceps'),panturrilha=mm('panturrilha'); soma=t+panturrilha;
+    extra='Guedes 1994';
+  } else if(proto==='guedes_crian'){
+    const t=mm('triceps'),sub=mm('subescapular'); soma=t+sub;
     const ageC=calcAge()||12;
     if(soma>0){
       const rawPct=sex==='M'?ageC<12?(0.735*soma)+1.0:(0.610*soma)+5.1:(0.610*soma)+5.1;
       const floor=sex==='F'?8:2;
       pct=(rawPct>=floor&&rawPct<=60)?rawPct:null;
-      extra='(6–17 anos)'; dens=null;
+      extra='7–17 anos'; dens=null;
+      if(pct==null){ showMsg('⚠️ Resultado: '+rawPct.toFixed(1)+'% (fora do intervalo '+floor+'–60%). Verifique os valores.'); return; }
     }
-  } else if(proto==='bio'){
-    const bio=parseFloat(D.bio_pct_gordura);
-    if(bio>0){
-      pct=bio; soma=0; dens=null;
-      const fields=['bio_massa_gorda','bio_massa_magra','bio_agua','bio_metabolismo'];
-      const db=['massa_gorda_kg','massa_magra_kg','agua_corporal_pct','metabolismo_basal'];
-      fields.forEach((f,i)=>{ if(D[f]) D[db[i]]=D[f]; });
+  } else if(proto==='penroe85'){
+    if(sex==='M'){
+      const abd=mm('abdominal'),costas=mm('subescapular'); soma=abd+costas;
+      if(soma>0){
+        const rawPct=(0.31457*abd)-(0.10969*costas)+10.8341;
+        const floor=2;
+        pct=(rawPct>=floor&&rawPct<=60)?rawPct:null;
+        dens=null;
+        if(pct==null){ showMsg('⚠️ Resultado: '+rawPct.toFixed(1)+'% (fora do intervalo '+floor+'–60%).'); return; }
+      }
+    } else {
+      const abd=mm('abdominal');
+      const quadril=parseFloat(D.quadril_cm)||0;
+      const altura=parseFloat(D.altura_cm)||0;
+      if(abd>0&&quadril>0&&altura>0){
+        const rawPct=(0.11077*quadril)-(0.17666*altura)+(0.14354*abd)+51.033;
+        const floor=8;
+        pct=(rawPct>=floor&&rawPct<=60)?rawPct:null;
+        dens=null; soma=abd;
+        extra='Quadril: '+quadril+'cm \xb7 Altura: '+altura+'cm';
+        if(pct==null){ showMsg('⚠️ Resultado: '+rawPct.toFixed(1)+'% (fora do intervalo '+floor+'–60%).'); return; }
+      } else if(abd>0){ showMsg('Feminino: preencha tamb\xe9m Quadril (circunfer\xeancias) e Altura (biometria).'); return; }
+    }
+    if(!extra) extra='Penroe 1985';
+  } else if(proto==='weltman'){
+    const circAbd=parseFloat(D.circunf_abd_cm)||parseFloat(document.querySelector('[data-f="circunf_abd_cm"]')?.value)||0;
+    const peso=parseFloat(D.peso_kg)||0;
+    const altura=parseFloat(D.altura_cm)||0;
+    if(circAbd>0){
+      let rawPct=null;
+      if(sex==='M'&&peso>0) rawPct=(0.31457*circAbd)-(0.10969*peso)+10.8341;
+      else if(sex==='F'&&altura>0&&peso>0) rawPct=(0.11077*circAbd)-(0.17666*altura)+(0.14354*peso)+51.033;
+      if(rawPct!=null){
+        const floor=sex==='F'?8:2;
+        pct=(rawPct>=floor&&rawPct<=60)?rawPct:null;
+        dens=null; soma=0;
+        extra='Circ. abd: '+circAbd+'cm';
+        if(pct==null){ showMsg('⚠️ Resultado: '+rawPct.toFixed(1)+'% (fora do intervalo '+floor+'–60%).'); return; }
+      } else { showMsg(sex==='M'?'Preencha tamb\xe9m Peso (biometria).':'Preencha tamb\xe9m Peso e Altura (biometria).'); return; }
     }
   }
 
-  // Alerta de somatório suspeito (< 15mm = provável erro de entrada)
-  if(soma>0&&soma<15&&pct!=null) extra=(extra?extra+' · ':'')+' ⚠️ Somatório muito baixo — confirme que os valores estão em mm';
+  if(soma>0&&soma<15&&pct!=null) extra=(extra?extra+' \xb7 ':'')+' ⚠️ Somat\xf3rio muito baixo — confirme que os valores est\xe3o em mm';
 
   _showDobrasResult(box,pct,soma>0?soma:null,dens,extra,dens&&pct==null?dens:null,preenchidos);
 }
@@ -944,13 +1008,13 @@ function showChoice(msg, onSim, onNao){
 function setSex(s){
   D.patient_sex = s; saveLS();
   document.querySelectorAll('.sex-chip').forEach(el=>el.classList.toggle('sel', el.textContent.startsWith(s==='M'?'Masc':'Fem')));
-  if(s==='F' && D.protocolo_dobras==='jp7'){
-    showChoice('Ajustar protocolo de dobras para JP3 Feminino?',
-      ()=>{ D.protocolo_dobras='jp3f'; saveLS(); showToast('Protocolo ajustado: JP3 Feminino'); }
+  if(s==='F' && D.protocolo_dobras==='pollock84_7'){
+    showChoice('Ajustar protocolo para Pollock 3 Feminino?',
+      ()=>{ D.protocolo_dobras='pollock84_3'; saveLS(); showToast('Protocolo ajustado: Pollock 3'); }
     );
-  } else if(s==='M' && D.protocolo_dobras==='jp3f'){
-    D.protocolo_dobras='jp7'; saveLS();
-    showToast('Protocolo ajustado: JP7 Dobras');
+  } else if(s==='M' && D.protocolo_dobras==='pollock84_3'){
+    D.protocolo_dobras='pollock84_7'; saveLS();
+    showToast('Protocolo ajustado: Pollock 7');
   }
   calcDobras(); calcVO2();
 }
@@ -1057,71 +1121,68 @@ function mod3(){
 
 // ── MODULE 4 ─────────────────────────────────────────────────
 function mod4(){
-  const p=D.protocolo_dobras||'jp7';
+  const p=D.protocolo_dobras||'pollock84_7';
   const sx=D.patient_sex||'';
-  const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input id="sf_${k}" type="number" step="0.1" inputmode="decimal" placeholder="Ex: 12.5" data-f="${k}_mm"><div class="hint">Digite em milímetros (ex: 12.5 mm, não 1.25 cm)</div></div>`;
-  const fna=(lbl,k,u='')=>`<div class="field"><label>${lbl}${u?' ('+u+')':''}</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
+  const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="Ex: 12.5" data-f="${k}_mm"><div class="hint">Digite em milímetros (ex: 12.5 mm, não 1.25 cm)</div></div>`;
+  const fna=(lbl,k,u='',ph='0.0')=>`<div class="field"><label>${lbl}${u?' ('+u+')':''}</label><input type="number" step="0.1" inputmode="decimal" placeholder="${ph}" data-f="${k}"></div>`;
 
-  const dwTable=`<details style="margin-bottom:10px"><summary style="font-size:11px;color:var(--muted);cursor:pointer">Tabela coeficientes Durnin-Womersley</summary>
-    <table class="ref-table"><thead><tr><th>Idade</th><th>A (M)</th><th>B (M)</th><th>A (F)</th><th>B (F)</th></tr></thead><tbody>
-    <tr><td>17–19</td><td>1.1620</td><td>0.0630</td><td>1.1549</td><td>0.0678</td></tr>
-    <tr><td>20–29</td><td>1.1631</td><td>0.0632</td><td>1.1599</td><td>0.0717</td></tr>
-    <tr><td>30–39</td><td>1.1422</td><td>0.0544</td><td>1.1423</td><td>0.0632</td></tr>
-    <tr><td>40–49</td><td>1.1620</td><td>0.0700</td><td>1.1333</td><td>0.0612</td></tr>
-    <tr><td>50+</td><td>1.1715</td><td>0.0779</td><td>1.1339</td><td>0.0645</td></tr>
-    </tbody></table></details>`;
-
-  const fields={
-    jp7:`<div style="padding-top:12px"><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Peitoral','peitoral')}${f('Axilar Média','axilar')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div></div>`,
-    jp3m:`<div style="padding-top:12px"><p class="proto-note">Pontos masculinos: Peitoral + Abdominal + Coxa</p><div class="grid2">${f('Peitoral','peitoral')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div></div>`,
-    jp3f:`<div style="padding-top:12px"><p class="proto-note">Pontos femininos: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div></div>`,
-    dw4:`<div style="padding-top:12px">${dwTable}<div class="grid2">${f('Bíceps','biceps')}${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}</div></div>`,
-    guedes:`<div style="padding-top:12px">${sx==='M'?`<p class="proto-note">Masculino: Subescapular + Abdominal + Coxa</p><div class="grid2">${f('Subescapular','subescapular')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`:`<p class="proto-note">Feminino: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div>`}</div>`,
-    faulkner:`<div style="padding-top:12px"><p class="proto-note">Tríceps + Subescapular + Suprailíaca + Abdominal</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}</div></div>`,
-    petroski:`<div style="padding-top:12px">${sx==='M'?`<p class="proto-note">Masculino: Tríceps + Subescapular + Suprailíaca + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Panturrilha','panturrilha')}</div>`:`<p class="proto-note">Feminino: Tríceps + Suprailíaca + Abdominal + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Panturrilha','panturrilha')}</div>`}</div>`,
-    slaughter:`<div style="padding-top:12px"><p class="proto-note">⚠️ Protocolo para crianças e adolescentes (6–17 anos)${calcAge()&&calcAge()>17?' — idade do avaliado fora da faixa':''}</p><div class="grid2">${f('Tríceps','triceps')}${f('Panturrilha medial','panturrilha')}</div></div>`,
-    bio:`<div style="padding-top:12px"><p class="proto-note">Insira os valores fornecidos pelo aparelho de bioimpedância.</p>
-      <div class="grid2">
-        ${fna('% Gordura','bio_pct_gordura','%')}${fna('Massa Gorda','bio_massa_gorda','kg')}
-        ${fna('Massa Magra','bio_massa_magra','kg')}${fna('Água Corporal','bio_agua','%')}
-        ${fna('Massa Óssea','bio_ossa','kg')}${fna('Metabolismo Basal','bio_metabolismo','kcal')}
-      </div></div>`
-  };
-
-  const PROTOS_D=[
-    {id:'jp7',     icon:'📐', name:'JP 7 Dobras',     meta:'Jackson-Pollock',    precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
-    {id:'jp3m',    icon:'♂️', name:'JP 3 — Masc',     meta:'3 pontos masculino', precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
-    {id:'jp3f',    icon:'♀️', name:'JP 3 — Fem',      meta:'3 pontos feminino',  precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
-    {id:'dw4',     icon:'🔢', name:'Durnin-Womersley', meta:'4 dobras',           precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
-    {id:'guedes',  icon:'🇧🇷', name:'Guedes',          meta:'Protocolo BR',       precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
-    {id:'faulkner',icon:'🧮', name:'Faulkner',         meta:'4 dobras direto',    precision:'Moderada',          tipo:'Campo',       badge:'badge-blue'},
-    {id:'petroski',icon:'📊', name:'Petroski',          meta:'4 equações',        precision:'Alta',              tipo:'Campo',       badge:'badge-green'},
-    {id:'slaughter',icon:'👶',name:'Slaughter-Lohman', meta:'6–17 anos',          precision:'Alta',              tipo:'Campo',       badge:'badge-gold'},
-    {id:'bio',     icon:'⚡', name:'Bioimpedância',    meta:'Registro de aparelho',precision:'Moderada',         tipo:'Rastreamento',badge:'badge-blue'},
+  const PROTOS=[
+    {id:'pollock84_7', name:'Pollock 7',      meta:'Pollock, 1984 · 7 dobras',            ndob:7},
+    {id:'pollock84_3', name:'Pollock 3',      meta:'Pollock, 1984 · 3 dobras',            ndob:3},
+    {id:'faulkner68',  name:'Faulkner',       meta:'Faulkner, 1968 · 4 dobras',           ndob:4},
+    {id:'siri_brozek', name:'Siri & Brozek',  meta:'Durnin-Womersley · 4 dobras',        ndob:4},
+    {id:'yuhasz',      name:'Yuhasz',         meta:'Yuhasz · 6 dobras',                   ndob:6},
+    {id:'petroski95',  name:'Petroski',       meta:'Petroski, 1995 · 4 dobras',           ndob:4},
+    {id:'guedes94',    name:'Guedes',         meta:'Guedes, 1994 · 3 dobras',             ndob:3},
+    {id:'guedes_crian',name:'Guedes Criança', meta:'Guedes · 2 dobras · 7–17 anos',       ndob:2},
+    {id:'penroe85',    name:'Penroe',         meta:'Penroe, Nelson, Fischer · 2 med.',     ndob:2},
+    {id:'weltman',     name:'Weltman',        meta:'Weltman · Obesos · Circunferências',  ndob:0},
   ];
 
-  const checkSVG=`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 6 5 9 10 3"/></svg>`;
+  const fields={
+    pollock84_7:`<div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Peitoral','peitoral')}${f('Axilar Média','axilar')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`,
+    pollock84_3:sx==='F'
+      ?`<p class="proto-note">Pontos femininos: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div>`
+      :`<p class="proto-note">Pontos masculinos: Peitoral + Abdominal + Coxa</p><div class="grid2">${f('Peitoral','peitoral')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`,
+    faulkner68:`<p class="proto-note">Tríceps + Subescapular + Suprailíaca + Abdominal</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}</div>`,
+    siri_brozek:`<p class="proto-note">Bíceps + Tríceps + Subescapular + Suprailíaca (Durnin-Womersley). Mostra Siri e Brozek lado a lado.</p><div class="grid2">${f('Bíceps','biceps')}${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}</div>`,
+    yuhasz:sx==='F'
+      ?`<p class="proto-note">Feminino: Tríceps + Subescapular + Suprailíaca + Abdominal + Coxa + Bíceps</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}${f('Bíceps','biceps')}</div>`
+      :`<p class="proto-note">Masculino: Tríceps + Subescapular + Suprailíaca + Abdominal + Coxa + Peitoral</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}${f('Peitoral','peitoral')}</div>`,
+    petroski95:sx==='F'
+      ?`<p class="proto-note">Feminino: Tríceps + Suprailíaca + Abdominal + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Abdominal','abdominal')}${f('Panturrilha','panturrilha')}</div>`
+      :`<p class="proto-note">Masculino: Tríceps + Subescapular + Suprailíaca + Panturrilha</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}${f('Suprailíaca','suprailiaca')}${f('Panturrilha','panturrilha')}</div>`,
+    guedes94:sx==='F'
+      ?`<p class="proto-note">Feminino: Tríceps + Suprailíaca + Coxa</p><div class="grid2">${f('Tríceps','triceps')}${f('Suprailíaca','suprailiaca')}${f('Coxa','coxa')}</div>`
+      :`<p class="proto-note">Masculino: Subescapular + Abdominal + Coxa</p><div class="grid2">${f('Subescapular','subescapular')}${f('Abdominal','abdominal')}${f('Coxa','coxa')}</div>`,
+    guedes_crian:`<p class="proto-note">⚠️ Para crianças e adolescentes 7–17 anos${calcAge()&&calcAge()>17?' — idade do avaliado fora da faixa':''}</p><div class="grid2">${f('Tríceps','triceps')}${f('Subescapular','subescapular')}</div>`,
+    penroe85:sx==='F'
+      ?`<p class="proto-note">Feminino: Abdominal (mm) + Quadril (cm da seção circunferências) + Altura (biometria)</p>${f('Abdominal','abdominal')}`
+      :`<p class="proto-note">Masculino: Abdominal + Subescapular (Costas)</p><div class="grid2">${f('Abdominal','abdominal')}${f('Subescapular','subescapular')}</div>`,
+    weltman:`<p class="proto-note">Usa circunferência abdominal, peso e altura da biometria. Indicado para pessoas obesas.</p>${fna('Circunferência Abdominal','circunf_abd_cm','cm','Ex: 90.5')}`,
+  };
 
-  const list=PROTOS_D.map(pr=>`<div class="protocol-item${p===pr.id?' active':''}" id="pid_${pr.id}">
-    <div class="protocol-header" onclick="setProto('${pr.id}')">
-      <div class="protocol-icon">${pr.icon}</div>
-      <div class="protocol-info">
-        <div class="protocol-name">${pr.name}</div>
-        <div class="protocol-meta"><span class="protocol-badge ${pr.badge}">${pr.precision}</span><span>${pr.tipo}</span></div>
-      </div>
-      <div class="protocol-right">
-        <button class="btn-info" onclick="showProtocolInfo('dobras','${pr.id}');event.stopPropagation()">ℹ</button>
-        <div class="protocol-check">${p===pr.id?checkSVG:''}</div>
-      </div>
-    </div>
-    <div class="protocol-fields">${fields[pr.id]||''}<div class="result-box" id="dobrasBox_${pr.id}" style="display:none;margin-top:10px"></div></div>
-  </div>`).join('');
+  const cards=PROTOS.map(pr=>`<button class="proto-card${p===pr.id?' active':''}" onclick="setProto('${pr.id}')">
+    <div class="proto-card-name">${pr.name}</div>
+    <div class="proto-card-meta">${pr.meta}</div>
+    ${pr.ndob>0?`<span class="proto-card-badge badge-green">${pr.ndob} dobras</span>`:`<span class="proto-card-badge badge-blue">circunf.</span>`}
+  </button>`).join('');
+
+  const activeProto=PROTOS.find(pr=>pr.id===p);
+  const fieldsHtml=fields[p]||'';
 
   return `<div class="av-card">
     <div class="av-card-title${relevCls(['emagrecimento','perda de peso','composição'])}">Dobras Cutâneas</div>
     <div class="av-card-sub">Selecione o protocolo e preencha os campos</div>
-    <div class="protocol-list">${list}</div>
-    <div class="result-box" id="dobrasBox" style="display:none;margin-top:14px"></div>
+    <div style="font-family:'Instrument Serif',serif;font-size:20px;font-weight:400;color:var(--ink);margin:16px 0 6px">Selecione o Protocolo de Avaliação</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Cada protocolo usa pontos anatômicos e fórmulas específicas. Clique para selecionar.</div>
+    <div class="proto-grid">${cards}</div>
+    ${fieldsHtml?`<div class="proto-fields-area">
+      <div class="proto-fields-title">${activeProto?activeProto.meta:p}</div>
+      ${fieldsHtml}
+      <div id="dobrasBox_${p}" class="result-box" style="display:none;margin-top:10px"></div>
+    </div>`:''}
+    <div id="dobrasBox" class="result-box" style="display:none;margin-top:14px"></div>
     ${navHTML(true)}
   </div>`;
 }
@@ -1798,8 +1859,8 @@ function gerarPDF(){
 
 // ── PROTOCOLOS PADRÃO POR SEXO ───────────────────────────────
 function initDefaultsBySex(){
-  if(D.patient_sex === 'F' && D.protocolo_dobras === 'jp7'){
-    D.protocolo_dobras = 'jp3f';
+  if(D.patient_sex === 'F' && D.protocolo_dobras === 'pollock84_7'){
+    D.protocolo_dobras = 'pollock84_3';
   }
 }
 
