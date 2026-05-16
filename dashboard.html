@@ -621,9 +621,10 @@ tr:hover td{background:var(--cream);}
 <!-- AUTH -->
 <div id="authScreen">
   <div class="auth-card">
-    <div class="auth-logo">Anamnese<span>App</span></div>
+    <div class="auth-logo" style="font-size:36px;margin-bottom:2px">Anamnese<span>App</span></div>
     <div class="auth-sub">Painel do Profissional</div>
-    <div class="auth-title">Acesse sua conta</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.6">Bem-vindo! Acesse sua conta para gerenciar clientes, fichas e avaliações físicas.</p>
+    <div class="auth-title">Entrar na conta</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Entrar</button>
       <button class="auth-tab" id="tabSignup" onclick="switchTab('signup')">Cadastrar</button>
@@ -945,7 +946,17 @@ if(!SB_URL || !SB_ANON || SB_URL === 'COLE_SUA_URL_AQUI'){
   throw new Error('Supabase keys not configured.');
 }
 const sb = supabase.createClient(SB_URL, SB_ANON, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'anamneseapp-auth' }
+});
+sb.auth.onAuthStateChange((event, session)=>{
+  if(event==='SIGNED_OUT'){
+    document.getElementById('dashboard').style.display='none';
+    document.getElementById('authScreen').style.display='flex';
+  }
+  if(event==='SIGNED_IN' && session && document.getElementById('authScreen').style.display!=='none'){
+    document.getElementById('authScreen').style.display='none';
+    loadDashboard();
+  }
 });
 
 let allRows = [];

@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<script>try{var _k=Object.keys(localStorage).find(function(k){return k==='anamneseapp-auth'||k.startsWith('sb-')});if(_k){var _s=JSON.parse(localStorage.getItem(_k)||'{}');if(_s.access_token||(_s.session&&_s.session.access_token)){window.location.replace('/dashboard');}}}catch(e){}</script>
 <style>
 :root {
   --bg:       #f7f5f0;
@@ -76,6 +77,8 @@ nav{
   transition:background .2s,transform .15s;
 }
 .nav-cta:hover{background:var(--olive-dk);transform:translateY(-1px);color:#fff;}
+.btn-nav-login{padding:8px 20px;border:1.5px solid var(--ink);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--ink);text-decoration:none;transition:all .2s;min-height:44px;display:flex;align-items:center;}
+.btn-nav-login:hover{background:var(--ink);color:#fff;}
 
 /* ── HERO ── */
 .hero{
@@ -399,8 +402,8 @@ footer{
     <a href="#como-funciona">Como funciona</a>
     <a href="#especialidades">Especialidades</a>
     <a href="#precos">Preços</a>
-    <a href="/dashboard">Painel</a>
     <a class="nav-cta" href="/anamnese">Ver demo →</a>
+    <a class="btn-nav-login" href="/dashboard">Entrar</a>
   </div>
 </nav>
 
