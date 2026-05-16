@@ -163,6 +163,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .gc-fitness{background:rgba(107,122,66,.12);color:#4e5b2e;}
 .gc-aceitavel{background:rgba(234,179,8,.15);color:#854d0e;}
 .gc-obeso{background:rgba(192,57,43,.12);color:#b91c1c;}
+/* sex required warning */
+.sex-required{border:2px solid var(--danger,#c0392b)!important;border-radius:10px;animation:pulse-warn 1s ease 2}
+@keyframes pulse-warn{0%,100%{opacity:1}50%{opacity:.55}}
+/* clinical alert banner */
+.clinical-alert{background:rgba(168,137,58,.12);border:1px solid rgba(168,137,58,.35);border-radius:8px;padding:10px 16px;font-size:13px;color:#8a6f28;margin-bottom:16px;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.clinical-alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+/* clinical info card in mod1 */
+.clinic-info-card{background:var(--cream);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.clinic-info-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.clinic-row{font-size:12px;color:var(--ink);padding:4px 0;border-bottom:1px solid var(--border);line-height:1.5}
+.clinic-row:last-child{border-bottom:none}
+.clinic-row b{color:var(--muted);font-weight:600}
+.clinic-row.clinic-warn{color:#8a6f28;font-weight:500}
+/* module relevance badge */
+.modulo-relevante::after{content:'★ Relevante';font-size:10px;font-weight:700;background:rgba(107,122,66,.15);color:var(--olive);border-radius:20px;padding:2px 8px;margin-left:8px;vertical-align:middle}
 .proto-note{font-size:11px;color:var(--muted);background:var(--cream);border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.5;}
 
 /* ── PHOTO UPLOAD ── */
@@ -377,6 +392,9 @@ let D = {
   core_dir:false, core_esq:false, core_postura:'',
   corrida2400_min:'', corrida2400_seg:'',
   observacoes_forca:'',
+  // clinical data from anamnese
+  _lesoes_note:'', _meds_note:'', _diag_note:'', _cirurg_note:'', _gestante:'',
+  _objetivo:'', _nivel:'', _has_restricoes:false,
   // record IDs for upsert
   _ids:{ biometrics:null, circumferences:null, skinfolds:null, posture:null, vo2:null, strength:null, mobility:null }
 };
@@ -517,7 +535,7 @@ function _showDobrasResult(box, pct, soma, dens, extra, invalidDens){
     } else { box.style.display='none'; }
     return;
   }
-  const sex=D.patient_sex||'M';
+  const sex=D.patient_sex||'';
   const peso=parseFloat(D.peso_kg)||0;
   const {label:clsLabel,cls:clsCss}=_classGordura(pct,sex);
   const boxCls=clsCss==='gc-essencial'||clsCss==='gc-atleta'?'great':clsCss==='gc-fitness'||clsCss==='gc-aceitavel'?'good':'poor';
@@ -545,7 +563,7 @@ function calcDobras(){
   saveCurrentFields();
   const box=document.getElementById('dobrasBox');
   if(!box) return;
-  const sex=D.patient_sex||'M'; const age=calcAge()||30;
+  const sex=D.patient_sex||''; const age=calcAge()||30;
   const proto=D.protocolo_dobras||'jp7';
   // Validação de entrada: dobras válidas entre 3mm e 80mm
   // Valor <3 provavelmente foi digitado em cm (ex: 1.2 ao invés de 12)
@@ -647,7 +665,7 @@ function calcVO2(){
   const box=document.getElementById('vo2Box');
   if(!box) return;
   const proto=D.protocolo_vo2||'cooper';
-  const sex=D.patient_sex||'M'; const age=calcAge()||25;
+  const sex=D.patient_sex||''; const age=calcAge()||25;
   let vo2=null, label='VO2 Máx Estimado', extra='';
 
   if(proto==='cooper'){
@@ -773,6 +791,25 @@ function showClassif(elId, valor, faixas){
   el.innerHTML = getClassifBadge(v, faixas);
 }
 
+// ── MODULE RELEVANCE ─────────────────────────────────────────
+function isRelevante(tags){
+  if(!D._objetivo) return false;
+  const obj = D._objetivo.toLowerCase();
+  return tags.some(t => obj.includes(t));
+}
+function relevCls(tags){ return isRelevante(tags) ? ' modulo-relevante' : ''; }
+
+// ── CLINICAL ALERT HTML ──────────────────────────────────────
+function clinicalAlertHTML(){
+  if(!D._has_restricoes) return '';
+  const parts=[];
+  if(D._diag_note)    parts.push(`<b>Diagnóstico:</b> ${D._diag_note}`);
+  if(D._lesoes_note)  parts.push(`<b>Lesões:</b> ${D._lesoes_note}`);
+  if(D._meds_note)    parts.push(`<b>Medicações:</b> ${D._meds_note}`);
+  if(D._cirurg_note)  parts.push(`<b>Cirurgias:</b> ${D._cirurg_note}`);
+  return `<div class="clinical-alert"><span class="clinical-alert-icon">⚠️</span><div>${parts.join(' &nbsp;·&nbsp; ')}</div></div>`;
+}
+
 // ── MODULES RENDER ───────────────────────────────────────────
 function render(){
   renderProgress();
@@ -780,6 +817,17 @@ function render(){
   if(currentMod === 8){ renderFinal(); return; }
   const fns = [null, mod1, mod2, mod3, mod4, mod5, mod6, mod7];
   body.innerHTML = fns[currentMod]();
+  // inject clinical alert after first card title in modules 2-7
+  if(currentMod > 1 && D._has_restricoes){
+    const card = body.querySelector('.av-card');
+    if(card){
+      const sub = card.querySelector('.av-card-sub');
+      const ref = sub ? sub.nextSibling : card.firstChild;
+      const alertEl = document.createElement('div');
+      alertEl.innerHTML = clinicalAlertHTML();
+      card.insertBefore(alertEl.firstElementChild, ref);
+    }
+  }
   bind();
   // run calcs after render
   if(currentMod===1) calcIMC();
@@ -801,11 +849,25 @@ function prevMod(){ saveCurrentFields(); currentMod--; render(); }
 
 // ── MODULE 1 ─────────────────────────────────────────────────
 function mod1(){
+  const sexMissing = !D.patient_sex;
+  const clinicCard = (()=>{
+    const rows=[];
+    if(D._diag_note)   rows.push(`<div class="clinic-row clinic-warn"><b>Diagnóstico</b> ${D._diag_note}</div>`);
+    if(D._lesoes_note) rows.push(`<div class="clinic-row clinic-warn"><b>Lesões / restrições</b> ${D._lesoes_note}</div>`);
+    if(D._meds_note)   rows.push(`<div class="clinic-row"><b>Medicações</b> ${D._meds_note}</div>`);
+    if(D._cirurg_note) rows.push(`<div class="clinic-row"><b>Cirurgias</b> ${D._cirurg_note}</div>`);
+    if(D._gestante)    rows.push(`<div class="clinic-row clinic-warn"><b>Gestante</b> ${D._gestante}</div>`);
+    if(D._objetivo)    rows.push(`<div class="clinic-row"><b>Objetivo</b> ${D._objetivo}</div>`);
+    if(D._nivel)       rows.push(`<div class="clinic-row"><b>Nível de atividade</b> ${D._nivel}</div>`);
+    if(!rows.length) return '';
+    return `<div class="clinic-info-card"><div class="clinic-info-title">Dados da Anamnese</div>${rows.join('')}</div>`;
+  })();
   return `<div class="av-card">
     <div class="av-card-title">Biometria</div>
     <div class="av-card-sub">Dados corporais básicos e composição</div>
-    <div class="field"><label>Sexo biológico</label>
-      <div class="sex-chips">
+    ${clinicCard}
+    <div class="field"><label>Sexo biológico${sexMissing?' <span style="color:#c0392b;font-size:11px">(obrigatório)</span>':''}</label>
+      <div class="sex-chips${sexMissing?' sex-required':''}">
         <div class="sex-chip${D.patient_sex==='M'?' sel':''}" onclick="setSex('M')">Masculino</div>
         <div class="sex-chip${D.patient_sex==='F'?' sel':''}" onclick="setSex('F')">Feminino</div>
       </div>
@@ -836,7 +898,7 @@ function setSex(s){
 
 // ── MODULE 2 — MOBILIDADE ─────────────────────────────────────
 function mod2(){
-  const sx = D.patient_sex||'M';
+  const sx = D.patient_sex||'';
   function radioGroup(field, opts){
     return `<div class="radio-group">`+opts.map(([val,lbl])=>`
       <div class="radio-opt${D[field]===val?' sel':''}" onclick="mobSet('${field}','${val}',this)">
@@ -919,7 +981,7 @@ function mobSet(field, val, el){
 function mod3(){
   const f=(lbl,k)=>`<div class="field"><label>${lbl} (cm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
   return `<div class="av-card">
-    <div class="av-card-title">Circunferências</div>
+    <div class="av-card-title${relevCls(['emagrecimento','perda de peso','composição'])}">Circunferências</div>
     <div class="av-card-sub">Perimetria em centímetros</div>
     <div class="grid2">
       ${f('Pescoço','pescoco_cm')}${f('Ombro','ombro_cm')}
@@ -937,7 +999,7 @@ function mod3(){
 // ── MODULE 4 ─────────────────────────────────────────────────
 function mod4(){
   const p=D.protocolo_dobras||'jp7';
-  const sx=D.patient_sex||'M';
+  const sx=D.patient_sex||'';
   const f=(lbl,k)=>`<div class="field"><label>${lbl} (mm)</label><input type="number" step="0.1" inputmode="decimal" placeholder="Ex: 12.5" data-f="${k}_mm"><div class="hint">Digite em milímetros (ex: 12.5 mm, não 1.25 cm)</div></div>`;
   const fna=(lbl,k,u='')=>`<div class="field"><label>${lbl}${u?' ('+u+')':''}</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="${k}"></div>`;
 
@@ -997,7 +1059,7 @@ function mod4(){
   </div>`).join('');
 
   return `<div class="av-card">
-    <div class="av-card-title">Dobras Cutâneas</div>
+    <div class="av-card-title${relevCls(['emagrecimento','perda de peso','composição'])}">Dobras Cutâneas</div>
     <div class="av-card-sub">Selecione o protocolo e preencha os campos</div>
     <div class="protocol-list">${list}</div>
     <div class="result-box" id="dobrasBox" style="display:none;margin-top:14px"></div>
@@ -1195,9 +1257,11 @@ function mod6(){
     <div class="protocol-fields">${fields[pr.id]||''}</div>
   </div>`).join('');
 
+  const gestWarn = D._gestante ? `<div class="result-warn" style="margin-bottom:14px">⚠️ <b>Gestante:</b> Testes máximos de VO2 são contraindicados. Avalie com protocolo submáximo supervisionado.</div>` : '';
   return `<div class="av-card">
-    <div class="av-card-title">VO2 Máximo</div>
+    <div class="av-card-title${relevCls(['condicionamento','resistência','cardio','aeróbico','aerobico'])}">VO2 Máximo</div>
     <div class="av-card-sub">Selecione o protocolo de teste</div>
+    ${gestWarn}
     <div class="protocol-list">${list}</div>
     <div class="result-box" id="vo2Box" style="display:none;margin-top:14px"></div>
     ${navHTML(true)}
@@ -1231,7 +1295,7 @@ function calcCorrida2400(){
 
 // ── MODULE 7 — FORÇA ─────────────────────────────────────────
 function mod7(){
-  const sx = D.patient_sex||'M';
+  const sx = D.patient_sex||'';
   const age = calcAge()||25;
 
   // Classification tables
@@ -1242,10 +1306,11 @@ function mod7(){
   const ABDOM=[{a:20,b:30,exc:45,bom:35,reg:25},{a:30,b:40,exc:40,bom:30,reg:20},{a:40,b:50,exc:35,bom:25,reg:15},{a:50,b:999,exc:30,bom:20,reg:10}];
   const FLEXAO=[{a:20,b:30,exc:40,bom:30,reg:20},{a:30,b:40,exc:35,bom:25,reg:15},{a:40,b:50,exc:30,bom:20,reg:10},{a:50,b:999,exc:25,bom:15,reg:8}];
 
+  const gestWarnF = D._gestante ? `<div class="result-warn" style="margin-bottom:14px">⚠️ <b>Gestante:</b> Testes de força máxima e manobra de Valsalva são contraindicados. Priorize avaliações funcionais leves.</div>` : '';
   return `<div class="av-card">
-    <div class="av-card-title">Força e Resistência</div>
+    <div class="av-card-title${relevCls(['hipertrofia','força','musculação','ganho de massa'])}">Força e Resistência</div>
     <div class="av-card-sub">Testes de força, potência e resistência muscular</div>
-
+    ${gestWarnF}
     <div class="av-card-sub" style="margin:0 0 10px">Preensão Manual</div>
     <div class="grid2">
       <div class="field"><label>Preensão D (kg)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="preensao_d_kg"></div>
@@ -1348,7 +1413,7 @@ function renderFinal(){
     const soma=['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm']
       .reduce((s,k)=>s+(parseFloat(D[k])||0),0);
     if(soma<=0) return '—';
-    const age=calcAge()||30, sex=D.patient_sex||'M';
+    const age=calcAge()||30, sex=D.patient_sex||'';
     let dens;
     if(sex==='M') dens=1.112-(0.00043499*soma)+(0.00000055*soma*soma)-(0.00028826*age);
     else          dens=1.097-(0.00046971*soma)+(0.00000056*soma*soma)-(0.00012828*age);
@@ -1469,7 +1534,7 @@ async function saveAll(){
 
     const soma7 = ['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm']
       .reduce((s,k)=>s+(parseFloat(D[k])||0),0);
-    const age=calcAge()||30, sex=D.patient_sex||'M';
+    const age=calcAge()||30, sex=D.patient_sex||'';
     let dens=null, pctG=null;
     if(soma7>0){
       if(sex==='M') dens=1.112-(0.00043499*soma7)+(0.00000055*soma7*soma7)-(0.00028826*age);
@@ -1672,6 +1737,13 @@ function gerarPDF(){
   } catch(e){ console.error(e); showToast('Erro ao gerar PDF.'); }
 }
 
+// ── PROTOCOLOS PADRÃO POR SEXO ───────────────────────────────
+function initDefaultsBySex(){
+  if(D.patient_sex === 'F' && D.protocolo_dobras === 'jp7'){
+    D.protocolo_dobras = 'jp3f';
+  }
+}
+
 // ── PRÉ-PREENCHIMENTO DA ANAMNESE ────────────────────────────
 async function prefillFromAnamnese(){
   if(!_clientId || !sb) return;
@@ -1691,6 +1763,16 @@ async function prefillFromAnamnese(){
     }
     if(ad.peso   && !D.peso_kg)    D.peso_kg    = String(ad.peso).replace(',','.');
     if(ad.altura && !D.altura_cm)  D.altura_cm  = String(ad.altura).replace(',','.');
+    // clinical fields
+    if(ad.lesoes && !D._lesoes_note)  D._lesoes_note  = ad.lesoes;
+    if(ad.meds   && !D._meds_note)    D._meds_note    = ad.meds;
+    if(ad.diag   && !D._diag_note)    D._diag_note    = ad.diag;
+    if(ad.cirurg && !D._cirurg_note)  D._cirurg_note  = ad.cirurg;
+    if(ad.gestante) D._gestante = ad.gestante;
+    if(ad.obj)      D._objetivo  = ad.obj;
+    if(ad.nivel)    D._nivel     = ad.nivel;
+    if(ad.lesoes || ad.meds || ad.diag) D._has_restricoes = true;
+    initDefaultsBySex();
     saveLS();
     render();
     const dt = new Date(anam.created_at).toLocaleDateString('pt-BR');
