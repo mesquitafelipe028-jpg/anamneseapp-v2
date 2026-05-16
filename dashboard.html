@@ -383,6 +383,13 @@ tr:hover td{background:var(--cream);}
 .cpv-record-main{font-size:13px;font-weight:500;color:var(--ink);}
 .cpv-record-sub{font-size:11px;color:var(--muted);margin-top:2px;}
 .cpv-actions-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+/* Resumo cards — tela consolidada do cliente */
+.resumo-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+.resumo-card{background:var(--cream);border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:background .15s;}
+.resumo-card:hover{background:#e8e4da;}
+.resumo-card-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.resumo-card-val{font-size:17px;font-weight:700;color:var(--ink);font-family:'Instrument Serif',serif;line-height:1.2;}
+.resumo-card-sub{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;}
 @media(max-width:640px){.cli-grid{grid-template-columns:1fr;}}
 
 /* ── APP SHELL ── */
@@ -1367,7 +1374,14 @@ async function renderViewCliente(params={}){
   if(!client){ showToast('Cliente não encontrado.'); goBack(); return; }
   const vc = document.getElementById('viewContainer');
   const ini = _cliInitial(client.name);
-  const meta = [client.phone,client.email,client.objetivo].filter(Boolean).map(esc).join(' · ')||'Sem informações adicionais';
+  const sexLabel = client.sex==='M'?'Masculino':client.sex==='F'?'Feminino':'';
+  const ageStr = (()=>{
+    if(!client.dob) return '';
+    const diff = Date.now()-new Date(client.dob).getTime();
+    const age = Math.floor(diff/(365.25*24*60*60*1000));
+    return isNaN(age)||age<0?'':age+' anos';
+  })();
+  const meta = [client.phone,client.email,client.objetivo,sexLabel,ageStr].filter(Boolean).map(esc).join(' · ')||'Sem informações adicionais';
   vc.innerHTML = _vHd(client.name,
     `<button class="btn-view" style="white-space:nowrap;display:flex;align-items:center;gap:4px" onclick="generateClientReport('${clientId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>PDF</button>
      <button class="btn-view" style="margin-left:4px;white-space:nowrap" onclick="navigateTo('editar-cliente',{id:'${clientId}'})">Editar</button>`
@@ -1387,6 +1401,7 @@ async function renderViewCliente(params={}){
       <button class="btn-new-ficha" onclick="navigateTo('nova-avaliacao',{clientId:'${clientId}',clientName:'${esc(client.name).replace(/'/g,"\\'")}' })">+ Nova avaliação</button>
       <button class="btn-view" id="btnPortal_${clientId}" onclick="generatePortalToken('${clientId}')">🔗 Portal do cliente</button>
     </div>
+    <div id="clientResumoCards"></div>
     <div class="evolution-section">
       <h3>Evolução</h3>
       <div class="metric-selector" id="metricSelector">
@@ -1411,10 +1426,41 @@ async function renderViewCliente(params={}){
   </div>`;
   const [anamRes, avalRes] = await Promise.all([
     sb.from('anamneses').select('id,patient_name,status,mode,created_at').eq('client_id',clientId).order('created_at',{ascending:false}),
-    sb.from('assessments').select('id,patient_name,status,modality,created_at').eq('client_id',clientId).order('created_at',{ascending:false})
+    sb.from('assessments').select('id,patient_name,status,modality,created_at,assessment_biometrics(peso_kg,percentual_gordura_bio)').eq('client_id',clientId).order('created_at',{ascending:false})
   ]);
   const anams = anamRes.data||[];
   const avals = avalRes.data||[];
+
+  // ── Resumo cards ─────────────────────────────────────────────
+  const resumoEl = document.getElementById('clientResumoCards');
+  if(resumoEl && (anams.length || avals.length)){
+    const la = anams[0], lv = avals[0];
+    let rHtml = '<div class="resumo-cards">';
+    if(la){
+      const dt = new Date(la.created_at).toLocaleDateString('pt-BR');
+      const mode = la.mode==='online'?'Online':'Presencial';
+      const st = STATUS_LABEL[la.status||'nova']||la.status;
+      rHtml += `<div class="resumo-card" onclick="switchCliViewTab('anam')">
+        <div class="resumo-card-label">Última anamnese</div>
+        <div class="resumo-card-val">${dt}</div>
+        <div class="resumo-card-sub">${mode} · ${st}</div>
+      </div>`;
+    }
+    if(lv){
+      const dt = new Date(lv.created_at).toLocaleDateString('pt-BR');
+      const bio = Array.isArray(lv.assessment_biometrics) ? lv.assessment_biometrics[0] : lv.assessment_biometrics;
+      const pesoStr  = bio?.peso_kg               ? parseFloat(bio.peso_kg).toFixed(1)+' kg'  : '';
+      const gordStr  = bio?.percentual_gordura_bio ? parseFloat(bio.percentual_gordura_bio).toFixed(1)+'% gord' : '';
+      const metaLine = [pesoStr,gordStr].filter(Boolean).join(' · ');
+      rHtml += `<div class="resumo-card" onclick="switchCliViewTab('aval')">
+        <div class="resumo-card-label">Última avaliação</div>
+        <div class="resumo-card-val">${metaLine||'—'}</div>
+        <div class="resumo-card-sub">${dt} · ${lv.modality||'presencial'}</div>
+      </div>`;
+    }
+    rHtml += '</div>';
+    resumoEl.innerHTML = rHtml;
+  }
   const aHtml = anams.length ? anams.map(a=>{
     const st=a.status||'nova';
     return `<div class="cpv-record">

@@ -894,9 +894,33 @@ function mod1(){
     ${navHTML(false)}
   </div>`;
 }
+function showChoice(msg, onSim, onNao){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;display:flex;align-items:flex-end;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0)';
+  ov.innerHTML=`<div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 28px;width:100%;max-width:480px">
+    <div style="font-size:15px;font-weight:600;color:#1a1814;margin-bottom:20px;line-height:1.4">${msg}</div>
+    <div style="display:flex;gap:10px">
+      <button id="_chNo"  style="flex:1;padding:13px;background:#f4f2ed;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:#7a7668;cursor:pointer">Não</button>
+      <button id="_chSim" style="flex:1;padding:13px;background:#6b7a42;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:#fff;cursor:pointer">Sim</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#_chSim').onclick=()=>{ ov.remove(); onSim(); };
+  ov.querySelector('#_chNo').onclick=()=>{ ov.remove(); if(onNao) onNao(); };
+  ov.onclick=e=>{ if(e.target===ov){ ov.remove(); if(onNao) onNao(); } };
+}
+
 function setSex(s){
   D.patient_sex = s; saveLS();
   document.querySelectorAll('.sex-chip').forEach(el=>el.classList.toggle('sel', el.textContent.startsWith(s==='M'?'Masc':'Fem')));
+  if(s==='F' && D.protocolo_dobras==='jp7'){
+    showChoice('Ajustar protocolo de dobras para JP3 Feminino?',
+      ()=>{ D.protocolo_dobras='jp3f'; saveLS(); showToast('Protocolo ajustado: JP3 Feminino'); }
+    );
+  } else if(s==='M' && D.protocolo_dobras==='jp3f'){
+    D.protocolo_dobras='jp7'; saveLS();
+    showToast('Protocolo ajustado: JP7 Dobras');
+  }
   calcDobras(); calcVO2();
 }
 
