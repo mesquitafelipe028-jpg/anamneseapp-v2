@@ -567,16 +567,19 @@ function _showDobrasResult(box, pct, soma, dens, extra, invalidDens, nFilled){
 
 function calcDobras(){
   saveCurrentFields();
-  const box=document.getElementById('dobrasBox');
+  const proto=D.protocolo_dobras||'jp7';
+  // Usa box específico do protocolo (dentro do seu container) com fallback ao genérico
+  const box=document.getElementById('dobrasBox_'+proto)||document.getElementById('dobrasBox');
   if(!box) return;
   if(!D.patient_sex){ box.style.display='none'; return; }
   const sex=D.patient_sex||''; const age=calcAge()||30;
-  const proto=D.protocolo_dobras||'jp7';
   const showMsg=msg=>{ box.className='result-warn'; box.innerHTML=msg; box.style.display='block'; };
   const mm=k=>{
-    const el=document.getElementById('sf_'+k);
-    const v=el?parseFloat(el.value):parseFloat(D[k+'_mm'])||0;
-    if(isNaN(v)||v<=0) return 0;
+    // Escopa ao container do protocolo ativo para evitar IDs duplicados entre protocolos
+    const el=document.querySelector('#pid_'+proto+' [data-f="'+k+'_mm"]')
+           ||document.querySelector('[data-f="'+k+'_mm"]');
+    const rawV=el&&el.value!==''?parseFloat(el.value):(parseFloat(D[k+'_mm'])||0);
+    const v=isNaN(rawV)||rawV<=0?0:rawV;
     if(v>80) console.warn('Dobra '+k+' = '+v+'mm parece alto. Valores típicos: 5-60mm');
     return v;
   };
