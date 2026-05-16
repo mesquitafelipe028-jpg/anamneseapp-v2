@@ -684,6 +684,7 @@ tr:hover td{background:var(--cream);}
         <div style="min-width:0;flex:1">
           <div class="home-link-label">Seu link de anamnese</div>
           <div class="home-link-url" id="shareLink">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Link genérico · Para link personalizado por cliente, vá em Clientes → perfil → <b>Enviar link anamnese</b></div>
         </div>
         <button class="btn-copy" onclick="copyLink()">Copiar</button>
       </div>
@@ -2275,7 +2276,14 @@ function renderViewFicha(params={}){
     </div>
     <div class="upload-err" id="uploadErr"></div>
   </div>
-  <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border);margin-bottom:24px">
+  <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border);margin-bottom:24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    ${(()=>{
+      const ptName=(row.patient_name||d.nome||'').replace(/'/g,"\\'");
+      if(row.client_id){
+        return `<button class="btn-new-ficha" onclick="navigateTo('nova-avaliacao',{clientId:'${row.client_id}',clientName:'${ptName}'})">💪 Iniciar avaliação física</button>`;
+      }
+      return `<button class="btn-new-ficha" onclick="navigateTo('nova-avaliacao',{clientName:'${ptName}'})">💪 Nova avaliação (sem vínculo)</button>`;
+    })()}
     <button class="btn-danger-logout" onclick="deleteAnamnese()">Excluir ficha</button>
   </div>
   </div>`;
