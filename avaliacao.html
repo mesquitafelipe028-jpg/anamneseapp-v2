@@ -1360,30 +1360,29 @@ function mod6(){
     {id:'fc_repouso',icon:'❤️', name:'FC de Repouso',       meta:'Apenas FC',           precision:'Baixa (estimativa)',tipo:'Rastreamento',badge:'badge-blue'},
   ];
 
-  const checkSVG=`<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 6 5 9 10 3"/></svg>`;
-
-  const list=PROTOS_V.map(pr=>`<div class="protocol-item${p===pr.id?' active':''}" id="piv_${pr.id}">
-    <div class="protocol-header" onclick="setVO2Proto('${pr.id}')">
-      <div class="protocol-icon">${pr.icon}</div>
-      <div class="protocol-info">
-        <div class="protocol-name">${pr.name}</div>
-        <div class="protocol-meta"><span class="protocol-badge ${pr.badge}">${pr.precision}</span><span>${pr.tipo}</span></div>
-      </div>
-      <div class="protocol-right">
-        <button class="btn-info" onclick="showProtocolInfo('vo2','${pr.id}');event.stopPropagation()">ℹ</button>
-        <div class="protocol-check">${p===pr.id?checkSVG:''}</div>
-      </div>
-    </div>
-    <div class="protocol-fields">${fields[pr.id]||''}</div>
-  </div>`).join('');
-
   const gestWarn = D._gestante ? `<div class="result-warn" style="margin-bottom:14px">⚠️ <b>Gestante:</b> Testes máximos de VO2 são contraindicados. Avalie com protocolo submáximo supervisionado.</div>` : '';
+  const activeProto=PROTOS_V.find(pr=>pr.id===p);
+  const fieldsHtml=fields[p]||'';
+  const cards=PROTOS_V.map(pr=>`<div style="position:relative">
+    <button class="proto-card${p===pr.id?' active':''}" style="padding-bottom:20px;width:100%" onclick="setVO2Proto('${pr.id}')">
+      <div class="proto-card-name">${pr.icon} ${pr.name}</div>
+      <div class="proto-card-meta">${pr.meta}</div>
+      <span class="proto-card-badge ${pr.badge}">${pr.precision}</span>
+    </button>
+    <button class="btn-info" style="position:absolute;top:8px;right:8px;width:26px;height:26px;min-height:26px;font-size:12px;border-radius:50%" onclick="showProtocolInfo('vo2','${pr.id}')" title="Instruções do protocolo">ℹ</button>
+  </div>`).join('');
   return `<div class="av-card">
     <div class="av-card-title${relevCls(['condicionamento','resistência','cardio','aeróbico','aerobico'])}">VO2 Máximo</div>
     <div class="av-card-sub">Selecione o protocolo de teste</div>
     ${gestWarn}
-    <div class="protocol-list">${list}</div>
-    <div class="result-box" id="vo2Box" style="display:none;margin-top:14px"></div>
+    <div style="font-family:'Instrument Serif',serif;font-size:20px;font-weight:400;color:var(--ink);margin:16px 0 6px">Selecione o Protocolo</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Clique para selecionar. Toque em ℹ para ver instruções detalhadas.</div>
+    <div class="proto-grid">${cards}</div>
+    ${fieldsHtml?`<div class="proto-fields-area">
+      <div class="proto-fields-title">${activeProto?activeProto.name+' — '+activeProto.meta:p}</div>
+      ${fieldsHtml}
+      <div id="vo2Box" class="result-box" style="display:none;margin-top:10px"></div>
+    </div>`:''}
     ${navHTML(true)}
   </div>`;
 }
