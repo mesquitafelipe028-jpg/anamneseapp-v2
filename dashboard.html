@@ -1370,7 +1370,7 @@ async function renderViewCliente(params={}){
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Enviar link anamnese
       </button>
       <button class="btn-new-ficha" onclick="navigateTo('nova-avaliacao',{clientId:'${clientId}',clientName:'${esc(client.name).replace(/'/g,"\\'")}' })">+ Nova avaliação</button>
-      <button class="btn-view" onclick="generatePortalToken('${clientId}')">🔗 Portal do cliente</button>
+      <button class="btn-view" id="btnPortal_${clientId}" onclick="generatePortalToken('${clientId}')">🔗 Portal do cliente</button>
     </div>
     <div class="evolution-section">
       <h3>Evolução</h3>
@@ -1775,17 +1775,53 @@ async function generateClientReport(clientId){
 // ── PORTAL DO CLIENTE ────────────────────────────────────────────
 async function generatePortalToken(clientId){
   if(!profId){ showToast('Profissional não carregado.'); return; }
+  // Feedback visual no botão
+  const btnEl = document.getElementById('btnPortal_'+clientId);
+  if(btnEl){ btnEl.textContent='⏳ Gerando…'; btnEl.disabled=true; }
+  const _resetBtn = ()=>{ if(btnEl){ btnEl.textContent='🔗 Portal do cliente'; btnEl.disabled=false; } };
+  // Abre janela ANTES do await para não ser bloqueada por popup blocker
+  const isMob = window.innerWidth < 900;
+  let win = null;
+  if(!isMob){
+    win = window.open('', '_blank');
+    if(win){
+      win.document.write(`<style>*{margin:0;box-sizing:border-box}body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f7f5f0;font-family:'DM Sans',sans-serif;color:#9a9588;flex-direction:column;gap:12px}</style><div style="font-family:serif;font-style:italic;font-size:22px;color:#6b7a42">AnamneseApp</div><div>Gerando portal…</div>`);
+      win.document.close();
+    }
+  }
   const token = crypto.randomUUID();
-  const expires = new Date(Date.now() + 90*24*60*60*1000).toISOString(); // 90 dias
+  const expires = new Date(Date.now() + 90*24*60*60*1000).toISOString();
   const {error} = await sb.from('clients')
     .update({portal_token: token, portal_token_expires_at: expires})
     .eq('id', clientId);
-  if(error){ showToast('Erro ao gerar token: '+error.message); return; }
+  if(error){
+    win?.close(); _resetBtn();
+    showToast('Erro ao gerar token: '+error.message);
+    return;
+  }
   const link = `${location.origin}/portal?client_id=${clientId}&token=${token}`;
-  await navigator.clipboard.writeText(link);
-  showToast('Link do portal copiado! Válido por 90 dias.');
   const cli = allClients.find(c=>c.id===clientId);
   if(cli){ cli.portal_token=token; cli.portal_token_expires_at=expires; }
+  if(win){
+    // Desktop: navega na janela já aberta
+    win.location.href = link;
+  } else {
+    // Mobile: tenta share nativo, fallback para clipboard
+    _resetBtn();
+    if(navigator.share){
+      try{
+        await navigator.share({ title:'Portal AnamneseApp', url: link });
+      } catch(e){ /* cancelou */ }
+    } else {
+      try{ await navigator.clipboard.writeText(link); } catch(e){}
+      showToast('Link copiado! Compartilhe com o cliente.');
+    }
+    return;
+  }
+  // Desktop: tenta copiar link também
+  _resetBtn();
+  try{ await navigator.clipboard.writeText(link); } catch(e){}
+  showToast('Portal aberto! Link copiado.');
 }
 
 // ── GRÁFICO DE EVOLUÇÃO ───────────────────────────────────────────
