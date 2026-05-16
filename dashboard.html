@@ -2395,7 +2395,8 @@ async function createAvalFromView(){
     return;
   }
   const returnPart = (_newAvalReturnToClient && _newAvalClientId) ? `&return_to=cliente&return_id=${_newAvalClientId}` : '';
-  const url=`/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&professional_name=${encodeURIComponent(profData?.name||'')}&modality=${modality}${_newAvalClientId?'&client_id='+_newAvalClientId:''}${returnPart}`;
+  const _cli = _newAvalClientId ? allClients.find(c=>c.id===_newAvalClientId) : null;
+  const url=`/avaliacao?assessment_id=${data.id}&patient_name=${encodeURIComponent(nome)}&professional_id=${profId||''}&professional_name=${encodeURIComponent(profData?.name||'')}&modality=${modality}${_newAvalClientId?'&client_id='+_newAvalClientId:''}${_cli?.sex?'&client_sex='+_cli.sex:''}${_cli?.dob?'&client_dob='+encodeURIComponent(_cli.dob):''}${returnPart}`;
   window.location.href = url;
 }
 
@@ -3745,8 +3746,21 @@ function closeClientProfile(e){
 }
 
 function copyClientAnamneseLink(clientId){
-  const link=_anamLink('&client_id='+clientId);
-  navigator.clipboard.writeText(link).then(()=>showToast('Link copiado!'));
+  const client = allClients.find(c=>c.id===clientId);
+  if(!client){ showToast('Cliente não encontrado'); return; }
+  const p = new URLSearchParams({
+    pid: profId||'',
+    client_id: clientId,
+    client_name: client.name||'',
+    client_sex: client.sex||'',
+    client_dob: client.dob||'',
+    client_phone: client.phone||''
+  });
+  if(profData?.specialty && profData.specialty!=='personal'){
+    p.set('specialty', profData.specialty);
+  }
+  const link = window.location.origin+'/anamnese?'+p.toString();
+  navigator.clipboard.writeText(link).then(()=>showToast('Link personalizado copiado!'));
 }
 
 function createAvalForClient(clientId, clientName){

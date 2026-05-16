@@ -507,10 +507,14 @@ const sb = (_SBU && _SBA && _SBU !== 'COLE_SUA_URL_AQUI')
 let mode=null,step=0,data={},chips={},toggles={},scales={},alunoFone='';
 let _pendingDraft=null;
 let _SOc=null,_SPc=null; // versões customizadas pelo profissional
-const _pid=new URLSearchParams(window.location.search).get('pid')||null;
-const _clientId=new URLSearchParams(window.location.search).get('client_id')||null;
-const _specialty=new URLSearchParams(window.location.search).get('specialty')||'personal';
-let _clientName=null;
+const params = new URLSearchParams(window.location.search);
+const _pid       = params.get('pid')        || null;
+const _clientId  = params.get('client_id')  || null;
+const _specialty = params.get('specialty')  || 'personal';
+let _clientName  = params.get('client_name')  || null;
+const _clientSex   = params.get('client_sex')   || null;
+const _clientDob   = params.get('client_dob')   || null;
+const _clientPhone = params.get('client_phone') || null;
 const ss=()=>{const sb=SPECIALTY_BLOCKS[_specialty];if(sb)return sb;return mode==='online'?(_SOc||SO):(_SPc||SP);};
 const io=()=>mode==='online';
 const c=()=>io()?'o':'p';
@@ -600,6 +604,10 @@ async function startForm(m){
   document.getElementById('fhMode').textContent=io()?'Consultoria Online':'Atendimento Presencial';
   document.getElementById('fbody').className='fbody '+(io()?'online-form':'presencial-form');
   await loadAndApplyConfig(m);
+  if(_clientName)  { data.nome = data.nome || _clientName; }
+  if(_clientSex)   { const sexMap={'M':'Masculino','F':'Feminino'}; data.sexo = data.sexo || (sexMap[_clientSex]||_clientSex); }
+  if(_clientDob)   { data.nasc = data.nasc || _clientDob; }
+  if(_clientPhone) { alunoFone = alunoFone||_clientPhone; const fi=document.getElementById('alunoFone'); if(fi) fi.value=alunoFone; }
   const _draft=loadLocal(m);
   if(_draft){_pendingDraft=_draft;render();showDraftBanner();}
   else{render();}
@@ -711,8 +719,10 @@ function confirmSend(){
       professional_id: pid,
       client_id:       _clientId || null,
       mode: mode,
-      patient_name:  data['nome']  || null,
-      patient_phone: alunoFone || data['fone'] || null,
+      patient_name:  data.nome  || _clientName  || null,
+      patient_phone: alunoFone  || _clientPhone || null,
+      patient_dob:   data.nasc  || _clientDob   || null,
+      patient_sex:   _clientSex || null,
       data: data
     }).then(({error})=>{
       if(error){ console.warn('Supabase save error:', error.message); return; }
@@ -1614,24 +1624,25 @@ async function loadProfBadge(){
     if(!el)return;
     const specName=SPECIALTY_NAMES[_specialty]||SPECIALTY_NAMES[prof.specialty]||prof.specialty||'Personal Trainer';
     const badgeTag=_specialty==='psico'?'Seu Psicólogo(a)':_specialty==='nutri'?'Sua Nutricionista':_specialty==='fisio'?'Sua Fisioterapeuta':_specialty==='estetica'?'Sua Esteticista':_specialty==='pilates'?'Seu Professor(a) de Pilates':'Seu Personal';
-    el.innerHTML=`<div class="prof-badge-tag">${badgeTag}</div>
-      <div class="prof-badge-name">${prof.name||''}</div>
-      <div class="prof-badge-spec">${specName}</div>`;
-    el.style.display='block';
-    if(prof.name) document.title=`Anamnese — ${prof.name}`;
-    // Pré-preenche dados do cliente se veio de link personalizado
     if(cliRes.data){
       const cli=cliRes.data;
-      _clientName=cli.name||null;
-      if(cli.phone){
+      if(cli.name) _clientName=cli.name;
+      if(cli.phone && !_clientPhone){
         alunoFone=cli.phone;
         const fi=document.getElementById('alunoFone');
         if(fi) fi.value=cli.phone;
       }
     }
+    el.innerHTML=`<div class="prof-badge-tag">${badgeTag}</div>
+      <div class="prof-badge-name">${prof.name||''}</div>
+      <div class="prof-badge-spec">${specName}</div>
+      ${_clientName?`<div style="font-size:12px;color:#6b7a42;margin-top:6px">Formulário para: <strong>${_clientName}</strong></div>`:''}`;
+    el.style.display='block';
+    if(prof.name) document.title=`Anamnese — ${prof.name}`;
   }catch(e){console.warn('[loadProfBadge]',e);}
 }
 if(_pid) loadProfBadge();
+if(_clientPhone){ alunoFone=_clientPhone; const fi=document.getElementById('alunoFone'); if(fi) fi.value=_clientPhone; }
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>

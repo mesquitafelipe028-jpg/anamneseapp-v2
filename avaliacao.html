@@ -328,6 +328,8 @@ const _modality    = params.get('modality')         || 'presencial';
 const _clientId    = params.get('client_id')        || null;
 const _returnTo    = params.get('return_to')        || null;
 const _returnId    = params.get('return_id')        || null;
+const _clientSex   = params.get('client_sex')       || null;
+const _clientDob   = params.get('client_dob')       || null;
 
 function _goBackFromAval(){
   if(_returnTo === 'cliente' && _returnId){
@@ -2040,6 +2042,8 @@ function closeInstrSheet(){
 
 // ── INIT ──────────────────────────────────────────────────────
 loadLS();
+if(_clientSex && !D.patient_sex) D.patient_sex = _clientSex;
+if(_clientDob && !D.patient_dob) D.patient_dob = _clientDob;
 render();
 if(_asmId && sb) loadExistingData();
 else if(_clientId && sb) prefillFromAnamnese();
