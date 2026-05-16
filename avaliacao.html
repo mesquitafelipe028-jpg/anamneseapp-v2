@@ -621,7 +621,10 @@ function calcVO2(){
   } else if(proto==='harvard'){
     const fc1=parseFloat(D.harvard_fc1)||0,fc2=parseFloat(D.harvard_fc2)||0,fc3=parseFloat(D.harvard_fc3)||0;
     if(fc1>0&&fc2>0&&fc3>0){
-      const idx=(300*100)/(2*(fc1+fc2+fc3));
+      // Fórmula: PFI = (300s × 100) / (fc1+fc2+fc3)
+      // fc em bpm → conta 30s = bpm/2; denominador original usa counts de 30s × 2
+      // Simplificado: 30000 / (fc1+fc2+fc3) quando fc em bpm
+      const idx=30000/(fc1+fc2+fc3);
       const cls=idx<55?'Fraco':idx<65?'Regular':idx<80?'Médio':idx<90?'Bom':'Excelente';
       box.className='result-box'; box.style.display='flex';
       box.innerHTML=`<span class="result-label">Índice Harvard</span><div><div class="result-val">${idx.toFixed(0)}</div><div class="result-class">${cls}</div></div>`;
@@ -636,21 +639,30 @@ function calcVO2(){
     }
   } else if(proto==='astrand'){
     const carga=parseFloat(D.astrand_carga),fc=parseFloat(D.astrand_fc);
-    if(carga>0&&fc>0){
-      const fSex=sex==='M'?1.0:0.7;
-      vo2=((carga*0.0141+0.435)/fc)*fSex*1000/parseFloat(D.peso_kg||70);
-      // Fator de correção por idade Astrand
-      const corr=[[15,1.10],[25,1.00],[35,0.87],[40,0.83],[45,0.78],[50,0.75],[55,0.71],[60,0.68],[65,0.65]];
-      const fc2=corr.reduce((b,r)=>age>=r[0]?r:b,corr[0])[1];
-      vo2*=fc2; extra='(fator correção idade: '+fc2+')';
+    const peso=parseFloat(D.peso_kg)||70;
+    if(carga>0&&fc>0&&peso>0){
+      // VO2 durante o exercício (ACSM ergometria): ml/kg/min
+      const vo2sub=(carga*10.8/peso)+7;
+      // Extrapolação para VO2max — Åstrand-Rhyming (HRmax Tanaka: 208-0.7×age)
+      const hrMax=Math.round(208-0.7*age);
+      const vo2maxRaw=vo2sub*(hrMax/fc);
+      // Fator de correção por idade (tabela Åstrand)
+      const corrT=[[15,1.10],[25,1.00],[35,0.87],[40,0.83],[45,0.78],[50,0.75],[55,0.71],[60,0.68],[65,0.65]];
+      const corr=corrT.reduce((b,r)=>age>=r[0]?r:b,corrT[0])[1];
+      vo2=vo2maxRaw*corr;
+      extra='(HRmax est.: '+hrMax+' bpm · cor. idade: '+corr+')';
     }
   } else if(proto==='yoyo'){
     const nivel=parseInt(D.yoyo_nivel)||1,estagio=parseInt(D.yoyo_estagio)||0;
     if(estagio>0){
-      // Yoyo nível 1: distância ≈ estagio * 40m (simplificado); nível 2 idem
-      const dist=estagio*40;
+      // Distâncias acumuladas por estágio (Bangsbo, 2008) — Nível 1
+      const YY1=[0,40,80,120,160,200,240,280,320,400,480,560,640,760,880,1000,1160,1320,1560,1800,2040,2280,2560,2840];
+      // Nível 2 (começa mais rápido)
+      const YY2=[0,80,160,240,320,400,480,560,680,800,960,1120,1320,1560,1800,2080,2400,2760,3160,3600,4080];
+      const tbl=nivel===1?YY1:YY2;
+      const dist=tbl[estagio]||(estagio*(nivel===1?40:80));
       vo2=nivel===1?dist*0.0084+36.4:dist*0.0136+45.3;
-      extra='Nível '+nivel+' · Estágio '+estagio;
+      extra='Nível '+nivel+' · Estágio '+estagio+' · '+dist+'m';
     }
   } else if(proto==='ukk'){
     const tMin=parseFloat(D.ukk_tempo_min)||0,tSec=parseFloat(D.ukk_tempo_sec)||0;
