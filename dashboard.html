@@ -717,7 +717,7 @@ tr:hover td{background:var(--cream);}
         <div style="min-width:0;flex:1">
           <div class="home-link-label">Seu link de anamnese</div>
           <div class="home-link-url" id="shareLink">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">Link genérico · Para link personalizado por cliente, vá em Clientes → perfil → <b>Enviar link anamnese</b></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Para vincular ao cliente use <b>Enviar link</b> no perfil do cliente.</div>
         </div>
         <button class="btn-copy" onclick="copyLink()">Copiar</button>
       </div>
@@ -2360,6 +2360,10 @@ function renderViewFicha(params={}){
     <button class="btn-danger-logout" onclick="deleteAnamnese()">Excluir ficha</button>
   </div>
   </div>`;
+  if(row.client_id){
+    const _ptn=(row.patient_name||d.nome||'').replace(/'/g,"\\'");
+    html+=_vFooter(`<button class="btn-save-profile" onclick="navigateTo('nova-avaliacao',{clientId:'${row.client_id}',clientName:'${_ptn}'})">Iniciar avaliação física</button>`);
+  }
   vc.innerHTML = html;
 }
 

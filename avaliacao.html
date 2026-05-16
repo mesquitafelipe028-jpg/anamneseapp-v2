@@ -503,13 +503,7 @@ function calcIMC(){
 
 // ── DOBRAS ───────────────────────────────────────────────────
 // Validação: Homem 30 anos JP7 soma=80mm → esperado ~12-14% | Mulher 25 anos JP7 soma=90mm → esperado ~25-27%
-function _siri(d, sex){
-  const raw=(495/d)-450;
-  // Limites fisiológicos ACSM: homem mín 3%, mulher mín 10%, máx 50%
-  const floor=(sex==='F')?10:3;
-  if(raw<floor||raw>50) return null; // resultado fisiologicamente inválido
-  return raw;
-}
+function _siri(d,sex){ const r=(495/d)-450; const floor=sex==='F'?10:3; if(r<floor||r>50) return null; return r; }
 function _classGordura(pct, sex){
   // Classificação ACSM (2018)
   if(sex==='M'){
@@ -532,9 +526,7 @@ function _showDobrasResult(box, pct, soma, dens, extra, invalidDens){
   if(pct==null){
     if(soma&&soma>0){
       box.className='result-warn';
-      box.innerHTML=`⚠️ Resultado fora do intervalo fisiológico. Verifique os valores inseridos.<br>
-        Certifique-se que as dobras estão em <strong>milímetros</strong> (ex: 12.5, não 1.25).
-        ${invalidDens!=null?`<br><span style="font-size:11px;opacity:.8">Densidade calculada: ${invalidDens.toFixed(5)}</span>`:''}`;
+      box.innerHTML=`⚠️ Resultado fora do intervalo fisiológico, verifique se valores estão em mm.${invalidDens!=null?`<br><span style="font-size:11px;opacity:.8">Densidade calculada: ${invalidDens.toFixed(5)}</span>`:''}`;
       box.style.display='block';
     } else { box.style.display='none'; }
     return;
@@ -567,6 +559,7 @@ function calcDobras(){
   saveCurrentFields();
   const box=document.getElementById('dobrasBox');
   if(!box) return;
+  if(!D.patient_sex){ box.style.display='none'; return; }
   const sex=D.patient_sex||''; const age=calcAge()||30;
   const proto=D.protocolo_dobras||'jp7';
   // Validação de entrada: dobras válidas entre 3mm e 80mm
@@ -657,7 +650,7 @@ function calcDobras(){
 
 // ── VO2 ──────────────────────────────────────────────────────
 function classifyVO2(vo2){
-  const sex=D.patient_sex==='F'?'F':'M'; const age=calcAge()||25;
+  const sex=D.patient_sex||''; const age=calcAge()||25;
   const M=[[20,55.9,51.0,45.2,38.4,35.0],[30,54.0,48.7,43.0,35.7,30.2],[40,52.5,46.1,39.9,35.1,29.1],[50,48.9,43.1,36.5,30.2,25.1],[60,45.7,39.5,32.3,26.1,20.5]];
   const F=[[20,49.7,43.9,36.1,32.3,26.5],[30,47.4,42.4,35.7,29.5,23.4],[40,45.3,39.7,34.3,28.9,22.8],[50,41.1,36.7,31.1,25.5,18.0],[60,37.8,33.0,28.0,23.9,16.5]];
   const tbl=sex==='F'?F:M; const row=tbl.reduce((b,r)=>age>=r[0]?r:b,tbl[0]);
@@ -668,6 +661,7 @@ function calcVO2(){
   saveCurrentFields();
   const box=document.getElementById('vo2Box');
   if(!box) return;
+  if(!D.patient_sex){ box.style.display='none'; return; }
   const proto=D.protocolo_vo2||'cooper';
   const sex=D.patient_sex||''; const age=calcAge()||25;
   let vo2=null, label='VO2 Máx Estimado', extra='';
@@ -875,6 +869,7 @@ function mod1(){
         <div class="sex-chip${D.patient_sex==='M'?' sel':''}" onclick="setSex('M')">Masculino</div>
         <div class="sex-chip${D.patient_sex==='F'?' sel':''}" onclick="setSex('F')">Feminino</div>
       </div>
+      ${sexMissing?'<div style="font-size:12px;color:#c0392b;margin-top:6px">Selecione o sexo para cálculos precisos.</div>':''}
     </div>
     <div class="field"><label>Data de nascimento</label><input type="date" data-f="patient_dob"></div>
     <div class="grid2">
@@ -891,6 +886,13 @@ function mod1(){
       <div class="field"><label>Água corporal (%)</label><input type="number" step="0.1" inputmode="decimal" placeholder="0.0" data-f="agua_corporal_pct"></div>
       <div class="field"><label>Metabolismo basal (kcal)</label><input type="number" inputmode="numeric" placeholder="0" data-f="metabolismo_basal"></div>
     </div>
+    ${D._has_restricoes?(()=>{
+      const rows=[];
+      if(D._diag)    rows.push(`<div class="clinic-row clinic-warn"><b>Diagnóstico</b> ${D._diag}</div>`);
+      if(D._lesoes)  rows.push(`<div class="clinic-row clinic-warn"><b>Lesões / restrições</b> ${D._lesoes}</div>`);
+      if(D._meds)    rows.push(`<div class="clinic-row"><b>Medicações</b> ${D._meds}</div>`);
+      return rows.length?`<div class="clinic-info-card" style="margin-top:14px"><div class="clinic-info-title">Dados clínicos</div>${rows.join('')}</div>`:'';
+    })():''}
     ${navHTML(false)}
   </div>`;
 }
@@ -1799,6 +1801,9 @@ async function prefillFromAnamnese(){
     if(ad.gestante) D._gestante = ad.gestante;
     if(ad.obj)      D._objetivo  = ad.obj;
     if(ad.nivel)    D._nivel     = ad.nivel;
+    if(ad.lesoes) D._lesoes = ad.lesoes;
+    if(ad.meds)   D._meds   = ad.meds;
+    if(ad.diag)   D._diag   = ad.diag;
     if(ad.lesoes || ad.meds || ad.diag) D._has_restricoes = true;
     initDefaultsBySex();
     saveLS();
