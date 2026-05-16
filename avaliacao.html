@@ -452,7 +452,7 @@ function onFieldChange(k){
 }
 
 const _DOBRAS_FIELDS=['triceps_mm','subescapular_mm','peitoral_mm','axilar_mm','suprailiaca_mm','abdominal_mm','coxa_mm',
-  'biceps_mm','panturrilha_mm','biceps_mm',
+  'biceps_mm','panturrilha_mm',
   'bio_pct_gordura','bio_massa_gorda','bio_massa_magra','bio_agua','bio_metabolismo'];
 const _VO2_FIELDS=['cooper_distancia','rockport_tempo_min','rockport_tempo_sec','rockport_fc',
   'harvard_fc1','harvard_fc2','harvard_fc3','balke_distancia','bruce_tempo',
@@ -570,7 +570,8 @@ function calcDobras(){
     } else {
       const h=parseFloat(D.altura_cm)||170;
       const v=[mm('triceps'),mm('suprailiaca'),mm('abdominal'),mm('panturrilha')]; soma=v.reduce((a,b)=>a+b,0);
-      if(soma>0){ dens=1.0954-(0.0004699*soma)+(0.0000003*soma*soma)-(0.0001505*h); pct=_siri(dens); }
+      // Petroski (1995) Equação I Feminino: coeficiente S4² = 0.0000030 (3×10⁻⁶)
+      if(soma>0){ dens=1.0954-(0.0004699*soma)+(0.0000030*soma*soma)-(0.0001505*h); pct=_siri(dens); }
     }
     extra='Petroski '+peq;
   } else if(proto==='slaughter'){
