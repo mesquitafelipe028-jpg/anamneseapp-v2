@@ -658,9 +658,7 @@ tr:hover td{background:var(--cream);}
   <div class="sidebar-menu">
     <button class="nav-item active" id="navHome"      onclick="setSection('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
     <button class="nav-item"        id="navClientes"  onclick="setSection('clientes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</button>
-    <button class="nav-item"        id="navFichas"    onclick="setSection('fichas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Fichas</button>
     <button class="nav-item"        id="navAvaliacoes" onclick="setSection('avaliacoes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Avaliações</button>
-    <button class="nav-item"        id="navFormulario" onclick="setSection('formulario')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Formulário</button>
     <button class="nav-item"        id="navConfig"    onclick="setSection('config')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</button>
   </div>
   <div class="sidebar-footer">
@@ -681,46 +679,8 @@ tr:hover td{background:var(--cream);}
   <!-- HOME -->
   <div class="section-pane active" id="pane-home">
     <div class="dash-inner">
-      <div id="homeAlertBanner" class="home-alert" style="display:none">
-        <span class="home-alert-text" id="homeAlertText"></span>
-        <button class="btn-home-alert" onclick="setSection('fichas')">Ver fichas</button>
-      </div>
       <div class="home-greeting" id="homeGreeting">Olá!</div>
       <div class="home-date"     id="homeDate"></div>
-      <div class="home-cards" style="margin-bottom:20px">
-        <button class="home-action-card ac-olive" onclick="copyLink()">
-          <div class="home-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
-          <div class="home-action-title">Link de anamnese</div>
-          <div class="home-action-sub">Copiar link</div>
-        </button>
-        <button class="home-action-card ac-gold" onclick="openNewAval()">
-          <div class="home-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-          <div class="home-action-title">Nova avaliação</div>
-          <div class="home-action-sub">Criar avaliação</div>
-        </button>
-        <button class="home-action-card ac-blue" onclick="openNewClient()">
-          <div class="home-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
-          <div class="home-action-title">Novo cliente</div>
-          <div class="home-action-sub">Cadastrar cliente</div>
-        </button>
-        <button class="home-action-card ac-gray" onclick="setSection('fichas')">
-          <div class="home-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-          <div class="home-action-title">Ver fichas</div>
-          <div class="home-action-sub">Gerenciar fichas</div>
-        </button>
-      </div>
-      <button class="consulta-guiada-btn" onclick="openConsultaGuiada()">
-        <span>🔍 Consulta guiada</span>
-        <span class="consulta-guiada-sub">Cliente → Anamnese → Avaliação → Relatório</span>
-      </button>
-      <div class="home-link-card">
-        <div style="min-width:0;flex:1">
-          <div class="home-link-label">Seu link de anamnese</div>
-          <div class="home-link-url" id="shareLink">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">Para vincular ao cliente use <b>Enviar link</b> no perfil do cliente.</div>
-        </div>
-        <button class="btn-copy" onclick="copyLink()">Copiar</button>
-      </div>
       <div id="homeAlertsSection" style="display:none"></div>
       <div class="section-hd" style="margin-top:24px">
         <h2>Atividade recente</h2>
@@ -733,14 +693,14 @@ tr:hover td{background:var(--cream);}
   <div class="section-pane" id="pane-fichas">
     <div class="dash-inner">
       <div class="stats-row">
-        <div class="stat-card highlight"><div class="stat-val" id="statTotal">—</div><div class="stat-lbl">Total de fichas</div></div>
+        <div class="stat-card highlight"><div class="stat-val" id="statTotal">—</div><div class="stat-lbl">Total de anamneses</div></div>
         <div class="stat-card"><div class="stat-val" id="statOnline">—</div><div class="stat-lbl">Online</div></div>
         <div class="stat-card"><div class="stat-val" id="statPresencial">—</div><div class="stat-lbl">Presencial</div></div>
         <div class="stat-card"><div class="stat-val" id="statWeek">—</div><div class="stat-lbl">Esta semana</div></div>
       </div>
       <div class="section-hd">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <h2>Fichas recebidas</h2>
+          <h2>Anamneses recebidas</h2>
           <div class="filter-btns">
             <button class="filter-btn active" id="fAll"        onclick="setFilter('all')">Todas</button>
             <button class="filter-btn"        id="fOnline"     onclick="setFilter('online')">Online</button>
@@ -748,7 +708,7 @@ tr:hover td{background:var(--cream);}
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="btn-new-ficha" onclick="openNew()">+ Nova ficha</button>
+          <button class="btn-new-ficha" onclick="openNew()">+ Nova anamnese</button>
           <input class="search-input" id="searchInput" placeholder="Buscar paciente…" oninput="applyFilters()">
           <button class="btn-refresh" id="btnRefresh" onclick="refreshData()" title="Atualizar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
@@ -761,7 +721,7 @@ tr:hover td{background:var(--cream);}
         <button class="filter-btn"        id="fsLida"      onclick="setStatusFilter('lida')">Lida</button>
         <button class="filter-btn"        id="fsArquivada" onclick="setStatusFilter('arquivada')">Arquivada</button>
       </div>
-      <div class="table-wrap"><div id="tableContent"><div class="spinner-wrap"><div class="spin"></div>Carregando fichas…</div></div></div>
+      <div class="table-wrap"><div id="tableContent"><div class="spinner-wrap"><div class="spin"></div>Carregando anamneses…</div></div></div>
     </div>
   </div>
 
@@ -878,6 +838,18 @@ tr:hover td{background:var(--cream);}
       </div>
 
       <div class="config-group">
+        <div class="config-group-title">Meu link de anamnese</div>
+        <div class="config-card">
+          <div id="shareLink" style="font-size:13px;color:var(--ink);word-break:break-all;margin-bottom:8px">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Para vincular ao cliente use <b>Enviar link</b> no perfil do cliente.</div>
+          <button class="btn-export" id="btnCopyLink" onclick="copyLink()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Copiar link
+          </button>
+        </div>
+      </div>
+
+      <div class="config-group">
         <div class="config-group-title">Exportar dados</div>
         <div class="export-grid">
           <div class="export-card">
@@ -913,6 +885,8 @@ tr:hover td{background:var(--cream);}
       <div class="config-group">
         <div class="config-group-title">Conta</div>
         <div class="config-card">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Email</div>
+          <div id="cfgEmail" style="font-size:14px;color:var(--ink);margin-bottom:16px">—</div>
           <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Você será desconectado de todos os dispositivos.</div>
           <button class="btn-danger-logout" onclick="doLogout()">Sair da conta</button>
         </div>
@@ -934,10 +908,6 @@ tr:hover td{background:var(--cream);}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span>Clientes</span>
     </button>
-    <button class="bnav-item" id="bnavFichas"    onclick="setSection('fichas')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
-      <span>Fichas</span>
-    </button>
     <button class="bnav-item" id="bnavAvaliacoes" onclick="setSection('avaliacoes')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       <span>Avaliações</span>
@@ -952,7 +922,6 @@ tr:hover td{background:var(--cream);}
 <!-- FAB MOBILE -->
 <div class="fab-wrap" id="fabWrap">
   <div class="fab-menu" id="fabMenu">
-    <button class="fab-menu-btn" onclick="closeFab();openNew()">+ Nova ficha</button>
     <button class="fab-menu-btn" onclick="closeFab();openNewClient()">+ Novo cliente</button>
     <button class="fab-menu-btn" onclick="closeFab();openNewAval()">+ Nova avaliação</button>
   </div>
@@ -962,7 +931,7 @@ tr:hover td{background:var(--cream);}
 </div>
 
 <!-- TOAST -->
-<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg">Nova ficha!</span></div>
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg">Nova anamnese!</span></div>
 
 <!-- Modais removidos — substituídos por views (sistema navigateTo) -->
 
@@ -1069,8 +1038,10 @@ async function loadDashboard(){
   if(profData?.name) document.getElementById('sidebarProfName').textContent = profData.name;
   // shareLink com specialty
   const _specParam = profData?.specialty && profData.specialty !== 'personal' ? '&specialty='+profData.specialty : '';
-  document.getElementById('shareLink').textContent =
-    window.location.origin + '/anamnese?pid=' + (profId || '') + _specParam;
+  const _shareLinkVal = window.location.origin + '/anamnese?pid=' + (profId || '') + _specParam;
+  document.getElementById('shareLink').textContent = _shareLinkVal;
+  const cfgEmail = document.getElementById('cfgEmail');
+  if(cfgEmail) cfgEmail.textContent = user.email;
 
   if(profData){
     document.getElementById('pfName').value      = profData.name || '';
@@ -1363,7 +1334,7 @@ async function deleteAnamFromClient(anamId, clientId){
     allRows = allRows.filter(r=>r.id!==anamId);
     updateStats(allRows); applyFilters();
     renderViewCliente({id: clientId});
-    showToast('Ficha excluída.');
+    showToast('Anamnese excluída.');
   });
 }
 async function deleteGoal(goalId, clientId){
@@ -2281,7 +2252,7 @@ async function createFichaFromView(){
   const {data, error} = await sb.from('anamneses').insert(payload).select().single();
   if(error){ const msg='Erro: '+error.message; if(errEl){errEl.textContent=msg;errEl.style.display='block';} else showToast(msg); return; }
   allRows.unshift(data); updateStats(allRows); applyFilters();
-  showToast('Ficha criada!');
+  showToast('Anamnese criada!');
   navigateTo('ficha',{id:data.id});
 }
 
@@ -2853,7 +2824,7 @@ async function loadAnamneses(){
         filter:'professional_id=eq.'+profId}, payload=>{
         allRows.unshift(payload.new);
         updateStats(allRows); applyFilters();
-        showToast('Nova ficha: '+(payload.new.patient_name||'Paciente'));
+        showToast('Nova anamnese: '+(payload.new.patient_name||'Paciente'));
       })
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'anamneses',
         filter:'professional_id=eq.'+profId}, payload=>{
@@ -3392,7 +3363,7 @@ function deleteAnamnese(){
     if(error){ console.error('[deleteAnamnese]',error); showToast('Erro ao excluir: '+error.message); return; }
     allRows = allRows.filter(r=>r.id!==currentModalId);
     updateStats(allRows); applyFilters(); goBack();
-    showToast('Ficha excluída.');
+    showToast('Anamnese excluída.');
   });
 }
 
@@ -3440,7 +3411,7 @@ async function createFicha(){
   updateStats(allRows);
   applyFilters();
   closeNew();
-  showToast('Ficha criada!');
+  showToast('Anamnese criada!');
 }
 
 function closeNew(e){
@@ -3742,7 +3713,7 @@ async function openAnamneseFromClient(id){
     const {data} = await sb.from('anamneses').select('*').eq('id',id).maybeSingle();
     if(data){ allRows.push(data); row=data; }
   }
-  if(!row){ showToast('Ficha não encontrada.'); return; }
+  if(!row){ showToast('Anamnese não encontrada.'); return; }
   navigateTo('ficha',{id});
 }
 
@@ -3821,8 +3792,8 @@ async function loadHomeAlerts(){
     html += `<div class="atencao-item atencao-nova" onclick="setSection('fichas')">
       <div class="atencao-icon">📋</div>
       <div class="atencao-info">
-        <div class="atencao-title">${plural(fichasNovas.length,'ficha nova não lida','fichas novas não lidas')}</div>
-        <div class="atencao-sub">Toque para gerenciar fichas</div>
+        <div class="atencao-title">${plural(fichasNovas.length,'anamnese nova não lida','anamneses novas não lidas')}</div>
+        <div class="atencao-sub">Toque para ver anamneses</div>
       </div>
       <div class="atencao-chevron">›</div>
     </div>`;
@@ -3872,19 +3843,7 @@ function loadHomeSection(){
   }
   // Atenção necessária
   loadHomeAlerts();
-  // Alert banner: fichas com status nova
-  const novasFichas = allRows.filter(r=>r.status==='nova');
-  const banner = el('homeAlertBanner');
-  if(banner){
-    if(novasFichas.length > 0){
-      const txt = el('homeAlertText');
-      if(txt) txt.textContent = `${novasFichas.length} ${novasFichas.length===1?'ficha aguardando':'fichas aguardando'} análise`;
-      banner.style.display = 'flex';
-    } else {
-      banner.style.display = 'none';
-    }
-  }
-  // Activity feed (top 5 recent fichas)
+  // Activity feed (top 5 anamneses recentes)
   const rc = el('homeRecentContent');
   if(!rc) return;
   const recent = allRows.slice(0,5);
@@ -3957,9 +3916,8 @@ function _anamLink(extra=''){
 function copyLink(){
   const link=_anamLink();
   navigator.clipboard.writeText(link).then(()=>{
-    const btn=document.querySelector('.btn-copy');
-    btn.textContent='Copiado ✓';
-    setTimeout(()=>btn.textContent='Copiar',2000);
+    const btn=document.getElementById('btnCopyLink');
+    if(btn){ btn.textContent='Copiado ✓'; setTimeout(()=>btn.textContent='Copiar link',2000); }
   });
 }
 
@@ -3976,7 +3934,7 @@ function copyLink(){
         const params = Object.fromEntries(new URLSearchParams(location.search));
         delete params.view;
         _renderView(urlView, params);
-      } else if(hash && ['home','clientes','fichas','avaliacoes','formulario','config'].includes(hash)){
+      } else if(hash && ['home','clientes','avaliacoes','config','fichas','formulario'].includes(hash)){
         setSection(hash);
         if(hash==='avaliacoes'){ allAvals=[]; loadAvaliacoes(); }
         history.replaceState(null,'','/dashboard');
