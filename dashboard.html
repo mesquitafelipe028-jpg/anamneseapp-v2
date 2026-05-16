@@ -1151,6 +1151,7 @@ function _renderView(view, params={}){
     case 'cliente':        renderViewCliente(params); break;
     case 'nova-ficha':     renderViewNovaFicha(params); break;
     case 'ficha':          renderViewFicha(params); break;
+    case 'anamnese':       renderViewAnamnese(params); break;
     case 'nova-avaliacao': renderViewNovaAvaliacao(params); break;
     default: goBack();
   }
@@ -1447,14 +1448,23 @@ async function renderViewCliente(params={}){
   }
   const aHtml = anams.length ? anams.map(a=>{
     const st=a.status||'nova';
-    return `<div class="cpv-record">
-      <div class="cpv-record-info">
-        <div class="cpv-record-main">${esc(a.patient_name||client.name)}</div>
-        <div class="cpv-record-sub">${new Date(a.created_at).toLocaleDateString('pt-BR')} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></div>
+    const d=a.data||{};
+    const dt=new Date(a.created_at).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+    const obj=Array.isArray(d.obj)?d.obj.join(', '):(d.obj||'');
+    const nivel=d.nivel||'';
+    const resumo=[obj,nivel].filter(Boolean).join(' · ');
+    const cName=esc(client.name).replace(/'/g,"\\'");
+    return `<div class="cpv-record" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div>
+          <div class="cpv-record-main">${dt} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></div>
+          ${resumo?`<div class="cpv-record-sub" style="margin-top:4px">${esc(resumo)}</div>`:''}
+        </div>
+        <button class="btn-del" onclick="deleteAnamFromClient('${a.id}','${clientId}')" title="Excluir">🗑</button>
       </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn-view" onclick="navigateTo('ficha',{id:'${a.id}'})">Abrir</button>
-        <button class="btn-del" onclick="deleteAnamFromClient('${a.id}','${clientId}')" title="Excluir ficha">🗑</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn-view" onclick="navigateTo('anamnese',{id:'${a.id}',clientId:'${clientId}'})">Ver anamnese</button>
+        <button class="btn-new-ficha" style="font-size:11px;padding:6px 12px" onclick="_startAvalFromAnamnese('${a.id}','${clientId}','${cName}')">Iniciar avaliação física</button>
       </div>
     </div>`;
   }).join('')
@@ -2338,6 +2348,77 @@ function renderViewFicha(params={}){
   vc.innerHTML = html;
 }
 
+// ── VIEW: DETALHE DA ANAMNESE ─────────────────────────────────
+function renderViewAnamnese(params={}){
+  const anamId   = params.id;
+  const clientId = params.clientId||null;
+  const row = allRows.find(r=>r.id===anamId);
+  if(!row){ goBack(); return; }
+  currentModalId = anamId;
+  const d = row.data||{};
+  const dt = new Date(row.created_at).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+  const st = row.status||'nova';
+  const vc = document.getElementById('viewContainer');
+  const ptName = row.patient_name||d.nome||'Anamnese';
+  const entries = Object.entries(d).filter(([k,v])=>v&&v!=='—');
+  let body = '';
+  if(entries.length){
+    body += '<div class="modal-block"><div class="modal-block-title">Dados da anamnese</div>';
+    entries.forEach(([k,v])=>{
+      body += `<div class="modal-row"><span class="mk">${LABELS[k]||k}</span><span class="mv">${esc(String(v))}</span></div>`;
+    });
+    body += '</div>';
+  }
+  const cName = ptName.replace(/'/g,"\\'");
+  const footerBtns = [];
+  if(clientId){
+    footerBtns.push(`<button class="btn-save-profile" onclick="_startAvalFromAnamnese('${anamId}','${clientId}','${cName}')">Iniciar avaliação física</button>`);
+  }
+  footerBtns.push(`<button class="btn-logout" onclick="_markAnamLida('${anamId}','${clientId||''}')">Marcar como lida</button>`);
+  let html = _vHd(ptName);
+  html += `<div class="dash-inner" style="padding-bottom:90px">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${dt} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span> · ${row.mode==='online'?'Online':'Presencial'}</div>
+    ${body}
+    <div class="modal-block">
+      <div class="modal-block-title">Anotações internas</div>
+      <textarea class="notes-area" id="modalNotes" placeholder="Observações…">${esc(row.notes||'')}</textarea>
+      <button class="btn-save-notes" style="margin-top:10px" onclick="saveNotes()">Salvar nota</button>
+    </div>
+  </div>`;
+  html += _vFooter(...footerBtns);
+  vc.innerHTML = html;
+}
+function _startAvalFromAnamnese(anamId, clientId, clientName){
+  const row = allRows.find(r=>r.id===anamId);
+  if(row && clientId){
+    const d = row.data||{};
+    const pd = {
+      nome:   row.patient_name || d.nome   || null,
+      sexo:   d.sexo   || null,
+      nasc:   row.patient_dob  || d.nasc   || null,
+      lesoes: d.lesoes || null,
+      meds:   d.meds   || null,
+      diag:   d.diag   || null,
+      obj:    Array.isArray(d.obj)?d.obj.join(', '):(d.obj||null),
+      peso:   d.peso   || null,
+      altura: d.altura || null
+    };
+    try{ localStorage.setItem('anam_prefill_'+clientId, JSON.stringify(pd)); }catch(e){}
+  }
+  navigateTo('nova-avaliacao',{clientId, clientName});
+}
+async function _markAnamLida(anamId, clientId){
+  if(!sb||!anamId) return;
+  const {error} = await sb.from('anamneses').update({status:'lida'}).eq('id',anamId);
+  if(error){ showToast('Erro ao atualizar'); return; }
+  const idx = allRows.findIndex(r=>r.id===anamId);
+  if(idx>-1) allRows[idx].status='lida';
+  updateStats(allRows); applyFilters();
+  showToast('Marcada como lida');
+  if(clientId) navigateTo('cliente',{id:clientId});
+  else goBack();
+}
+
 // ── VIEW: NOVA AVALIAÇÃO ───────────────────────────────────────
 function renderViewNovaAvaliacao(params={}){
   const clientId = params.clientId||null;
@@ -2825,7 +2906,16 @@ async function loadAnamneses(){
         filter:'professional_id=eq.'+profId}, payload=>{
         allRows.unshift(payload.new);
         updateStats(allRows); applyFilters();
-        showToast('Nova anamnese: '+(payload.new.patient_name||'Paciente'));
+        if(payload.new.client_id){
+          const _rc = allClients.find(c=>c.id===payload.new.client_id);
+          if(_rc) _rc.total_anamneses = (_rc.total_anamneses||0) + 1;
+          const _cv = new URLSearchParams(window.location.search).get('view');
+          const _ci = new URLSearchParams(window.location.search).get('id');
+          if(_cv==='cliente' && _ci===payload.new.client_id) renderViewCliente({id:payload.new.client_id});
+          showToast('Nova anamnese de '+(payload.new.patient_name||'Paciente')+' — ver perfil');
+        } else {
+          showToast('Nova anamnese: '+(payload.new.patient_name||'Paciente'));
+        }
       })
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'anamneses',
         filter:'professional_id=eq.'+profId}, payload=>{

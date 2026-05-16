@@ -849,6 +849,14 @@ function prevMod(){ saveCurrentFields(); currentMod--; render(); }
 
 // ── MODULE 1 ─────────────────────────────────────────────────
 function mod1(){
+  // Aplica prefill da anamnese (campos _anam_*) na primeira vez em mod1
+  if(D._anam_sexo && !D.patient_sex){
+    const s = D._anam_sexo;
+    D.patient_sex = (s==='Masculino'||s==='M') ? 'M' : (s==='Feminino'||s==='F') ? 'F' : '';
+  }
+  if(D._anam_nasc   && !D.patient_dob) D.patient_dob   = D._anam_nasc;
+  if(D._anam_peso   && !D.peso_kg)     D.peso_kg        = D._anam_peso;
+  if(D._anam_altura && !D.altura_cm)   D.altura_cm      = D._anam_altura;
   const sexMissing = !D.patient_sex;
   const clinicCard = (()=>{
     const rows=[];
@@ -2044,6 +2052,26 @@ function closeInstrSheet(){
 loadLS();
 if(_clientSex && !D.patient_sex) D.patient_sex = _clientSex;
 if(_clientDob && !D.patient_dob) D.patient_dob = _clientDob;
+// Prefill da anamnese salvo em localStorage pelo dashboard
+if(_clientId){
+  try{
+    const _prefillKey = 'anam_prefill_'+_clientId;
+    const _pd = localStorage.getItem(_prefillKey);
+    if(_pd){
+      const pd = JSON.parse(_pd);
+      if(pd.nome)   D._anam_nome   = pd.nome;
+      if(pd.sexo)   D._anam_sexo   = pd.sexo;
+      if(pd.nasc)   D._anam_nasc   = pd.nasc;
+      if(pd.lesoes) { D._lesoes = pd.lesoes; D._has_restricoes = true; }
+      if(pd.meds)   D._meds    = pd.meds;
+      if(pd.diag)   D._diag    = pd.diag;
+      if(pd.obj)    D._objetivo = pd.obj;
+      if(pd.peso)   D._anam_peso   = pd.peso;
+      if(pd.altura) D._anam_altura = pd.altura;
+      localStorage.removeItem(_prefillKey);
+    }
+  }catch(e){}
+}
 render();
 if(_asmId && sb) loadExistingData();
 else if(_clientId && sb) prefillFromAnamnese();
