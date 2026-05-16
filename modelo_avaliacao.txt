@@ -1,0 +1,181 @@
+Em avaliacao.html implementa o modelo de avaliacao fisica completa baseado no documento de referencia. Adiciona 2 novos modulos e expande o modulo de forca existente.
+
+═══ NOVO MODULO — MOBILIDADE E FUNCIONALIDADE ═══
+
+Adiciona modulo entre Biometria e Circunferencias. Passa a ter 7 modulos no total: 1-Biometria, 2-Mobilidade, 3-Circunferencias, 4-Dobras, 5-Postural, 6-VO2, 7-Forca. Atualiza a barra de progresso para 7 modulos.
+
+TITULO: Mobilidade e Funcionalidade
+SUBTITULO: FMS + Testes Funcionais
+
+TESTE 1 - AGACHAMENTO COM BASTAO (Overhead Squat):
+Descricao: Joelhos alinhados, coluna neutra, profundidade adequada, sem dor.
+Campo resultado: radio buttons Bom / Regular / Ruim.
+Checkboxes adicionais com label Observacoes:
+- Retroversao de quadril: Sim / Nao
+- Mobilidade toracica: Sim / Nao
+- Joelhos em valgo: Sim / Nao
+- Dor: Sim / Nao com campo texto Onde quando Sim
+- Pisada instavel: Sim / Nao
+
+TESTE 2 - MOBILIDADE DE OMBRO:
+Descricao: Avaliar alcance sem dor.
+Para cada lado (Direito e Esquerdo) radio buttons:
+- Dor, nao alcancou
+- Sem dor, nao alcancou
+- Alcancou
+
+TESTE 3 - TOE TOUCH (alcançar os pes):
+Descricao: Movimento completo, curvaturas preservadas.
+Radio buttons:
+- Dor, nao alcancou os joelhos
+- Nao alcancou o solo, mas passou dos joelhos
+- Alcancou o solo
+
+TESTE 4 - ELEVACAO ATIVA DE PERNAS:
+Descricao: Controle de movimento e amplitude adequada.
+Para cada perna (Direita e Esquerda) radio buttons:
+- Dor, nao alcancou
+- Sem dor, nao alcancou
+- Alcancou 90 graus
+
+TESTE 5 - MOBILIDADE DE TORNOZELO (Bastao):
+Procedimento explicativo em card cinza: Avaliado em posicao de avanco (lunge), pe totalmente apoiado no chao. Bastao colocado na vertical, paralelo ao dedao do pe da frente. Distancia inicial = tamanho do punho do avaliado. Movimento: flexionar o joelho em direcao ao bastao sem tirar o calcanhar do solo.
+Radio buttons resultado:
+- Joelho ultrapassa o bastao alem do punho → Mobilidade otima (verde)
+- Joelho encosta no bastao ate o punho → Mobilidade funcional aceitavel (amarelo)
+- Joelho nao encosta no bastao na medida do punho → Mobilidade restrita (vermelho)
+
+Para cada resultado mostra automaticamente badge colorido com a classificacao.
+
+CAMPO OBSERVACOES GERAIS do modulo de mobilidade.
+
+═══ EXPANDE MODULO FORCA ═══
+
+O modulo de forca existente ja tem preensao manual e 1RM estimado. Adiciona os seguintes testes baseados no modelo:
+
+TESTE - PRANCHA VENTRAL:
+Objetivo: mais de 60 segundos sem compensar.
+Inputs: tempo em segundos (numerico), postura correta radio Sim/Nao.
+Classificacao automatica por idade e sexo com tabela:
+20-29: Excelente >150s, Bom 90-149s, Regular 60-89s, Fraco <60s
+30-39: Excelente >120s, Bom 80-119s, Regular 50-79s, Fraco <50s
+40-49: Excelente >90s, Bom 60-89s, Regular 40-59s, Fraco <40s
+50+: Excelente >60s, Bom 40-59s, Regular 30-39s, Fraco <30s
+Mostra classificacao em badge colorido automaticamente.
+
+TESTE - SALTO HORIZONTAL (Standing Broad Jump):
+Objetivo: Potencia de membros inferiores.
+Input: distancia em centimetros.
+Observacao: radio Execucao correta / Compensacao.
+Classificacao automatica por idade:
+20-29: Excelente >220cm, Bom 200-219cm, Regular 170-199cm, Fraco <170cm
+30-39: Excelente >210cm, Bom 190-209cm, Regular 160-189cm, Fraco <160cm
+40-49: Excelente >190cm, Bom 170-189cm, Regular 150-169cm, Fraco <150cm
+50+: Excelente >170cm, Bom 150-169cm, Regular 130-149cm, Fraco <130cm
+
+TESTE - BARRA FIXA (masculino):
+Objetivo: Maximo de repeticoes ate a falha.
+Input: numero de repeticoes.
+Observacao: radio Pegada pronada / Pegada supinada.
+Classificacao automatica por idade (masculino):
+20-29: Excelente >12, Bom 8-12, Regular 4-7, Fraco <4
+30-39: Excelente >10, Bom 7-10, Regular 3-6, Fraco <3
+40-49: Excelente >8, Bom 5-8, Regular 2-4, Fraco <2
+50+: Excelente >6, Bom 4-6, Regular 1-3, Fraco <1
+
+TESTE - BARRA FIXA ISOMETRICA / SUSPENSAO (feminino):
+Objetivo: Manter queixo acima da barra.
+Input: tempo em segundos.
+Classificacao automatica por idade (feminino):
+20-29: Excelente >40s, Bom 30-39s, Regular 20-29s, Fraco <20s
+30-39: Excelente >35s, Bom 25-34s, Regular 15-24s, Fraco <15s
+40-49: Excelente >30s, Bom 20-29s, Regular 10-19s, Fraco <10s
+50+: Excelente >25s, Bom 15-24s, Regular 8-14s, Fraco <8s
+Nota: mostra este teste automaticamente para feminino e barra fixa para masculino baseado no sexo do modulo 1.
+
+TESTE - ABDOMINAL REMADOR (sit-up 1 min):
+Ja existe como abdominal_repeticoes. Adiciona classificacao automatica:
+20-29: Excelente >45, Bom 35-44, Regular 25-34, Fraco <25
+30-39: Excelente >40, Bom 30-39, Regular 20-29, Fraco <20
+40-49: Excelente >35, Bom 25-34, Regular 15-24, Fraco <15
+50+: Excelente >30, Bom 20-29, Regular 10-19, Fraco <10
+
+TESTE - FLEXAO DE BRACO (1 min):
+Ja existe. Adiciona classificacao automatica:
+20-29: Excelente >40, Bom 30-39, Regular 20-29, Fraco <20
+30-39: Excelente >35, Bom 25-34, Regular 15-24, Fraco <15
+40-49: Excelente >30, Bom 20-29, Regular 10-19, Fraco <10
+50+: Excelente >25, Bom 15-24, Regular 8-14, Fraco <8
+
+TESTE - CORE ANTIROTACAO (Pallof Press):
+Objetivo: Manter postura sem compensacao por 30 segundos.
+Input: checkbox Lado direito concluiu / Lado esquerdo concluiu.
+Observacao radio: Postura correta / Compensou.
+
+═══ EXPANDE MODULO VO2 ═══
+
+Adiciona teste de corrida 2400m (2.4km) com classificacao por tempo:
+20-29: Excelente <9:30min, Bom 9:31-11:00, Regular 11:01-13:00, Fraco >13:00
+30-39: Excelente <10:00min, Bom 10:01-11:30, Regular 11:31-13:30, Fraco >13:30
+40-49: Excelente <10:30min, Bom 10:31-12:00, Regular 12:01-14:00, Fraco >14:00
+50+: Excelente <11:00min, Bom 11:01-12:30, Regular 12:31-14:30, Fraco >14:30
+Inputs: minutos e segundos separados.
+
+Atualiza Cooper 12min com classificacao por idade:
+20-29: Excelente >2800m, Bom 2400-2799m, Regular 2200-2399m, Fraco 1600-2199m, Muito Fraco <1600m
+30-39: Excelente >2700m, Bom 2300-2699m, Regular 1900-2299m, Fraco 1500-1899m, Muito Fraco <1500m
+40-49: Excelente >2500m, Bom 2100-2499m, Regular 1700-2099m, Fraco 1400-1699m, Muito Fraco <1400m
+50+: Excelente >2400m, Bom 2000-2399m, Regular 1600-1999m, Fraco 1300-1599m, Muito Fraco <1300m
+
+═══ CSS PARA CLASSIFICACAO AUTOMATICA ═══
+
+Funcao getClassificacao(valor, tabela, idade, sexo) que recebe o valor medido e retorna a classificacao.
+
+Funcao calcIdade() que usa patient_dob do modulo 1 para calcular idade automaticamente.
+
+Badge de classificacao colorido mostrado ao lado do campo apos preencher:
+.classif-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;margin-left:8px}
+.classif-excelente{background:rgba(107,122,66,.15);color:#3d6b2e}
+.classif-bom{background:rgba(59,130,246,.1);color:#1d4ed8}
+.classif-regular{background:rgba(234,179,8,.15);color:#854d0e}
+.classif-fraco{background:rgba(239,68,68,.12);color:#b91c1c}
+.classif-muito-fraco{background:rgba(127,29,29,.12);color:#7f1d1d}
+
+Para os testes de mobilidade usa badges:
+.classif-otimo{background:rgba(107,122,66,.15);color:#3d6b2e}
+.classif-aceitavel{background:rgba(234,179,8,.15);color:#854d0e}
+.classif-restrito{background:rgba(239,68,68,.12);color:#b91c1c}
+
+Atualiza evento oninput ou onchange em cada campo numerico para calcular e mostrar badge automaticamente.
+
+═══ BANCO DE DADOS ═══
+
+Na tabela assessment_strength existente adiciona as novas colunas via ALTER TABLE:
+Cria arquivo mobility_strength_update.sql com:
+ALTER TABLE assessment_strength ADD COLUMN IF NOT EXISTS prancha_seg integer;
+ALTER TABLE assessment_strength ADD COLUMN IF NOT EXISTS salto_horizontal_cm numeric;
+ALTER TABLE assessment_strength ADD COLUMN IF NOT EXISTS barra_fixa_reps integer;
+ALTER TABLE assessment_strength ADD COLUMN IF NOT EXISTS barra_isometrica_seg integer;
+ALTER TABLE assessment_strength ADD COLUMN IF NOT EXISTS core_antirotacao jsonb default null;
+
+Cria tabela assessment_mobility:
+CREATE TABLE IF NOT EXISTS assessment_mobility (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  assessment_id uuid NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+  overhead_squat_resultado text,
+  overhead_squat_obs jsonb default '{}',
+  mobilidade_ombro_d text,
+  mobilidade_ombro_e text,
+  toe_touch text,
+  elevacao_perna_d text,
+  elevacao_perna_e text,
+  tornozelo_resultado text,
+  observacoes_gerais text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+RLS igual as outras subtabelas.
+Indice em assessment_id.
+
+Atualiza saveAll() em avaliacao.html para incluir os dados de mobilidade e os novos campos de forca no upsert.
+
+node --check, cria mobility_strength_update.sql, commit push.

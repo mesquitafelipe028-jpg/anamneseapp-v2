@@ -1,0 +1,183 @@
+Em avaliacao.html redesenha a selecao de protocolos dos modulos 3 (Dobras) e 5 (VO2) com visual profissional estilo sistema clinico.
+
+═══ SISTEMA DE SELECAO DE PROTOCOLO ═══
+
+Substitui o carrossel horizontal por uma lista vertical de protocolos. Cada protocolo e um item da lista. O protocolo selecionado expande e mostra os campos de entrada. Apenas um protocolo ativo por vez.
+
+CSS DO SELETOR:
+.protocol-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.protocol-item{border:1.5px solid var(--border);border-radius:12px;overflow:hidden;transition:all .2s;background:var(--white)}
+.protocol-item.active{border-color:#6b7a42;box-shadow:0 2px 12px rgba(107,122,66,.15)}
+.protocol-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.protocol-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:var(--cream)}
+.protocol-item.active .protocol-icon{background:rgba(107,122,66,.12)}
+.protocol-info{flex:1;min-width:0}
+.protocol-name{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.protocol-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.protocol-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.5px}
+.badge-gold{background:rgba(168,137,58,.12);color:#a8893a}
+.badge-blue{background:rgba(59,130,246,.1);color:#3b82f6}
+.badge-green{background:rgba(107,122,66,.12);color:#6b7a42}
+.protocol-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.protocol-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all .2s}
+.protocol-item.active .protocol-check{background:#6b7a42;border-color:#6b7a42;color:white}
+.btn-info{width:32px;height:32px;border-radius:50%;border:none;background:var(--cream);color:var(--muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.btn-info:hover{background:#6b7a42;color:white}
+.protocol-fields{padding:0 16px 16px;border-top:1px solid var(--cream);display:none;animation:fadeIn .2s ease}
+.protocol-item.active .protocol-fields{display:block}
+
+INSTRUCTION SHEET (bottom sheet estilo iOS):
+.instr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;display:none;align-items:flex-end;justify-content:center}
+.instr-overlay.open{display:flex}
+.instr-sheet{background:white;border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:0 0 env(safe-area-inset-bottom);animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.instr-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0}
+.instr-header{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between}
+.instr-title{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;color:var(--ink)}
+.instr-close{width:32px;height:32px;border:none;background:var(--cream);border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.instr-body{padding:20px}
+.instr-section{margin-bottom:20px}
+.instr-section-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#6b7a42;margin-bottom:10px}
+.instr-step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start}
+.instr-step-num{width:24px;height:24px;border-radius:50%;background:#6b7a42;color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.instr-step-text{font-size:14px;color:var(--ink);line-height:1.6}
+.instr-tip{background:rgba(107,122,66,.08);border-left:3px solid #6b7a42;border-radius:0 8px 8px 0;padding:12px 14px;margin:12px 0}
+.instr-tip-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:#6b7a42;margin-bottom:4px}
+.instr-tip-text{font-size:13px;color:var(--ink);line-height:1.5}
+.instr-equip{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.instr-equip-item{padding:5px 12px;background:var(--cream);border-radius:20px;font-size:12px;color:var(--ink)}
+.instr-ref{font-size:11px;color:var(--muted);font-style:italic;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
+.instr-contraind{background:rgba(192,57,43,.06);border-radius:8px;padding:12px;margin-top:8px}
+.instr-contraind-title{font-size:11px;font-weight:700;color:#c0392b;margin-bottom:6px}
+.instr-contraind-text{font-size:12px;color:var(--ink);line-height:1.5}
+
+DADOS DE CADA PROTOCOLO VO2 (objeto JS instrucoes_vo2):
+
+cooper: {
+  icon:'🏃', name:'Cooper 12 min', 
+  equip:['Pista de atletismo ou local plano','Cronômetro','Trena ou GPS'],
+  precision:'Alta', tipo:'Campo',
+  passos:['Aqueça por 5-10 minutos com caminhada e alongamento leve','Ao sinal, corra o máximo possível durante 12 minutos exatos','Mantenha ritmo constante — evite arrancar rápido no início','Ao final dos 12 minutos, marque a distância percorrida','Insira a distância total em metros no campo abaixo'],
+  tip:{label:'Dica profissional', texto:'Instrua o avaliado a manter pace constante. O erro mais comum é começar rápido e terminar caminhando, o que subestima o resultado real.'},
+  contraind:'Não recomendado para sedentários sem avaliação médica prévia, cardiopatas ou pessoas com ortopedia limitante.',
+  ref:'Cooper KH. A means of assessing maximal oxygen intake. JAMA. 1968'
+}
+
+balke: {
+  icon:'⏱️', name:'Balke 15 min',
+  equip:['Pista de atletismo','Cronômetro','Trena ou GPS'],
+  precision:'Alta', tipo:'Campo',
+  passos:['Aqueça por 5-10 minutos','Corra pelo máximo de tempo possível durante 15 minutos','Mantenha a velocidade mais alta que conseguir sustentar','Ao finalizar, registre a distância total percorrida em metros'],
+  tip:{label:'Diferença do Cooper', texto:'O Balke usa 15 minutos em vez de 12. Por ser mais longo, tende a ser mais preciso para corredores experientes mas mais exigente para sedentários.'},
+  contraind:'Mesmas contraindicações do Cooper. Exige condicionamento mínimo.',
+  ref:'Balke B, Ware RW. An experimental study of physical fitness. US Armed Forces Med J. 1959'
+}
+
+bruce: {
+  icon:'🏋️', name:'Bruce — Esteira',
+  equip:['Esteira ergométrica com controle de velocidade e inclinação','Monitor de FC','Cronômetro'],
+  precision:'Muito Alta', tipo:'Laboratório',
+  passos:['Configure a esteira conforme a tabela de estágios Bruce (ver abaixo)','Inicie no Estágio 1: 2.7 km/h a 10% de inclinação','A cada 3 minutos avance para o próximo estágio','Continue até exaustão voluntária ou critério de interrupção','Registre o tempo total em minutos no campo abaixo'],
+  tip:{label:'Tabela de Estágios', texto:'E1: 2.7km/h 10% | E2: 4.0km/h 12% | E3: 5.5km/h 14% | E4: 6.8km/h 16% | E5: 8.0km/h 18% | E6: 8.9km/h 20% | E7: 9.7km/h 22%'},
+  contraind:'Contraindicado para hipertensos severos não controlados, IAM recente, arritmias instáveis. Recomenda médico presente.',
+  ref:'Bruce RA. Maximal oxygen intake and nomographic assessment. Am Heart J. 1971'
+}
+
+astrand: {
+  icon:'🚴', name:'Åstrand-Rhyming',
+  equip:['Bicicleta ergométrica calibrada','Monitor de frequência cardíaca','Cronômetro'],
+  precision:'Alta', tipo:'Laboratório',
+  passos:['Ajuste a carga conforme sexo: homens 100-200W, mulheres 50-100W','Pedale em cadência constante de 50-60 rpm por 6 minutos','Nos últimos 2 minutos meça a FC em estado estável (2 medições)','Use a média das 2 medições de FC','Insira a carga em Watts e a FC média abaixo — o sistema aplica o fator de correção por idade automaticamente'],
+  tip:{label:'Estado estável', texto:'A FC está em estado estável quando a variação entre as medições do 5º e 6º minuto é menor que 5 bpm. Se não estabilizar, prolongue o teste.'},
+  contraind:'Ajustar carga conforme condicionamento. Sedentários iniciam com carga menor.',
+  ref:'Åstrand PO, Ryhming I. A nomogram for calculation of aerobic capacity. J Appl Physiol. 1954'
+}
+
+rockport: {
+  icon:'🚶', name:'Rockport 1 milha',
+  equip:['Pista de 400m ou local plano de 1 milha (1609m)','Cronômetro','Monitor de FC ou palpação imediata'],
+  precision:'Moderada', tipo:'Campo',
+  passos:['Marque 1 milha (1609 metros) em superfície plana','Caminhe o mais rápido possível sem correr','Ao cruzar a linha de chegada, anote o tempo imediatamente','Meça a FC nos primeiros 15 segundos após chegar (multiplique por 4)','Insira tempo, FC, peso e altura abaixo'],
+  tip:{label:'Para quem usar', texto:'Ideal para idosos, sedentários iniciantes e pessoas com limitações ortopédicas. Menos preciso para atletas.'},
+  contraind:'Sem contraindicações específicas além das gerais. Seguro para populações especiais.',
+  ref:'Kline GM et al. Estimation of VO2max from a one-mile track walk. Med Sci Sports Exerc. 1987'
+}
+
+harvard: {
+  icon:'🪜', name:'Banco de Harvard',
+  equip:['Banco de 50cm (homens) ou 43cm (mulheres)','Metrônomo a 120 bpm','Cronômetro','Esfigmomanômetro ou pulsímetro'],
+  precision:'Moderada', tipo:'Campo',
+  passos:['Suba e desça o banco em ritmo de 30 ciclos/min (metrônomo a 120bpm) por 5 minutos','Cada ciclo: pé esquerdo sobe, pé direito sobe, pé esquerdo desce, pé direito desce','Ao parar, aguarde 1 minuto e meça a FC por 30 segundos (FC1)','Aguarde mais 30 seg, meça por 30 seg (FC2). Aguarde mais 30 seg, meça (FC3)','Calcule: Índice = 30000 / (FC1+FC2+FC3)'],
+  tip:{label:'Interrupção antecipada', texto:'Se o avaliado não conseguir manter o ritmo por mais de 20 segundos consecutivos, interrompa e registre o tempo efetivo realizado.'},
+  contraind:'Cuidado com pessoas com problemas nos joelhos ou tornozelos. Banco alto pode ser difícil para baixa estatura.',
+  ref:'Brouha L et al. The step test: A simple method of measuring physical fitness. Rev Can Biol. 1943'
+}
+
+yoyo: {
+  icon:'📡', name:'Yo-Yo Nível 1 e 2',
+  equip:['Espaço de 20 metros plano','Cones ou marcas','Áudio do teste Yo-Yo (beeps)','Smartphone ou caixa de som'],
+  precision:'Alta', tipo:'Campo',
+  passos:['Marque duas linhas paralelas com 20 metros de distância','O avaliado corre de uma linha à outra no ritmo dos beeps','A velocidade aumenta progressivamente a cada estágio','O teste termina quando o avaliado falha 2 vezes em alcançar a linha','Registre o último estágio e número de beeps completados'],
+  tip:{label:'Nível 1 vs Nível 2', texto:'Nível 1 começa mais devagar, ideal para população geral e atletas recreacionais. Nível 2 começa mais intenso, para atletas de alto rendimento.'},
+  contraind:'Alta intensidade. Não recomendado para sedentários. Exige aquecimento adequado.',
+  ref:'Bangsbo J, Iaia FM, Krustrup P. The Yo-Yo intermittent recovery test. Sports Med. 2008'
+}
+
+ukk: {
+  icon:'🚶‍♀️', name:'UKK 2km Caminhada',
+  equip:['Percurso plano de 2 km','Cronômetro','Monitor de FC'],
+  precision:'Moderada', tipo:'Campo',
+  passos:['Aqueça por 5 minutos com caminhada leve','Ao sinal, caminhe 2km o mais rápido possível sem correr','Ao cruzar os 2km, anote o tempo e meça a FC imediatamente','Insira os dados abaixo — peso e altura serão usados na fórmula'],
+  tip:{label:'Para quem é indicado', texto:'Desenvolvido para adultos de 20-65 anos com baixo condicionamento. Excelente para rastreamento em saúde pública e reabilitação.'},
+  contraind:'Seguro para a maioria das populações. Preferível ao Cooper para idosos e obesos.',
+  ref:'Oja P et al. A 2-km walking test for assessing the cardiorespiratory fitness. Int J Sports Med. 1991'
+}
+
+pacer: {
+  icon:'🔊', name:'PACER / Beep Test 20m',
+  equip:['Espaço de 20 metros','Cones','Áudio do PACER (beeps específicos)'],
+  precision:'Alta', tipo:'Campo',
+  passos:['Marque 2 linhas com exatamente 20 metros de distância','Ao primeiro beep, corra de uma linha à outra antes do próximo beep','A velocidade aumenta a cada minuto (nível)','O teste termina quando o avaliado não alcança a linha por 2 vezes consecutivas','Registre o último nível e última rodada completada'],
+  tip:{label:'Diferença do Yo-Yo', texto:'O PACER é contínuo (sem pausa de recuperação). O Yo-Yo tem 10 segundos de recuperação. Para crianças e adolescentes use o FitnessGram PACER.'},
+  contraind:'Alta intensidade. Contraindicado para sedentários severos sem adaptação prévia.',
+  ref:'Léger LA, Lambert J. A maximal multistage 20-m shuttle run test to predict VO2max. Eur J Appl Physiol. 1982'
+}
+
+fc_repouso: {
+  icon:'❤️', name:'FC de Repouso',
+  equip:['Monitor de FC ou palpação','5 minutos de repouso prévio'],
+  precision:'Baixa (estimativa)', tipo:'Rastreamento',
+  passos:['Avaliado deve estar em repouso por pelo menos 5 minutos','Preferencialmente pela manhã, antes de se levantar','Palpe o pulso radial ou use pulsímetro por 60 segundos','Registre a FC abaixo — será usada apenas como dado auxiliar'],
+  tip:{label:'Limitação', texto:'A FC de repouso isolada não estima VO2max com precisão. Use apenas quando nenhum outro protocolo for viável. Valores abaixo de 60 bpm indicam bom condicionamento aeróbico.'},
+  contraind:'Sem contraindicações.',
+  ref:'ACSM. Guidelines for Exercise Testing and Prescription. 10th Ed. 2018'
+}
+
+DADOS DE CADA PROTOCOLO DOBRAS (objeto JS instrucoes_dobras):
+
+jp7: instrucoes completas Jackson-Pollock 7 dobras com passos de como medir cada dobra (local anatomico, posicao do compasso, tecnica de pinçamento), tip sobre usar media de 3 medidas, ref Jackson AS, Pollock ML. Generalized equations for predicting body density. Br J Nutr. 1978.
+
+jp3_masc e jp3_fem: instrucoes das 3 dobras respectivas com locais anatomicos precisos.
+
+durnin: instrucoes das 4 dobras com tabela de coeficientes resumida.
+
+guedes: instrucoes com nota que e protocolo desenvolvido para populacao brasileira.
+
+faulkner: instrucoes das 4 dobras.
+
+petroski: instrucoes com nota de qual variacao usar.
+
+slaughter: instrucoes com alerta de faixa etaria 6-17 anos.
+
+bioimp: instrucoes para usar aparelho de bioimpedancia com boas praticas (jejum, hidratacao, sem atividade fisica previa).
+
+FUNCAO showProtocolInfo(tipo, protocolo):
+Busca os dados do objeto instrucoes. Preenche o instr-sheet com os dados. Adiciona classe open no instr-overlay. Ao fechar remove a classe.
+
+FUNCAO closeInstrSheet():
+Remove classe open do overlay. Adiciona swipe down para fechar no mobile: trackeia touchstart e touchend, se deltaY > 50 fecha.
+
+IMPLEMENTACAO NOS MODULOS:
+No renderModule3 e renderModule5 substitui o carrossel pelo protocol-list. Para cada protocolo renderiza um protocol-item com header clicavel. O btn-info chama showProtocolInfo com event.stopPropagation. O header clicavel seleciona o protocolo e expande os campos.
+
+node --check commit push.

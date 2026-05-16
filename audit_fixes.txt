@@ -1,0 +1,85 @@
+Em dashboard.html, avaliacao.html, portal.html e sw.js corrige todos os problemas encontrados na auditoria:
+
+═══ CRITICO 1 — build.js sai com exit 0 quando env vars faltam ═══
+Em build.js troca process.exit(0) por process.exit(1) quando SUPABASE_URL ou SUPABASE_ANON nao estao definidas. Isso faz o deploy do Vercel falhar visivelmente em vez de silenciosamente nao gerar o config.js.
+Excecao: se existir um config.js local (ambiente de desenvolvimento) pode continuar com exit 0.
+Nova logica:
+if (!url || !anon) {
+  if (fs.existsSync(outPath)) {
+    console.warn('[build] Usando config.js local existente.');
+    process.exit(0);
+  }
+  console.error('[build] ERRO: SUPABASE_URL e SUPABASE_ANON sao obrigatorias no Vercel.');
+  process.exit(1);
+}
+
+═══ CRITICO 2 — r.mode inconsistente no dashboard ═══
+Em dashboard.html na funcao updateStats (linha ~2689) troca r.mode por r.modality para contagem de fichas online. Verifica todas as referencias a r.mode em contexto de anamneses (tabela anamneses usa mode, assessments usa modality) e garante que cada um usa o campo correto da tabela certa.
+
+═══ ALTO 1 — avaliacao.html sem manifest e SW ═══
+Em avaliacao.html no head adiciona:
+<meta name="theme-color" content="#6b7a42">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.svg">
+No final do script adiciona:
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+
+═══ ALTO 2 — portal.html sem safe-area, manifest e SW ═══
+Em portal.html no head adiciona:
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.svg">
+Em CSS do portal adiciona:
+body { padding-bottom: env(safe-area-inset-bottom); }
+No final do script adiciona:
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+
+═══ ALTO 3 — SW SHELL nao inclui /avaliacao e /portal ═══
+Em sw.js adiciona /avaliacao e /portal ao array SHELL:
+const SHELL = ['/', '/anamnese', '/dashboard', '/avaliacao', '/portal', '/config.js', '/manifest.json', '/icon.svg'];
+
+═══ MEDIO 1 — touch targets insuficientes em anamnese, avaliacao e portal ═══
+Em anamnese.html adiciona CSS global:
+button, .chip, .mcard, input[type=radio]+label, input[type=checkbox]+label {
+  min-height: 44px;
+}
+.chip { min-height: 40px; padding: 8px 14px; }
+Em avaliacao.html adiciona CSS global para todos os botoes:
+.btn-action, .btn-nav, .btn-save-av, .module-btn, .proto-header { min-height: 44px; }
+button { min-height: 44px; }
+Em portal.html adiciona min-height: 44px em todos os botoes.
+
+═══ MEDIO 2 — SQL schemas que precisam ser rodados ═══
+Cria um arquivo SETUP.md na raiz documentando a ordem EXATA de execucao dos schemas:
+1. schema.sql (professionals, anamneses, form_templates)
+2. avaliacoes_schema.sql (assessments + 7 subtabelas)
+3. clients_schema.sql (clients + clients_summary view)
+4. goals_schema.sql (client_goals, goal_checkins)
+5. organizations_schema.sql (organizations, organization_members)
+6. portal_schema.sql (portal_token columns)
+7. mobility_strength_update.sql (assessment_mobility + novas colunas strength)
+8. protocols_update.sql (protocolo_detalhes jsonb)
+
+Tambem cria arquivo run_all_schemas.sql que concatena todos os schemas na ordem correta com comentarios, para facilitar execucao de uma vez so.
+
+═══ BAIXO 1 — Chart.js nao carregado para graficos de evolucao ═══
+Em dashboard.html no head verifica se Chart.js esta incluido. Se nao estiver, adiciona:
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+Tambem adiciona ao array CDN do sw.js para cache offline.
+
+═══ BAIXO 2 — portal.html tema claro diferente do sistema ═══
+Em portal.html garante que o tema segue as mesmas variaveis CSS do sistema:
+:root {
+  --bg: #f7f5f0; --white: #ffffff; --ink: #1a1814; --muted: #9a9588;
+  --border: #e4e0d8; --olive: #6b7a42; --gold: #a8893a; --cream: #f0ece3;
+}
+
+═══ SUGESTOES ADICIONAIS ═══
+
+1. Em dashboard.html a funcao loadAvaliacoes ainda pode ter o bug do erro 400 com a coluna mode/modality. Verifica a query e garante que usa modality corretamente.
+
+2. Em avaliacao.html o modulo de mobilidade usa assessment_mobility mas esse schema so existe em mobility_strength_update.sql. Garante que o saveAll tem try/catch individual por subtabela para que falha em uma nao bloqueie as outras.
+
+3. Em portal.html a verificacao do token e feita no client-side com a anon key do Supabase. Isso e aceitavel com RLS mas adiciona comentario explicando a limitacao de seguranca e que para producao real deve usar Edge Function.
+
+node --check em todos os HTMLs, commit "fix: auditoria completa — PWA, touch targets, build, sw cache" e push.

@@ -1,0 +1,121 @@
+PLANO DE ORGANIZACAO DO SISTEMA — Por prioridade
+
+═══ CRITICO — Quebra o fluxo principal ═══
+
+1. LINK DE ANAMNESE NAO INCLUI CLIENT_ID
+Em dashboard.html na funcao saveClientFromView quando sendLink=true:
+O link copiado deve ser: /anamnese?pid=profId&client_id=clientId
+Atualmente e apenas: /anamnese?pid=profId
+Corrige em copyLink e em saveClientFromView para incluir &client_id=clientId quando existe.
+Tambem corrige o link no shareLink da home para incluir instrucao de usar o perfil do cliente para enviar link personalizado.
+
+2. BOTAO INICIAR AVALIACAO DIRETO DA FICHA
+Na view de ficha (renderViewFicha) adiciona no footer, ao lado de Excluir ficha:
+<button onclick="navigateTo('nova-avaliacao', {clientId: row.client_id, clientName: row.patient_name})">
+  💪 Iniciar avaliação física
+</button>
+So aparece se row.client_id existir. Se nao tiver client_id mostra botao com texto diferente: Nova avaliacao (sem vinculo).
+
+3. SEX DEFAULT NUNCA PODE SER MASCULINO
+Em avaliacao.html remove todos os ||'M' e substitui por ||''.
+Quando patient_sex estiver vazio no modulo 1 mostra os chips de sexo com borda vermelha pulsante e texto obrigatorio ate o usuario selecionar.
+Nenhum calculo de dobras, VO2 ou forca executa sem sexo definido — mostra mensagem: Selecione o sexo no Modulo 1 para calcular.
+
+4. LESOES E RESTRICOES CLINICAS VISIVEIS NA AVALIACAO
+Ja existe codigo parcial. Garante que prefillFromAnamnese sempre exibe o card clinico no modulo 1 quando existirem lesoes, diagnosticos ou medicamentos na anamnese.
+Adiciona badge vermelho no step indicator do modulo 1 quando ha restricoes: <div class="ps-dot">1 ⚠️</div>
+
+═══ IMPORTANTE — Prejudica a experiencia ═══
+
+5. HOME MAIS UTIL — MOSTRA O QUE FAZER
+Em dashboard.html na renderHome adiciona secao Atencao necessaria:
+- Clientes sem avaliacao fisica (tem anamnese mas nao tem assessment)
+- Clientes com ultima avaliacao ha mais de 90 dias  
+- Fichas novas nao lidas (status = nova)
+Cada item e um card clicavel que leva direto para o cliente ou ficha.
+
+Funcao loadHomeAlerts():
+const semAval = allClients.filter(c => c.total_avaliacoes === 0 && c.total_anamneses > 0);
+const semContato = allClients.filter(c => {
+  const ultima = new Date(c.ultima_avaliacao || c.ultima_anamnese || c.created_at);
+  return (Date.now() - ultima) > 90*24*60*60*1000;
+});
+const fichasNovas = allRows.filter(r => r.status === 'nova');
+
+6. REDIRECT AUTOMATICO POS LOGIN
+Em index.html quando usuario ja tem sessao vai direto para /dashboard sem ver a landing.
+Ja existe logica — verificar se esta funcionando corretamente apos as mudancas recentes.
+
+7. TELA CONSOLIDADA DO CLIENTE
+Na renderViewCliente garante que mostra em sequencia clara:
+a) Card dados pessoais (nome, contato, objetivo, sexo, idade)
+b) Cards de resumo: ultima anamnese (data + comprometimento) + ultima avaliacao (data + % gordura + peso)
+c) Grafico de evolucao (se Chart.js carregado e tem 2+ avaliacoes)
+d) Lista de metas com progresso
+e) Historico de anamneses
+f) Historico de avaliacoes
+g) Botoes: Enviar link anamnese, Nova avaliacao, Gerar PDF consolidado, Portal do cliente
+
+8. ADAPTACAO POR SEXO NA AVALIACAO
+Em avaliacao.html a funcao initDefaultsBySex() deve ser chamada apos prefillFromAnamnese E apos o usuario selecionar o sexo manualmente (funcao setSex).
+
+Quando setSex e chamado com 'F':
+- Se protocolo_dobras for jp7 pergunta: Deseja usar JP3 Feminino? com botoes Sim/Nao
+- No modulo forca oculta Barra Fixa e mostra Barra Isometrica automaticamente
+- No VO2 as classificacoes ACSM ja usam o sexo correto — so confirmar
+
+Quando setSex e chamado com 'M':
+- Protocolo dobras volta para jp7 se estava em jp3f
+- Barra Fixa visivel, Barra Isometrica oculta
+
+═══ MELHORIAS — Agrega valor ═══
+
+9. FLOW DE CONSULTA GUIADA
+Na home adiciona card especial Iniciar consulta que guia o profissional:
+Passo 1: Selecionar cliente (busca ou criar)
+Passo 2: Ver anamnese existente ou enviar link
+Passo 3: Iniciar avaliacao fisica
+Passo 4: Gerar relatorio
+
+E um wizard simples que conecta tudo em sequencia logica.
+
+10. STATUS DO CLIENTE MAIS CLARO
+Na lista de clientes cada card mostra badges de status:
+- Verde: anamnese + avaliacao recente (< 30 dias)
+- Amarelo: so anamnese, sem avaliacao
+- Cinza: sem anamnese nem avaliacao (cadastro manual)
+- Vermelho: ultimo contato > 90 dias
+
+11. NOTIFICACAO QUANDO PACIENTE ENVIA ANAMNESE
+Ja existe realtime. Adiciona tambem: quando chega ficha nova, se o client_id estiver vinculado, mostra toast com link direto para o perfil: Nova ficha de Elisiane — Ver perfil.
+
+12. PAGINA DE AVALIACAO - INDICADOR VISUAL DE PROGRESSO REAL
+Atualmente o usuario pode pular modulos. Adiciona indicador de preenchimento real:
+- Modulo com pelo menos 1 campo preenchido: circulo verde parcial
+- Modulo totalmente preenchido: circulo verde cheio com check
+- Modulo nao tocado: circulo cinza
+Isso ajuda o profissional a saber o que falta preencher.
+
+═══ SQL NECESSARIO — Rodar no Supabase ═══
+
+Antes de tudo, verificar quais schemas foram rodados:
+SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;
+
+Schemas obrigatorios em ordem:
+1. schema.sql
+2. avaliacoes_schema.sql  
+3. clients_schema.sql
+4. goals_schema.sql (para metas funcionarem)
+5. organizations_schema.sql (opcional por ora)
+6. portal_schema.sql (para portal do cliente)
+7. mobility_strength_update.sql (para modulo mobilidade)
+8. protocols_update.sql (para protocolo_detalhes)
+
+SQL rapido para verificar o que falta:
+SELECT 
+  CASE WHEN EXISTS (SELECT 1 FROM pg_tables WHERE tablename='professionals') THEN 'OK' ELSE 'FALTA' END as professionals,
+  CASE WHEN EXISTS (SELECT 1 FROM pg_tables WHERE tablename='anamneses') THEN 'OK' ELSE 'FALTA' END as anamneses,
+  CASE WHEN EXISTS (SELECT 1 FROM pg_tables WHERE tablename='assessments') THEN 'OK' ELSE 'FALTA' END as assessments,
+  CASE WHEN EXISTS (SELECT 1 FROM pg_tables WHERE tablename='clients') THEN 'OK' ELSE 'FALTA' END as clients,
+  CASE WHEN EXISTS (SELECT 1 FROM pg_tables WHERE tablename='client_goals') THEN 'OK' ELSE 'FALTA' END as client_goals,
+  CASE WHEN EXISTS (SELECT 1 FROM pg_tables WHERE tablename='assessment_mobility') THEN 'OK' ELSE 'FALTA' END as assessment_mobility;
