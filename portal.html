@@ -41,7 +41,6 @@ button{min-height:44px;}
 .denied-desc{font-size:14px;color:var(--muted);line-height:1.7;max-width:360px;}
 
 /* ── PORTAL LAYOUT ── */
-#portal{display:none;}
 .portal-header{background:var(--ink);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:50;}
 .portal-logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:18px;color:#fff;}
 .portal-logo span{font-style:normal;color:var(--olive);}
@@ -129,7 +128,7 @@ button{min-height:44px;}
 </div>
 
 <!-- PORTAL -->
-<div id="portal">
+<div id="portal" style="display:none">
   <header class="portal-header">
     <div class="portal-logo">Anamnese<span>App</span></div>
     <div class="portal-client-name" id="portalClientName"></div>
