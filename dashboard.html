@@ -614,6 +614,28 @@ tr:hover td{background:var(--cream);}
 .ac-item:hover,.ac-item:focus{background:var(--cream);}
 .ac-item-name{color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ac-item-phone{font-size:11px;color:var(--muted);flex-shrink:0;}
+/* ── PRESCRIPTIONS ── */
+.presc-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.presc-card-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.presc-card-meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.presc-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+.presc-musc{background:rgba(107,122,66,.12);color:#4e5b2e;}
+.presc-cardio{background:rgba(59,130,246,.1);color:#2563eb;}
+.presc-func{background:rgba(168,137,58,.12);color:#8a6f28;}
+.presc-content{font-family:monospace;font-size:12px;background:var(--cream);border-radius:8px;padding:12px;white-space:pre-wrap;line-height:1.6;margin:10px 0;max-height:300px;overflow-y:auto;}
+/* ── COMP TABLE ── */
+.comp-table{width:100%;border-collapse:collapse;font-size:13px;}
+.comp-table th{padding:8px 12px;background:var(--cream);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;}
+.comp-table td{padding:10px 12px;border-bottom:1px solid var(--border);}
+.comp-table tr:last-child td{border:none;}
+.comp-table .metric-name{font-weight:500;color:var(--ink);}
+.comp-table .metric-val{color:var(--ink);text-align:center;}
+.comp-table .metric-val.empty{color:var(--border);}
+.delta-up{color:#c0392b;font-weight:600;}
+.delta-down{color:#27ae60;font-weight:600;}
+.delta-up-good{color:#27ae60;font-weight:600;}
+.delta-down-bad{color:#c0392b;font-weight:600;}
+.delta-neutral{color:var(--muted);}
 </style>
 </head>
 <body>
@@ -1164,6 +1186,8 @@ function _renderView(view, params={}){
     case 'ficha':          renderViewFicha(params); break;
     case 'anamnese':       renderViewAnamnese(params); break;
     case 'nova-avaliacao': renderViewNovaAvaliacao(params); break;
+    case 'nova-prescricao':   renderViewNovaPrescricao(params); break;
+    case 'detalhe-prescricao':renderViewDetalhePrescricao(params); break;
     default: goBack();
   }
 }
@@ -1396,6 +1420,8 @@ async function renderViewCliente(params={}){
       </button>
       <button class="btn-new-ficha" onclick="navigateTo('nova-avaliacao',{clientId:'${clientId}',clientName:'${esc(client.name).replace(/'/g,"\\'")}' })">+ Nova avaliação</button>
       <button class="btn-view" id="btnPortal_${clientId}" onclick="generatePortalToken('${clientId}')">🔗 Portal do cliente</button>
+      <button class="btn-view" onclick="_copyRetornoLink('${clientId}','${esc(client.name).replace(/'/g,"\\'")}')">📋 Retorno</button>
+      <button class="btn-new-ficha" style="font-size:11px" onclick="navigateTo('nova-prescricao',{clientId:'${clientId}',clientName:'${esc(client.name).replace(/'/g,"\\'")}' })">+ Prescrição</button>
     </div>
     <div id="clientResumoCards"></div>
     <div class="evolution-section">
@@ -1415,10 +1441,14 @@ async function renderViewCliente(params={}){
       <button class="cpv-tab active" onclick="switchCliViewTab('anam')">Anamneses</button>
       <button class="cpv-tab"        onclick="switchCliViewTab('aval')">Avaliações</button>
       <button class="cpv-tab"        onclick="switchCliViewTab('metas')">Metas</button>
+      <button class="cpv-tab"        onclick="switchCliViewTab('presc')">Prescrições</button>
+      <button class="cpv-tab"        onclick="switchCliViewTab('comp')">Comparativo</button>
     </div>
     <div id="cliTabAnam"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
     <div id="cliTabAval"   style="display:none"></div>
     <div id="cliTabMetas"  style="display:none"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
+    <div id="cliTabPresc"  style="display:none"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
+    <div id="cliTabComp"   style="display:none"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>
   </div>`;
   const [anamRes, avalRes] = await Promise.all([
     sb.from('anamneses').select('id,patient_name,status,mode,created_at').eq('client_id',clientId).order('created_at',{ascending:false}),
@@ -1434,7 +1464,7 @@ async function renderViewCliente(params={}){
     let rHtml = '<div class="resumo-cards">';
     if(la){
       const dt = new Date(la.created_at).toLocaleDateString('pt-BR');
-      const mode = la.mode==='online'?'Online':'Presencial';
+      const mode = la.mode==='retorno'?'Retorno':la.mode==='online'?'Online':'Presencial';
       const st = STATUS_LABEL[la.status||'nova']||la.status;
       rHtml += `<div class="resumo-card" onclick="switchCliViewTab('anam')">
         <div class="resumo-card-label">Última anamnese</div>
@@ -1468,7 +1498,7 @@ async function renderViewCliente(params={}){
     return `<div class="cpv-record" style="flex-direction:column;align-items:stretch;gap:10px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
         <div>
-          <div class="cpv-record-main">${dt} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span></div>
+          <div class="cpv-record-main">${dt} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span>${a.mode==='retorno'?' · <span style="background:rgba(59,130,246,.1);color:#2563eb;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px">RETORNO</span>':''}</div>
           ${resumo?`<div class="cpv-record-sub" style="margin-top:4px">${esc(resumo)}</div>`:''}
         </div>
         <button class="btn-del" onclick="deleteAnamFromClient('${a.id}','${clientId}')" title="Excluir">🗑</button>
@@ -1503,13 +1533,17 @@ async function renderViewCliente(params={}){
   loadEvolutionChart(clientId, 'peso', document.querySelector('#metricSelector .metric-btn.active'));
 }
 function switchCliViewTab(tab){
+  const tabs=['anam','aval','metas','presc','comp'];
   document.querySelectorAll('#cliViewTabs .cpv-tab').forEach((b,i)=>{
-    b.classList.toggle('active',
-      (i===0&&tab==='anam')||(i===1&&tab==='aval')||(i===2&&tab==='metas'));
+    b.classList.toggle('active', tabs[i]===tab);
   });
-  document.getElementById('cliTabAnam').style.display  = tab==='anam'  ?'':'none';
-  document.getElementById('cliTabAval').style.display  = tab==='aval'  ?'':'none';
-  document.getElementById('cliTabMetas').style.display = tab==='metas' ?'':'none';
+  document.getElementById('cliTabAnam').style.display  = tab==='anam' ?'':'none';
+  document.getElementById('cliTabAval').style.display  = tab==='aval' ?'':'none';
+  document.getElementById('cliTabMetas').style.display = tab==='metas'?'':'none';
+  document.getElementById('cliTabPresc').style.display = tab==='presc'?'':'none';
+  document.getElementById('cliTabComp').style.display  = tab==='comp' ?'':'none';
+  if(tab==='presc'){ const cid=new URLSearchParams(window.location.search).get('id'); if(cid) loadPrescricoes(cid); }
+  if(tab==='comp'){  const cid=new URLSearchParams(window.location.search).get('id'); if(cid) loadComparativo(cid);  }
 }
 
 // ── RELATÓRIO COMPLETO PDF DO CLIENTE ────────────────────────────
@@ -2388,7 +2422,7 @@ function renderViewAnamnese(params={}){
   footerBtns.push(`<button class="btn-logout" onclick="_markAnamLida('${anamId}','${clientId||''}')">Marcar como lida</button>`);
   let html = _vHd(ptName);
   html += `<div class="dash-inner" style="padding-bottom:90px">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${dt} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span> · ${row.mode==='online'?'Online':'Presencial'}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${dt} · <span class="badge-status s-${st}">${STATUS_LABEL[st]||st}</span> · ${row.mode==='retorno'?'Retorno':row.mode==='online'?'Online':'Presencial'}</div>
     ${body}
     <div class="modal-block">
       <div class="modal-block-title">Anotações internas</div>
@@ -2428,6 +2462,229 @@ async function _markAnamLida(anamId, clientId){
   showToast('Marcada como lida');
   if(clientId) navigateTo('cliente',{id:clientId});
   else goBack();
+}
+
+// ── PRESCRIÇÕES ───────────────────────────────────────────────
+async function loadPrescricoes(clientId){
+  const cont=document.getElementById('cliTabPresc');
+  if(!cont||!sb) return;
+  const {data,error}=await sb.from('workout_prescriptions')
+    .select('*').eq('client_id',clientId).order('created_at',{ascending:false});
+  if(error){ cont.innerHTML=`<div class="result-warn">Erro ao carregar prescrições: ${error.message}</div>`; return; }
+  const list=data||[];
+  const typeLabel={musculacao:'Musculação',cardio:'Cardio',funcional:'Funcional',pilates:'Pilates',yoga:'Yoga',outro:'Outro'};
+  const typeCls={musculacao:'presc-musc',cardio:'presc-cardio',funcional:'presc-func',pilates:'presc-musc',yoga:'presc-func',outro:'presc-cardio'};
+  const html=list.length?list.map(p=>{
+    const from=p.valid_from?new Date(p.valid_from).toLocaleDateString('pt-BR'):'';
+    const until=p.valid_until?new Date(p.valid_until).toLocaleDateString('pt-BR'):'';
+    const periodo=from?(until?`${from} – ${until}`:`A partir de ${from}`):'';
+    return `<div class="presc-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div class="presc-card-title">${esc(p.title)}</div>
+        <span class="presc-badge ${typeCls[p.type]||'presc-musc'}">${typeLabel[p.type]||p.type}</span>
+      </div>
+      <div class="presc-card-meta">${periodo?`📅 ${periodo}`:''} <span class="badge-status s-${p.status==='ativa'?'nova':p.status==='pausada'?'lida':'arquivada'}">${p.status}</span></div>
+      <div class="presc-content">${esc(p.content)}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn-view" onclick="navigateTo('detalhe-prescricao',{id:'${p.id}',clientId:'${clientId}'})">Abrir</button>
+        <button class="btn-view" onclick="_prescWpp('${p.id}')">WhatsApp</button>
+        <button class="btn-del" onclick="_delPresc('${p.id}','${clientId}')" title="Excluir">🗑</button>
+      </div>
+    </div>`;
+  }).join('')
+  :`<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Nenhuma prescrição cadastrada.</div>
+    <button class="btn-new-ficha" style="margin-top:12px" onclick="navigateTo('nova-prescricao',{clientId:'${clientId}'})">+ Nova prescrição</button></div>`;
+  cont.innerHTML=html;
+}
+async function _delPresc(id,clientId){
+  showConfirm('Excluir prescrição?',async()=>{
+    const {error}=await sb.from('workout_prescriptions').delete().eq('id',id);
+    if(error){ showToast('Erro: '+error.message); return; }
+    showToast('Prescrição excluída.'); loadPrescricoes(clientId);
+  });
+}
+async function _prescWpp(id){
+  const {data}=await sb.from('workout_prescriptions').select('title,content').eq('id',id).maybeSingle();
+  if(!data) return;
+  const msg=`*${data.title}*\n\n${data.content}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
+}
+function _copyRetornoLink(clientId,clientName){
+  const link=window.location.origin+'/retorno?pid='+(profId||'')+'&client_id='+clientId+'&client_name='+encodeURIComponent(clientName);
+  navigator.clipboard.writeText(link).then(()=>showToast('Link de retorno copiado!'));
+}
+function renderViewNovaPrescricao(params={}){
+  const clientId=params.clientId||null;
+  const clientName=params.clientName||'';
+  const vc=document.getElementById('viewContainer');
+  const tipos=['musculacao','cardio','funcional','pilates','yoga','outro'];
+  const tipoLabel={musculacao:'Musculação',cardio:'Cardio',funcional:'Funcional',pilates:'Pilates',yoga:'Yoga',outro:'Outro'};
+  const today=new Date().toISOString().slice(0,10);
+  vc.innerHTML=_vHd('Nova Prescrição')+`
+  <div class="dash-inner" style="padding-bottom:90px">
+    ${clientName?`<div style="font-size:13px;color:var(--muted);margin-bottom:16px">Cliente: <b>${esc(clientName)}</b></div>`:''}
+    <input type="hidden" id="np_cliId" value="${clientId||''}">
+    <div class="pf"><label>Título <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="np_title" placeholder="Ex: Treino A — Hipertrofia">
+    </div>
+    <div class="pf"><label>Tipo</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="np_tipo_chips">
+        ${tipos.map(t=>`<button class="sex-chip${t==='musculacao'?' sel':''}" style="flex:none;padding:8px 14px" onclick="_npTipo('${t}',this)">${tipoLabel[t]}</button>`).join('')}
+      </div>
+      <input type="hidden" id="np_tipo" value="musculacao">
+    </div>
+    <div class="grid2">
+      <div class="pf"><label>Válido de</label><input type="date" id="np_from" value="${today}"></div>
+      <div class="pf"><label>Válido até <span style="font-size:11px;color:var(--muted)">(opcional)</span></label><input type="date" id="np_until"></div>
+    </div>
+    <div class="pf"><label>Conteúdo do treino <span style="color:var(--danger)">*</span></label>
+      <textarea id="np_content" style="min-height:300px;font-family:monospace;font-size:13px;line-height:1.6;resize:vertical" placeholder="Ex:
+AQUECIMENTO (10 min)
+- Esteira 5 min moderado
+- Mobilidade articular
+
+TREINO PRINCIPAL
+A1 - Supino reto: 4x10-12 (70% 1RM)
+A2 - Remada curvada: 4x10-12
+
+VOLTA À CALMA
+- Alongamento 5 min"></textarea>
+    </div>
+    <div class="profile-msg err" id="npErr" style="display:none;margin-top:8px"></div>
+  </div>`+
+  _vFooter(
+    `<button class="btn-logout" onclick="goBack()">Cancelar</button>`,
+    `<button class="btn-save-profile" onclick="savePrescription()">Salvar prescrição</button>`
+  );
+}
+function _npTipo(t,el){
+  document.getElementById('np_tipo').value=t;
+  document.querySelectorAll('#np_tipo_chips .sex-chip').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+async function savePrescription(){
+  const title=(document.getElementById('np_title')?.value||'').trim();
+  const content=(document.getElementById('np_content')?.value||'').trim();
+  const clientId=document.getElementById('np_cliId')?.value||null;
+  const tipo=document.getElementById('np_tipo')?.value||'musculacao';
+  const from=document.getElementById('np_from')?.value||null;
+  const until=document.getElementById('np_until')?.value||null;
+  const errEl=document.getElementById('npErr');
+  if(!title||!content){
+    if(errEl){errEl.textContent='Título e conteúdo são obrigatórios.';errEl.style.display='block';} return;
+  }
+  if(!clientId||!profId){ showToast('Cliente não identificado.'); return; }
+  const {error}=await sb.from('workout_prescriptions').insert({
+    client_id:clientId, professional_id:profId,
+    title, content, type:tipo,
+    valid_from:from||undefined, valid_until:until||undefined
+  });
+  if(error){ if(errEl){errEl.textContent='Erro: '+error.message;errEl.style.display='block';} return; }
+  showToast('Prescrição salva!');
+  navigateTo('cliente',{id:clientId});
+}
+async function renderViewDetalhePrescricao(params={}){
+  const {id,clientId}=params;
+  if(!id){ goBack(); return; }
+  const vc=document.getElementById('viewContainer');
+  vc.innerHTML=_vHd('Prescrição')+'<div class="dash-inner"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>';
+  const {data:p,error}=await sb.from('workout_prescriptions').select('*').eq('id',id).maybeSingle();
+  if(error||!p){ showToast('Prescrição não encontrada.'); goBack(); return; }
+  const typeLabel={musculacao:'Musculação',cardio:'Cardio',funcional:'Funcional',pilates:'Pilates',yoga:'Yoga',outro:'Outro'};
+  const from=p.valid_from?new Date(p.valid_from).toLocaleDateString('pt-BR'):'—';
+  const until=p.valid_until?new Date(p.valid_until).toLocaleDateString('pt-BR'):'sem data fim';
+  vc.innerHTML=_vHd(esc(p.title))+`
+  <div class="dash-inner" style="padding-bottom:90px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <span class="badge-status s-${p.status==='ativa'?'nova':p.status==='pausada'?'lida':'arquivada'}">${p.status}</span>
+      <span style="font-size:12px;color:var(--muted)">${typeLabel[p.type]||p.type} · ${from} – ${until}</span>
+    </div>
+    <div class="presc-content">${esc(p.content)}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+      <button class="btn-view" onclick="_togglePrescStatus('${p.id}','${p.status}','${clientId||''}')">${p.status==='ativa'?'Pausar':'Ativar'}</button>
+      <button class="btn-view" onclick="_prescWpp('${p.id}')">📲 Enviar WhatsApp</button>
+      <button class="btn-danger-logout" onclick="_delPrescNav('${p.id}','${clientId||''}')">Excluir</button>
+    </div>
+  </div>`;
+}
+async function _togglePrescStatus(id,currentStatus,clientId){
+  const newStatus=currentStatus==='ativa'?'pausada':'ativa';
+  const {error}=await sb.from('workout_prescriptions').update({status:newStatus}).eq('id',id);
+  if(error){ showToast('Erro: '+error.message); return; }
+  showToast('Status atualizado.'); renderViewDetalhePrescricao({id,clientId});
+}
+async function _delPrescNav(id,clientId){
+  showConfirm('Excluir prescrição permanentemente?',async()=>{
+    const {error}=await sb.from('workout_prescriptions').delete().eq('id',id);
+    if(error){ showToast('Erro: '+error.message); return; }
+    showToast('Prescrição excluída.');
+    if(clientId) navigateTo('cliente',{id:clientId}); else goBack();
+  });
+}
+
+// ── COMPARATIVO DE AVALIAÇÕES ──────────────────────────────────
+async function loadComparativo(clientId){
+  const cont=document.getElementById('cliTabComp');
+  if(!cont||!sb) return;
+  cont.innerHTML='<div class="spinner-wrap"><div class="spin"></div>Carregando…</div>';
+  const {data:asmts}=await sb.from('assessments').select('id,created_at')
+    .eq('client_id',clientId).eq('status','concluida').order('created_at');
+  const ids=(asmts||[]).map(a=>a.id);
+  if(ids.length<2){
+    cont.innerHTML='<div class="empty-state" style="padding:40px 0"><div class="empty-desc">Faça pelo menos 2 avaliações concluídas para ver o comparativo.</div></div>'; return;
+  }
+  const [r1,r2,r3,r4,r5]=await Promise.all([
+    sb.from('assessment_biometrics').select('assessment_id,peso_kg,imc,percentual_gordura_bio').in('assessment_id',ids),
+    sb.from('assessment_skinfolds').select('assessment_id,percentual_gordura').in('assessment_id',ids),
+    sb.from('assessment_circumferences').select('assessment_id,cintura_cm,quadril_cm,abdomen_cm').in('assessment_id',ids),
+    sb.from('assessment_vo2').select('assessment_id,vo2max_estimado').in('assessment_id',ids),
+    sb.from('assessment_strength').select('assessment_id,preensao_d_kg,rm_estimado_supino').in('assessment_id',ids)
+  ]);
+  const bio=Object.fromEntries((r1.data||[]).map(x=>[x.assessment_id,x]));
+  const skin=Object.fromEntries((r2.data||[]).map(x=>[x.assessment_id,x]));
+  const circ=Object.fromEntries((r3.data||[]).map(x=>[x.assessment_id,x]));
+  const vo2m=Object.fromEntries((r4.data||[]).map(x=>[x.assessment_id,x]));
+  const str=Object.fromEntries((r5.data||[]).map(x=>[x.assessment_id,x]));
+
+  const metrics=[
+    {key:'peso',     label:'Peso (kg)',         get:id=>parseFloat(bio[id]?.peso_kg),           bad:'up'},
+    {key:'imc',      label:'IMC',               get:id=>parseFloat(bio[id]?.imc),               bad:'up'},
+    {key:'gordura',  label:'% Gordura',          get:id=>{const g=parseFloat(skin[id]?.percentual_gordura)||parseFloat(bio[id]?.percentual_gordura_bio);return g;}, bad:'up'},
+    {key:'cintura',  label:'Cintura (cm)',       get:id=>parseFloat(circ[id]?.cintura_cm),       bad:'up'},
+    {key:'abdomen',  label:'Abdômen (cm)',       get:id=>parseFloat(circ[id]?.abdomen_cm),       bad:'up'},
+    {key:'quadril',  label:'Quadril (cm)',       get:id=>parseFloat(circ[id]?.quadril_cm),       bad:'up'},
+    {key:'vo2',      label:'VO2máx (ml/kg/min)', get:id=>parseFloat(vo2m[id]?.vo2max_estimado),  bad:'down'},
+    {key:'preensao', label:'Preensão D (kg)',    get:id=>parseFloat(str[id]?.preensao_d_kg),     bad:'down'},
+    {key:'rm_supino',label:'1RM Supino (kg)',    get:id=>parseFloat(str[id]?.rm_estimado_supino),bad:'down'},
+  ];
+
+  const cols=asmts.map(a=>new Date(a.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}));
+  const thDates=cols.map(d=>`<th>${d}</th>`).join('');
+  const rows=metrics.map(m=>{
+    const vals=asmts.map(a=>{ const v=m.get(a.id); return isNaN(v)?null:v; });
+    const first=vals.find(v=>v!=null), last=[...vals].reverse().find(v=>v!=null);
+    let delta='—', deltaCls='delta-neutral';
+    if(first!=null&&last!=null&&first!==last){
+      const diff=last-first, pct=Math.abs(diff/first*100);
+      const sign=diff>0?'+':'';
+      delta=(diff>0?'↑ ':'↓ ')+Math.abs(diff).toFixed(1);
+      if(pct>1){
+        const up=diff>0;
+        if(m.bad==='up') deltaCls=up?'delta-up':'delta-down';
+        else             deltaCls=up?'delta-up-good':'delta-down-bad';
+      }
+    }
+    const tds=vals.map(v=>`<td class="metric-val${v==null?' empty':''}">${v!=null?v.toFixed(1):'—'}</td>`).join('');
+    return `<tr><td class="metric-name">${m.label}</td>${tds}<td class="${deltaCls}">${delta}</td></tr>`;
+  }).join('');
+
+  cont.innerHTML=`
+    <div style="overflow-x:auto;margin-bottom:20px">
+      <table class="comp-table">
+        <thead><tr><th>Métrica</th>${thDates}<th>Variação</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 // ── VIEW: NOVA AVALIAÇÃO ───────────────────────────────────────

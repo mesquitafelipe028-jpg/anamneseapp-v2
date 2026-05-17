@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Questionário de Retorno</title>
+<meta name="theme-color" content="#6b7a42">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/config.js"></script>
+<style>
+:root{--bg:#f7f5f0;--white:#fff;--ink:#1a1814;--muted:#9a9588;--border:#e4e0d8;--olive:#6b7a42;--cream:#f0ece3;--danger:#c0392b;--r-md:12px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;padding:0 0 80px;}
+.header{background:var(--white);border-bottom:1px solid var(--border);padding:16px 20px;position:sticky;top:0;z-index:50;}
+.header-logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:18px;color:var(--olive);}
+.header-logo span{font-style:normal;color:var(--ink);}
+.header-sub{font-size:12px;color:var(--muted);}
+.container{max-width:600px;margin:0 auto;padding:20px 16px;}
+.block-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:20px;margin-bottom:16px;}
+.block-title{font-family:'Instrument Serif',serif;font-size:20px;font-weight:400;color:var(--ink);margin-bottom:4px;}
+.block-num{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--olive);margin-bottom:12px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{padding:8px 14px;border:1.5px solid var(--border);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;background:var(--white);}
+.chip.sel{border-color:var(--olive);background:rgba(107,122,66,.08);color:var(--olive);}
+.scale-wrap{display:flex;gap:4px;flex-wrap:wrap;}
+.scale-btn{width:40px;height:40px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s;background:var(--white);}
+.scale-btn.sel{border-color:var(--olive);background:var(--olive);color:#fff;}
+.toggle-wrap{display:flex;gap:8px;}
+.toggle-btn{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;background:var(--white);transition:all .2s;}
+.toggle-btn.sel{border-color:var(--olive);background:rgba(107,122,66,.08);color:var(--olive);}
+textarea{width:100%;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;resize:vertical;min-height:80px;transition:border-color .2s;line-height:1.6;}
+textarea:focus{border-color:var(--olive);}
+.cond-field{margin-top:10px;display:none;}
+.cond-field.show{display:block;}
+.btn-submit{width:100%;padding:16px;background:var(--olive);color:#fff;border:none;border-radius:var(--r-md);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s;margin-top:8px;}
+.btn-submit:hover{opacity:.88;}
+.success{text-align:center;padding:60px 24px;}
+.success-icon{font-size:60px;margin-bottom:16px;}
+.success-title{font-family:'Instrument Serif',serif;font-size:28px;font-weight:400;color:var(--olive);margin-bottom:8px;}
+.success-sub{font-size:15px;color:var(--muted);line-height:1.6;}
+.result-warn{background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--danger);}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-logo">Anamnese<span>App</span></div>
+  <div class="header-sub">Questionário de Retorno</div>
+</div>
+<div class="container" id="formContainer">
+  <!-- BLOCO 1 -->
+  <div class="block-card">
+    <div class="block-num">Bloco 01</div>
+    <div class="block-title">Como você está se sentindo?</div>
+    <div class="field">
+      <label>Bem-estar geral hoje (1–10)</label>
+      <div class="scale-wrap" id="sc_bemestar"></div>
+    </div>
+    <div class="field">
+      <label>Energia nos últimos dias</label>
+      <div class="chips" id="ch_energia" data-k="energia" data-multi="false"></div>
+    </div>
+    <div class="field">
+      <label>Qualidade do sono</label>
+      <div class="chips" id="ch_sono" data-k="sono" data-multi="false"></div>
+    </div>
+    <div class="field">
+      <label>Nível de estresse</label>
+      <div class="chips" id="ch_estresse" data-k="estresse" data-multi="false"></div>
+    </div>
+  </div>
+  <!-- BLOCO 2 -->
+  <div class="block-card">
+    <div class="block-num">Bloco 02</div>
+    <div class="block-title">Sobre o treino</div>
+    <div class="field">
+      <label>Conseguiu seguir o treino prescrito?</label>
+      <div class="chips" id="ch_seguiu" data-k="seguiu" data-multi="false"></div>
+    </div>
+    <div class="field">
+      <label>Frequência real de treinos por semana</label>
+      <div class="scale-wrap" id="sc_frequencia"></div>
+    </div>
+    <div class="field">
+      <label>Dificuldade percebida (1–10)</label>
+      <div class="scale-wrap" id="sc_dificuldade"></div>
+    </div>
+    <div class="field">
+      <label>O que foi mais difícil?</label>
+      <textarea id="tx_dificil" placeholder="Descreva o que encontrou de mais desafiador…"></textarea>
+    </div>
+    <div class="field">
+      <label>Alguma dor ou desconforto durante os treinos?</label>
+      <div class="toggle-wrap">
+        <button class="toggle-btn" onclick="toggleVal('dor',false,this)">Não</button>
+        <button class="toggle-btn" onclick="toggleVal('dor',true,this)">Sim</button>
+      </div>
+      <div class="cond-field" id="cd_dor">
+        <textarea id="tx_dor" placeholder="Onde e quando ocorre a dor?"></textarea>
+      </div>
+    </div>
+  </div>
+  <!-- BLOCO 3 -->
+  <div class="block-card">
+    <div class="block-num">Bloco 03</div>
+    <div class="block-title">Saúde e hábitos</div>
+    <div class="field">
+      <label>Mudou algo em medicamentos ou tratamentos?</label>
+      <div class="toggle-wrap">
+        <button class="toggle-btn" onclick="toggleVal('meds',false,this)">Não</button>
+        <button class="toggle-btn" onclick="toggleVal('meds',true,this)">Sim</button>
+      </div>
+      <div class="cond-field" id="cd_meds">
+        <textarea id="tx_meds" placeholder="Descreva a mudança…"></textarea>
+      </div>
+    </div>
+    <div class="field">
+      <label>Ocorreu alguma lesão ou acidente?</label>
+      <div class="toggle-wrap">
+        <button class="toggle-btn" onclick="toggleVal('lesao',false,this)">Não</button>
+        <button class="toggle-btn" onclick="toggleVal('lesao',true,this)">Sim</button>
+      </div>
+      <div class="cond-field" id="cd_lesao">
+        <textarea id="tx_lesao" placeholder="Descreva a lesão ou acidente…"></textarea>
+      </div>
+    </div>
+    <div class="field">
+      <label>Alterações na alimentação?</label>
+      <div class="chips" id="ch_alimentacao" data-k="alimentacao" data-multi="false"></div>
+    </div>
+    <div class="field">
+      <label>Hidratação</label>
+      <div class="chips" id="ch_hidratacao" data-k="hidratacao" data-multi="false"></div>
+    </div>
+  </div>
+  <!-- BLOCO 4 -->
+  <div class="block-card">
+    <div class="block-num">Bloco 04</div>
+    <div class="block-title">Evolução percebida</div>
+    <div class="field">
+      <label>Sente evolução nos resultados? (1–10)</label>
+      <div class="scale-wrap" id="sc_evolucao"></div>
+    </div>
+    <div class="field">
+      <label>O que melhorou mais?</label>
+      <textarea id="tx_melhora" placeholder="Descreva as melhorias percebidas…"></textarea>
+    </div>
+    <div class="field">
+      <label>Objetivo atual mudou?</label>
+      <div class="toggle-wrap">
+        <button class="toggle-btn" onclick="toggleVal('obj_mudou',false,this)">Não</button>
+        <button class="toggle-btn" onclick="toggleVal('obj_mudou',true,this)">Sim</button>
+      </div>
+      <div class="cond-field" id="cd_obj_mudou">
+        <textarea id="tx_novo_obj" placeholder="Qual é o novo objetivo?"></textarea>
+      </div>
+    </div>
+    <div class="field">
+      <label>Mensagem para seu profissional</label>
+      <textarea id="tx_mensagem" style="min-height:100px" placeholder="Escreva livremente…"></textarea>
+    </div>
+  </div>
+  <div class="result-warn" id="errMsg" style="display:none;margin-bottom:12px"></div>
+  <button class="btn-submit" onclick="enviarRetorno()">Enviar retorno</button>
+</div>
+<script>
+const _SBU=window.SUPABASE_URL||'',_SBA=window.SUPABASE_ANON||'';
+const sb=(_SBU&&_SBA&&_SBU!=='COLE_SUA_URL_AQUI')?supabase.createClient(_SBU,_SBA):null;
+const params=new URLSearchParams(window.location.search);
+const _pid=params.get('pid')||null;
+const _clientId=params.get('client_id')||null;
+const _clientName=params.get('client_name')||null;
+const data={};
+
+function scale(containerId, key, max, start=1){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+  for(let i=start;i<=max;i++){
+    const btn=document.createElement('button');
+    btn.className='scale-btn';
+    btn.textContent=i;
+    btn.onclick=()=>{
+      el.querySelectorAll('.scale-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+      data[key]=i;
+    };
+    el.appendChild(btn);
+  }
+}
+function chips(containerId, opts){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+  const key=el.dataset.k;
+  const multi=el.dataset.multi==='true';
+  opts.forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.className='chip';
+    btn.textContent=opt;
+    btn.onclick=()=>{
+      if(!multi){ el.querySelectorAll('.chip').forEach(b=>b.classList.remove('sel')); data[key]=opt; }
+      else{
+        if(!Array.isArray(data[key])) data[key]=[];
+        if(btn.classList.contains('sel')){ data[key]=data[key].filter(v=>v!==opt); }
+        else{ data[key].push(opt); }
+      }
+      btn.classList.toggle('sel', multi?data[key].includes(opt):data[key]===opt);
+    };
+    el.appendChild(btn);
+  });
+}
+function toggleVal(key, val, btn){
+  data[key]=val;
+  const wrap=btn.closest('.toggle-wrap');
+  if(wrap) wrap.querySelectorAll('.toggle-btn').forEach(b=>b.classList.toggle('sel',b===btn));
+  const cd=document.getElementById('cd_'+key);
+  if(cd) cd.classList.toggle('show',val===true);
+}
+
+// Init
+scale('sc_bemestar','bemestar',10);
+scale('sc_frequencia','frequencia',7,0);
+scale('sc_dificuldade','dificuldade',10);
+scale('sc_evolucao','evolucao',10);
+chips('ch_energia',['Ótima','Boa','Regular','Cansado','Exausto']);
+chips('ch_sono',['Excelente','Boa','Regular','Ruim']);
+chips('ch_estresse',['Baixo','Moderado','Alto','Muito alto']);
+chips('ch_seguiu',['Sim, sempre','Na maioria','Às vezes','Não consegui']);
+chips('ch_alimentacao',['Melhorou','Igual','Piorou']);
+chips('ch_hidratacao',['Ótima','Boa','Regular','Ruim']);
+
+if(_clientName) document.querySelector('.header-sub').textContent='Questionário de Retorno — '+_clientName;
+
+async function enviarRetorno(){
+  // Coleta campos de texto
+  const txFields={
+    dificil:'tx_dificil',dor:'tx_dor',meds_detalhe:'tx_meds',
+    lesao_detalhe:'tx_lesao',melhora:'tx_melhora',novo_obj:'tx_novo_obj',mensagem:'tx_mensagem'
+  };
+  Object.entries(txFields).forEach(([k,id])=>{ const el=document.getElementById(id); if(el&&el.value.trim()) data[k]=el.value.trim(); });
+  if(_clientName) data.nome=_clientName;
+  const errEl=document.getElementById('errMsg');
+  if(!sb){ errEl.textContent='Supabase não configurado.'; errEl.style.display='block'; return; }
+  const payload={mode:'retorno',professional_id:_pid,client_id:_clientId,patient_name:_clientName,data,status:'nova'};
+  const {error}=await sb.from('anamneses').insert(payload);
+  if(error){ errEl.textContent='Erro ao enviar: '+error.message; errEl.style.display='block'; return; }
+  document.getElementById('formContainer').innerHTML=`<div class="success">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Retorno enviado!</div>
+    <div class="success-sub">Seu profissional receberá suas respostas em breve. Obrigado por manter o acompanhamento em dia!</div>
+  </div>`;
+}
+if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+</script>
+</body>
+</html>

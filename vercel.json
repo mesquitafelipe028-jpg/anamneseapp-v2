@@ -11,6 +11,7 @@
     { "src": "/portal",       "dest": "/portal.html"    },
     { "src": "/avaliacao",    "dest": "/avaliacao.html" },
     { "src": "/anamnese",     "dest": "/anamnese.html"  },
+    { "src": "/retorno",      "dest": "/retorno.html"   },
     { "src": "/dashboard",    "dest": "/dashboard.html" },
     { "src": "/",             "dest": "/index.html"     }
   ]
