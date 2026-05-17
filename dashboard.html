@@ -636,6 +636,26 @@ tr:hover td{background:var(--cream);}
 .delta-up-good{color:#27ae60;font-weight:600;}
 .delta-down-bad{color:#c0392b;font-weight:600;}
 .delta-neutral{color:var(--muted);}
+/* ── MULTI-PLAN TABS ── */
+.plans-tab-row{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;border-bottom:2px solid var(--border);margin-bottom:16px;}
+.plans-tab-row::-webkit-scrollbar{display:none;}
+.plan-tab{padding:10px 20px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;min-height:44px;flex-shrink:0;}
+.plan-tab.active{color:var(--olive);border-bottom-color:var(--olive);}
+.plan-tab:hover:not(.active){color:var(--ink);}
+.btn-add-plan{padding:10px 16px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;min-height:44px;flex-shrink:0;display:flex;align-items:center;gap:4px;}
+.btn-add-plan:hover{color:var(--olive);}
+/* ── PLAN HEADER ── */
+.plan-header-card{background:var(--white);border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;border:1px solid var(--border);}
+.plan-color-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;cursor:pointer;border:2px solid rgba(0,0,0,.12);position:relative;}
+.plan-name-col{flex:1;min-width:0;}
+.plan-name-input{width:100%;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--ink);background:transparent;padding:0;margin-bottom:2px;}
+.plan-focus-input{width:100%;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);background:transparent;padding:0;}
+.plan-focus-input::placeholder{color:var(--border);}
+/* ── COLOR PICKER ── */
+.color-picker-popover{position:fixed;background:var(--white);border-radius:10px;padding:10px;display:flex;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.18);z-index:500;}
+.color-opt{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s;}
+.color-opt:hover{transform:scale(1.2);}
+.color-opt.selected{border-color:var(--ink);}
 </style>
 </head>
 <body>
@@ -988,6 +1008,30 @@ let allAvals = [];
 let allClients = [];
 let _newAvalClientId = null;
 let _newAvalReturnToClient = false;
+// ── PRESCRIÇÃO MULTI-PLANO ────────────────────────────────────
+let _np = null; // estado da prescrição em edição
+const _NP_COLORS = ['#6b7a42','#a8893a','#3b6ea5','#7b5ea7','#c0392b','#16a085','#e67e22'];
+const _NP_PLAN_NAMES = ['Treino A','Treino B','Treino C','Treino D','Treino E','Treino F'];
+function _npNewPlan(idx=0){
+  return {
+    id:'plan_'+Date.now()+'_'+idx,
+    name:_NP_PLAN_NAMES[idx]||('Treino '+(idx+1)),
+    focus:'',
+    color:_NP_COLORS[idx%_NP_COLORS.length],
+    content:''
+  };
+}
+function _npInit(clientId, clientName){
+  const today=new Date().toISOString().slice(0,10);
+  _np={
+    clientId, clientName,
+    title:'', tipo:'musculacao',
+    valid_from:today, valid_until:'',
+    objective:'', observacoes:'',
+    plans:[_npNewPlan(0)],
+    activePlanIdx:0
+  };
+}
 let currentModalId = null;
 let activeFilter = 'all';
 let activeStatusFilter = 'all';
@@ -2478,13 +2522,17 @@ async function loadPrescricoes(clientId){
     const from=p.valid_from?new Date(p.valid_from).toLocaleDateString('pt-BR'):'';
     const until=p.valid_until?new Date(p.valid_until).toLocaleDateString('pt-BR'):'';
     const periodo=from?(until?`${from} – ${until}`:`A partir de ${from}`):'';
+    let plans2=[];
+    try{const pp=JSON.parse(p.content);if(pp?.plans)plans2=pp.plans;else plans2=[{content:p.content}];}catch(e){plans2=[{content:p.content}];}
+    const planBadge=plans2.length>1?`<span style="font-size:11px;background:rgba(107,122,66,.12);color:var(--olive);padding:2px 7px;border-radius:10px;font-weight:600">${plans2.length} planos</span> `:'';
+    const previewContent=plans2[0]?.content||p.content;
     return `<div class="presc-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div class="presc-card-title">${esc(p.title)}</div>
         <span class="presc-badge ${typeCls[p.type]||'presc-musc'}">${typeLabel[p.type]||p.type}</span>
       </div>
-      <div class="presc-card-meta">${periodo?`📅 ${periodo}`:''} <span class="badge-status s-${p.status==='ativa'?'nova':p.status==='pausada'?'lida':'arquivada'}">${p.status}</span></div>
-      <div class="presc-content">${esc(p.content)}</div>
+      <div class="presc-card-meta">${planBadge}${periodo?`📅 ${periodo}`:''} <span class="badge-status s-${p.status==='ativa'?'nova':p.status==='pausada'?'lida':'arquivada'}">${p.status}</span></div>
+      <div class="presc-content" style="max-height:120px">${esc(previewContent.slice(0,400))}${previewContent.length>400?'\n…':''}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn-view" onclick="navigateTo('detalhe-prescricao',{id:'${p.id}',clientId:'${clientId}'})">Abrir</button>
         <button class="btn-view" onclick="_prescWpp('${p.id}')">WhatsApp</button>
@@ -2504,10 +2552,27 @@ async function _delPresc(id,clientId){
   });
 }
 async function _prescWpp(id){
-  const {data}=await sb.from('workout_prescriptions').select('title,content').eq('id',id).maybeSingle();
+  const {data}=await sb.from('workout_prescriptions').select('title,content,valid_from,valid_until').eq('id',id).maybeSingle();
   if(!data) return;
-  const msg=`*${data.title}*\n\n${data.content}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank');
+  let plans=[];
+  try{
+    const parsed=JSON.parse(data.content);
+    if(parsed?.plans) plans=parsed.plans;
+    else plans=[{name:'Treino A',focus:'',content:data.content}];
+  }catch(e){plans=[{name:'Treino A',focus:'',content:data.content}];}
+  const from=data.valid_from?new Date(data.valid_from).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}):'';
+  const until=data.valid_until?new Date(data.valid_until).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}):'';
+  const periodo=[from,until].filter(Boolean).join(' – ');
+  let msg=`*💪 PROGRAMA: ${data.title}*\n`;
+  if(periodo) msg+=`_${periodo}_\n`;
+  msg+='\n';
+  plans.forEach(pl=>{
+    const sep='━'.repeat(4);
+    msg+=`${sep} ${pl.name.toUpperCase()}${pl.focus?' — '+pl.focus.toUpperCase():''} ${sep}\n`;
+    msg+=pl.content+'\n\n';
+  });
+  msg+='_Dúvidas? Me chame no WhatsApp! 💪_';
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 function _copyRetornoLink(clientId,clientName){
   const link=window.location.origin+'/retorno?pid='+(profId||'')+'&client_id='+clientId+'&client_name='+encodeURIComponent(clientName);
@@ -2516,96 +2581,206 @@ function _copyRetornoLink(clientId,clientName){
 function renderViewNovaPrescricao(params={}){
   const clientId=params.clientId||null;
   const clientName=params.clientName||'';
+  _npInit(clientId, clientName);
   const vc=document.getElementById('viewContainer');
   const tipos=['musculacao','cardio','funcional','pilates','yoga','outro'];
   const tipoLabel={musculacao:'Musculação',cardio:'Cardio',funcional:'Funcional',pilates:'Pilates',yoga:'Yoga',outro:'Outro'};
-  const today=new Date().toISOString().slice(0,10);
   vc.innerHTML=_vHd('Nova Prescrição')+`
   <div class="dash-inner" style="padding-bottom:90px">
     ${clientName?`<div style="font-size:13px;color:var(--muted);margin-bottom:16px">Cliente: <b>${esc(clientName)}</b></div>`:''}
     <input type="hidden" id="np_cliId" value="${clientId||''}">
-    <div class="pf"><label>Título <span style="color:var(--danger)">*</span></label>
-      <input type="text" id="np_title" placeholder="Ex: Treino A — Hipertrofia">
+    <!-- INFO GERAL -->
+    <div class="pf"><label>Título do programa <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="np_title" placeholder="Ex: Hipertrofia 3x — Intermediário" oninput="_np.title=this.value">
     </div>
     <div class="pf"><label>Tipo</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="np_tipo_chips">
         ${tipos.map(t=>`<button class="sex-chip${t==='musculacao'?' sel':''}" style="flex:none;padding:8px 14px" onclick="_npTipo('${t}',this)">${tipoLabel[t]}</button>`).join('')}
       </div>
-      <input type="hidden" id="np_tipo" value="musculacao">
     </div>
     <div class="grid2">
-      <div class="pf"><label>Válido de</label><input type="date" id="np_from" value="${today}"></div>
-      <div class="pf"><label>Válido até <span style="font-size:11px;color:var(--muted)">(opcional)</span></label><input type="date" id="np_until"></div>
+      <div class="pf"><label>Válido de</label><input type="date" id="np_from" value="${new Date().toISOString().slice(0,10)}" oninput="_np.valid_from=this.value"></div>
+      <div class="pf"><label>Válido até <span style="font-size:11px;color:var(--muted)">(opcional)</span></label><input type="date" id="np_until" oninput="_np.valid_until=this.value"></div>
     </div>
-    <div class="pf"><label>Conteúdo do treino <span style="color:var(--danger)">*</span></label>
-      <textarea id="np_content" style="min-height:300px;font-family:monospace;font-size:13px;line-height:1.6;resize:vertical" placeholder="Ex:
-AQUECIMENTO (10 min)
-- Esteira 5 min moderado
-- Mobilidade articular
-
-TREINO PRINCIPAL
-A1 - Supino reto: 4x10-12 (70% 1RM)
-A2 - Remada curvada: 4x10-12
-
-VOLTA À CALMA
-- Alongamento 5 min"></textarea>
-    </div>
+    <!-- PLANOS -->
+    <div id="np_plans_area"></div>
     <div class="profile-msg err" id="npErr" style="display:none;margin-top:8px"></div>
   </div>`+
   _vFooter(
     `<button class="btn-logout" onclick="goBack()">Cancelar</button>`,
     `<button class="btn-save-profile" onclick="savePrescription()">Salvar prescrição</button>`
   );
+  _npRenderPlans();
 }
 function _npTipo(t,el){
-  document.getElementById('np_tipo').value=t;
+  _np.tipo=t;
   document.querySelectorAll('#np_tipo_chips .sex-chip').forEach(b=>b.classList.remove('sel'));
   el.classList.add('sel');
 }
+function _npRenderPlans(){
+  const area=document.getElementById('np_plans_area');
+  if(!area||!_np) return;
+  const p=_np.plans[_np.activePlanIdx]||_np.plans[0];
+  const tabs=_np.plans.map((pl,i)=>`<button class="plan-tab${i===_np.activePlanIdx?' active':''}" onclick="setActivePlanNp(${i})">${esc(pl.name)}</button>`).join('');
+  area.innerHTML=`
+    <div style="margin-bottom:6px;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase">Planos de treino</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${_np.plans.length} plano${_np.plans.length!==1?'s':''}</div>
+    <div class="plans-tab-row" id="np_tab_row">
+      ${tabs}
+      <button class="btn-add-plan" onclick="addPlanNp()">+ Novo plano</button>
+    </div>
+    <div class="plan-header-card" id="np_plan_hdr">
+      <div class="plan-color-dot" id="np_color_dot_${_np.activePlanIdx}" style="background:${p.color}" onclick="_npShowColorPicker(${_np.activePlanIdx},this)"></div>
+      <div class="plan-name-col">
+        <input class="plan-name-input" value="${esc(p.name)}" placeholder="Nome do plano" oninput="_np.plans[${_np.activePlanIdx}].name=this.value;_npUpdateTabLabel(${_np.activePlanIdx},this.value)">
+        <input class="plan-focus-input" value="${esc(p.focus)}" placeholder="Foco muscular (ex: Peito e Tríceps)" oninput="_np.plans[${_np.activePlanIdx}].focus=this.value">
+      </div>
+      <div style="display:flex;gap:4px">
+        ${_np.plans.length>1?`<button class="btn-del" onclick="deletePlanNp(${_np.activePlanIdx})" title="Excluir plano" style="min-height:36px">🗑</button>`:''}
+        <button class="btn-view" style="font-size:11px;padding:6px 10px;min-height:36px" onclick="duplicatePlanNp(${_np.activePlanIdx})">Duplicar</button>
+      </div>
+    </div>
+    <textarea style="width:100%;min-height:260px;font-family:monospace;font-size:13px;line-height:1.6;resize:vertical;padding:14px;background:var(--white);border:1.5px solid var(--border);border-radius:10px;color:var(--ink);outline:none"
+      placeholder="Ex:\nAQUECIMENTO (10 min)\n- Esteira 5 min moderado\n\nTREINO PRINCIPAL\nA1 - Supino reto: 4x10-12 (70% 1RM)\nA2 - Remada curvada: 4x10-12\n\nVOLTA À CALMA\n- Alongamento 5 min"
+      oninput="_np.plans[${_np.activePlanIdx}].content=this.value"
+      onfocus="this.style.borderColor='var(--olive)'" onblur="this.style.borderColor='var(--border)'"
+    >${esc(p.content)}</textarea>`;
+}
+function _npUpdateTabLabel(idx, name){
+  const tabs=document.querySelectorAll('#np_tab_row .plan-tab');
+  if(tabs[idx]) tabs[idx].textContent=name||('Treino '+(idx+1));
+}
+function setActivePlanNp(idx){
+  // salva conteúdo do textarea atual antes de mudar
+  const ta=document.querySelector('#np_plans_area textarea');
+  if(ta&&_np) _np.plans[_np.activePlanIdx].content=ta.value;
+  _np.activePlanIdx=idx;
+  _npRenderPlans();
+}
+function addPlanNp(){
+  const ta=document.querySelector('#np_plans_area textarea');
+  if(ta&&_np) _np.plans[_np.activePlanIdx].content=ta.value;
+  const idx=_np.plans.length;
+  _np.plans.push(_npNewPlan(idx));
+  _np.activePlanIdx=idx;
+  _npRenderPlans();
+  // scrolla para o novo tab
+  setTimeout(()=>{const row=document.getElementById('np_tab_row');if(row)row.scrollLeft=row.scrollWidth;},50);
+}
+function deletePlanNp(idx){
+  if(_np.plans.length<=1){showToast('Precisa ter pelo menos 1 plano.');return;}
+  showConfirm('Excluir este plano de treino?',()=>{
+    _np.plans.splice(idx,1);
+    _np.activePlanIdx=Math.min(_np.activePlanIdx,_np.plans.length-1);
+    _npRenderPlans();
+  });
+}
+function duplicatePlanNp(idx){
+  const ta=document.querySelector('#np_plans_area textarea');
+  if(ta&&_np) _np.plans[_np.activePlanIdx].content=ta.value;
+  const orig=_np.plans[idx];
+  const copy={...orig,id:'plan_'+Date.now(),name:orig.name+' — Cópia'};
+  _np.plans.splice(idx+1,0,copy);
+  _np.activePlanIdx=idx+1;
+  _npRenderPlans();
+}
+function _npShowColorPicker(planIdx, dotEl){
+  document.querySelectorAll('.color-picker-popover').forEach(e=>e.remove());
+  const rect=dotEl.getBoundingClientRect();
+  const pop=document.createElement('div');
+  pop.className='color-picker-popover';
+  pop.innerHTML=_NP_COLORS.map(c=>`<div class="color-opt${_np.plans[planIdx].color===c?' selected':''}" style="background:${c}" onclick="_npSetColor(${planIdx},'${c}',this.closest('.color-picker-popover'))"></div>`).join('');
+  pop.style.top=(rect.bottom+6)+'px';
+  pop.style.left=rect.left+'px';
+  document.body.appendChild(pop);
+  setTimeout(()=>document.addEventListener('click',function _close(e){if(!pop.contains(e.target)){pop.remove();document.removeEventListener('click',_close);}},{once:true}),10);
+}
+function _npSetColor(planIdx, color, pop){
+  _np.plans[planIdx].color=color;
+  const dot=document.getElementById('np_color_dot_'+planIdx);
+  if(dot) dot.style.background=color;
+  if(pop) pop.remove();
+}
 async function savePrescription(){
-  const title=(document.getElementById('np_title')?.value||'').trim();
-  const content=(document.getElementById('np_content')?.value||'').trim();
+  // salva textarea ativo antes de serializar
+  const ta=document.querySelector('#np_plans_area textarea');
+  if(ta&&_np) _np.plans[_np.activePlanIdx].content=ta.value;
+  const title=(document.getElementById('np_title')?.value||_np?.title||'').trim();
   const clientId=document.getElementById('np_cliId')?.value||null;
-  const tipo=document.getElementById('np_tipo')?.value||'musculacao';
-  const from=document.getElementById('np_from')?.value||null;
-  const until=document.getElementById('np_until')?.value||null;
   const errEl=document.getElementById('npErr');
-  if(!title||!content){
-    if(errEl){errEl.textContent='Título e conteúdo são obrigatórios.';errEl.style.display='block';} return;
+  if(!title){if(errEl){errEl.textContent='Título é obrigatório.';errEl.style.display='block';}return;}
+  if(!_np?.plans?.length||!_np.plans.some(p=>p.content.trim())){
+    if(errEl){errEl.textContent='Preencha o conteúdo de pelo menos um plano.';errEl.style.display='block';}return;
   }
-  if(!clientId||!profId){ showToast('Cliente não identificado.'); return; }
+  if(!clientId||!profId){showToast('Cliente não identificado.');return;}
+  const content=JSON.stringify({plans:_np.plans});
   const {error}=await sb.from('workout_prescriptions').insert({
     client_id:clientId, professional_id:profId,
-    title, content, type:tipo,
-    valid_from:from||undefined, valid_until:until||undefined
+    title, content, type:_np.tipo,
+    valid_from:_np.valid_from||undefined, valid_until:_np.valid_until||undefined
   });
-  if(error){ if(errEl){errEl.textContent='Erro: '+error.message;errEl.style.display='block';} return; }
+  if(error){if(errEl){errEl.textContent='Erro: '+error.message;errEl.style.display='block';}return;}
   showToast('Prescrição salva!');
   navigateTo('cliente',{id:clientId});
 }
 async function renderViewDetalhePrescricao(params={}){
   const {id,clientId}=params;
-  if(!id){ goBack(); return; }
+  if(!id){goBack();return;}
   const vc=document.getElementById('viewContainer');
   vc.innerHTML=_vHd('Prescrição')+'<div class="dash-inner"><div class="spinner-wrap"><div class="spin"></div>Carregando…</div></div>';
   const {data:p,error}=await sb.from('workout_prescriptions').select('*').eq('id',id).maybeSingle();
-  if(error||!p){ showToast('Prescrição não encontrada.'); goBack(); return; }
+  if(error||!p){showToast('Prescrição não encontrada.');goBack();return;}
   const typeLabel={musculacao:'Musculação',cardio:'Cardio',funcional:'Funcional',pilates:'Pilates',yoga:'Yoga',outro:'Outro'};
   const from=p.valid_from?new Date(p.valid_from).toLocaleDateString('pt-BR'):'—';
   const until=p.valid_until?new Date(p.valid_until).toLocaleDateString('pt-BR'):'sem data fim';
+  // Parseia planos (suporte a formato antigo texto simples)
+  let plans=[];
+  try{
+    const parsed=JSON.parse(p.content);
+    if(parsed?.plans) plans=parsed.plans;
+    else plans=[{name:'Treino A',focus:'',color:'#6b7a42',content:p.content}];
+  }catch(e){
+    plans=[{name:'Treino A',focus:'',color:'#6b7a42',content:p.content}];
+  }
+  let activeIdx=0;
+  const renderDetailPlans=()=>{
+    const pl=plans[activeIdx];
+    const tabs=plans.map((pl2,i)=>`<button class="plan-tab${i===activeIdx?' active':''}" data-pidx="${i}">${esc(pl2.name)}</button>`).join('');
+    return `<div class="plans-tab-row" id="dtl_tab_row">${tabs}</div>
+      <div class="plan-header-card">
+        <div style="width:14px;height:14px;border-radius:50%;background:${pl.color};flex-shrink:0"></div>
+        <div class="plan-name-col">
+          <div style="font-size:15px;font-weight:700;color:var(--ink)">${esc(pl.name)}</div>
+          ${pl.focus?`<div style="font-size:12px;color:var(--muted)">${esc(pl.focus)}</div>`:''}
+        </div>
+      </div>
+      <div class="presc-content">${esc(pl.content)}</div>`;
+  };
   vc.innerHTML=_vHd(esc(p.title))+`
   <div class="dash-inner" style="padding-bottom:90px">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
       <span class="badge-status s-${p.status==='ativa'?'nova':p.status==='pausada'?'lida':'arquivada'}">${p.status}</span>
       <span style="font-size:12px;color:var(--muted)">${typeLabel[p.type]||p.type} · ${from} – ${until}</span>
+      <span style="font-size:12px;color:var(--muted)">${plans.length} plano${plans.length!==1?'s':''}</span>
     </div>
-    <div class="presc-content">${esc(p.content)}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+    <div id="dtl_plans_area">${renderDetailPlans()}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
       <button class="btn-view" onclick="_togglePrescStatus('${p.id}','${p.status}','${clientId||''}')">${p.status==='ativa'?'Pausar':'Ativar'}</button>
-      <button class="btn-view" onclick="_prescWpp('${p.id}')">📲 Enviar WhatsApp</button>
+      <button class="btn-view" onclick="_prescWpp('${p.id}')">📲 WhatsApp</button>
       <button class="btn-danger-logout" onclick="_delPrescNav('${p.id}','${clientId||''}')">Excluir</button>
     </div>
   </div>`;
+  // Bind tab clicks para detalhe (readonly)
+  const bindTabs=()=>{
+    document.getElementById('dtl_tab_row')?.querySelectorAll('.plan-tab').forEach((btn,i)=>{
+      btn.onclick=()=>{
+        activeIdx=i;
+        document.getElementById('dtl_plans_area').innerHTML=renderDetailPlans();
+        bindTabs();
+      };
+    });
+  };
+  bindTabs();
 }
 async function _togglePrescStatus(id,currentStatus,clientId){
   const newStatus=currentStatus==='ativa'?'pausada':'ativa';
