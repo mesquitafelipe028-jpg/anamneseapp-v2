@@ -662,6 +662,30 @@ tr:hover td{background:var(--cream);}
 .color-opt{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s;}
 .color-opt:hover{transform:scale(1.2);}
 .color-opt.selected{border-color:var(--ink);}
+/* ── BUILDER DE BLOCOS/EXERCÍCIOS ── */
+.np-block{background:var(--white);border:1px solid var(--border);border-radius:14px;margin-bottom:12px;overflow:hidden;}
+.np-block-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--cream);}
+.np-block-name{flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--ink);background:transparent;border-bottom:1.5px solid transparent;padding-bottom:2px;min-height:32px;}
+.np-block-name:focus{border-bottom-color:var(--olive);}
+.np-block-body{padding:10px 14px 4px;}
+.np-ex-row{padding:10px 0;border-bottom:1px solid var(--border);}
+.np-ex-row:last-child{border-bottom:none;}
+.np-ex-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.np-ex-name{flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--ink);background:transparent;border-bottom:1.5px solid var(--border);padding-bottom:3px;min-height:32px;}
+.np-ex-name:focus{border-bottom-color:var(--olive);}
+.np-ex-name::placeholder{color:#c8c4bb;font-weight:400;}
+.np-del-ex{width:28px;height:28px;border:none;background:none;color:var(--border);cursor:pointer;font-size:18px;border-radius:6px;flex-shrink:0;transition:color .15s;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;}
+.np-del-ex:hover{color:var(--danger);}
+.np-ex-params{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+.np-param label{display:block;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.np-param input{width:100%;padding:7px 8px;background:var(--cream);border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none;transition:border-color .2s;min-height:34px;}
+.np-param input:focus{border-color:var(--olive);}
+.np-ex-notes{width:100%;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);background:transparent;padding:0;border-bottom:1px dashed var(--border);}
+.np-ex-notes::placeholder{color:#c8c4bb;}
+.np-btn-add-ex{width:100%;padding:9px;background:none;border:1.5px dashed var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;margin-top:10px;min-height:36px;transition:all .2s;}
+.np-btn-add-ex:hover{border-color:var(--olive);color:var(--olive);}
+.np-btn-add-block{width:100%;padding:14px;background:var(--white);border:1.5px dashed var(--border);border-radius:14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;min-height:50px;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:all .2s;}
+.np-btn-add-block:hover{border-color:var(--olive);color:var(--olive);}
 </style>
 </head>
 <body>
@@ -1024,7 +1048,7 @@ function _npNewPlan(idx=0){
     name:_NP_PLAN_NAMES[idx]||('Treino '+(idx+1)),
     focus:'',
     color:_NP_COLORS[idx%_NP_COLORS.length],
-    content:''
+    blocks:[{id:'b_'+Date.now(),name:'Aquecimento',exercises:[{id:'e_'+Date.now(),name:'',sets:'3',reps:'10-12',load:'',rest:'60s',notes:''}]}]
   };
 }
 function _npInit(clientId, clientName){
@@ -2637,7 +2661,22 @@ async function _prescWpp(id){
   plans.forEach(pl=>{
     const sep='━'.repeat(4);
     msg+=`${sep} ${pl.name.toUpperCase()}${pl.focus?' — '+pl.focus.toUpperCase():''} ${sep}\n`;
-    msg+=pl.content+'\n\n';
+    if(pl.blocks&&pl.blocks.length){
+      pl.blocks.forEach(blk=>{
+        msg+=`\n🔹 *${blk.name}*\n`;
+        blk.exercises.forEach((ex,i)=>{
+          if(!ex.name.trim()) return;
+          const letra=String.fromCharCode(65+(i%26));
+          const params=[ex.sets?ex.sets+'×':'',ex.reps||'',ex.load||'',ex.rest?'↻ '+ex.rest:''].filter(Boolean).join(' ');
+          msg+=`${letra} — ${ex.name}\n`;
+          if(params) msg+=`   ${params}\n`;
+          if(ex.notes) msg+=`   _${ex.notes}_\n`;
+        });
+      });
+    } else if(pl.content){
+      msg+=pl.content+'\n';
+    }
+    msg+='\n';
   });
   msg+='_Dúvidas? Me chame no WhatsApp! 💪_';
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
@@ -2708,26 +2747,92 @@ function _npRenderPlans(){
         <button class="btn-view" style="font-size:11px;padding:6px 10px;min-height:36px" onclick="duplicatePlanNp(${_np.activePlanIdx})">Duplicar</button>
       </div>
     </div>
-    <textarea style="width:100%;min-height:260px;font-family:monospace;font-size:13px;line-height:1.6;resize:vertical;padding:14px;background:var(--white);border:1.5px solid var(--border);border-radius:10px;color:var(--ink);outline:none"
-      placeholder="Ex:\nAQUECIMENTO (10 min)\n- Esteira 5 min moderado\n\nTREINO PRINCIPAL\nA1 - Supino reto: 4x10-12 (70% 1RM)\nA2 - Remada curvada: 4x10-12\n\nVOLTA À CALMA\n- Alongamento 5 min"
-      oninput="_np.plans[${_np.activePlanIdx}].content=this.value"
-      onfocus="this.style.borderColor='var(--olive)'" onblur="this.style.borderColor='var(--border)'"
-    >${esc(p.content)}</textarea>`;
+    <div id="np_blocks_area"></div>`;
+  _npRenderBlocks();
+}
+function _npRenderBlocks(){
+  const el=document.getElementById('np_blocks_area');
+  if(!el||!_np) return;
+  const bi=_np.activePlanIdx;
+  const plan=_np.plans[bi];
+  if(!plan.blocks||!plan.blocks.length){
+    plan.blocks=[{id:'b_'+Date.now(),name:'Aquecimento',exercises:[{id:'e_'+Date.now(),name:'',sets:'3',reps:'10-12',load:'',rest:'60s',notes:''}]}];
+  }
+  let h='';
+  plan.blocks.forEach((blk,bIdx)=>{
+    h+=`<div class="np-block">
+      <div class="np-block-header">
+        <input class="np-block-name" value="${esc(blk.name)}" placeholder="Nome do bloco"
+          oninput="_np.plans[${bi}].blocks[${bIdx}].name=this.value">
+        ${plan.blocks.length>1?`<button class="np-del-ex" onclick="_npDelBlock(${bIdx})" title="Remover bloco">×</button>`:''}
+      </div>
+      <div class="np-block-body" id="npex_${bIdx}">`;
+    blk.exercises.forEach((ex,eIdx)=>{
+      h+=`<div class="np-ex-row">
+        <div class="np-ex-top">
+          <input class="np-ex-name" value="${esc(ex.name)}" placeholder="Nome do exercício"
+            oninput="_np.plans[${bi}].blocks[${bIdx}].exercises[${eIdx}].name=this.value">
+          <button class="np-del-ex" onclick="_npDelEx(${bIdx},${eIdx})">×</button>
+        </div>
+        <div class="np-ex-params">
+          <div class="np-param"><label>Séries</label>
+            <input type="number" inputmode="numeric" value="${esc(String(ex.sets))}" min="1" max="20"
+              oninput="_np.plans[${bi}].blocks[${bIdx}].exercises[${eIdx}].sets=this.value">
+          </div>
+          <div class="np-param"><label>Reps</label>
+            <input value="${esc(ex.reps)}" placeholder="10-12"
+              oninput="_np.plans[${bi}].blocks[${bIdx}].exercises[${eIdx}].reps=this.value">
+          </div>
+          <div class="np-param"><label>Carga</label>
+            <input value="${esc(ex.load)}" placeholder="kg"
+              oninput="_np.plans[${bi}].blocks[${bIdx}].exercises[${eIdx}].load=this.value">
+          </div>
+          <div class="np-param"><label>Descanso</label>
+            <input value="${esc(ex.rest)}" placeholder="60s"
+              oninput="_np.plans[${bi}].blocks[${bIdx}].exercises[${eIdx}].rest=this.value">
+          </div>
+        </div>
+        <input class="np-ex-notes" value="${esc(ex.notes||'')}" placeholder="Técnica, observações..."
+          oninput="_np.plans[${bi}].blocks[${bIdx}].exercises[${eIdx}].notes=this.value">
+      </div>`;
+    });
+    h+=`<button class="np-btn-add-ex" onclick="_npAddEx(${bIdx})">+ Adicionar exercício</button>
+      </div>
+    </div>`;
+  });
+  h+=`<button class="np-btn-add-block" onclick="_npAddBlock()">+ Adicionar bloco</button>`;
+  el.innerHTML=h;
+}
+function _npAddBlock(){
+  const plan=_np.plans[_np.activePlanIdx];
+  plan.blocks.push({id:'b_'+Date.now(),name:'Bloco '+(plan.blocks.length+1),exercises:[{id:'e_'+Date.now(),name:'',sets:'3',reps:'10-12',load:'',rest:'60s',notes:''}]});
+  _npRenderBlocks();
+  setTimeout(()=>{const inputs=document.querySelectorAll('.np-block-name');if(inputs.length)inputs[inputs.length-1].focus();},60);
+}
+function _npDelBlock(bi){
+  const plan=_np.plans[_np.activePlanIdx];
+  if(plan.blocks.length<=1){showToast('Precisa ter pelo menos 1 bloco.');return;}
+  showConfirm('Remover este bloco e todos os exercícios?',()=>{plan.blocks.splice(bi,1);_npRenderBlocks();});
+}
+function _npAddEx(bi){
+  _np.plans[_np.activePlanIdx].blocks[bi].exercises.push({id:'e_'+Date.now(),name:'',sets:'3',reps:'10-12',load:'',rest:'60s',notes:''});
+  _npRenderBlocks();
+  setTimeout(()=>{const names=document.querySelectorAll('#npex_'+bi+' .np-ex-name');if(names.length)names[names.length-1].focus();},60);
+}
+function _npDelEx(bi,ei){
+  const exs=_np.plans[_np.activePlanIdx].blocks[bi].exercises;
+  if(exs.length<=1){showToast('Precisa ter pelo menos 1 exercício.');return;}
+  exs.splice(ei,1);_npRenderBlocks();
 }
 function _npUpdateTabLabel(idx, name){
   const tabs=document.querySelectorAll('#np_tab_row .plan-tab');
   if(tabs[idx]) tabs[idx].textContent=name||('Treino '+(idx+1));
 }
 function setActivePlanNp(idx){
-  // salva conteúdo do textarea atual antes de mudar
-  const ta=document.querySelector('#np_plans_area textarea');
-  if(ta&&_np) _np.plans[_np.activePlanIdx].content=ta.value;
   _np.activePlanIdx=idx;
   _npRenderPlans();
 }
 function addPlanNp(){
-  const ta=document.querySelector('#np_plans_area textarea');
-  if(ta&&_np) _np.plans[_np.activePlanIdx].content=ta.value;
   const idx=_np.plans.length;
   _np.plans.push(_npNewPlan(idx));
   _np.activePlanIdx=idx;
@@ -2744,10 +2849,8 @@ function deletePlanNp(idx){
   });
 }
 function duplicatePlanNp(idx){
-  const ta=document.querySelector('#np_plans_area textarea');
-  if(ta&&_np) _np.plans[_np.activePlanIdx].content=ta.value;
   const orig=_np.plans[idx];
-  const copy={...orig,id:'plan_'+Date.now(),name:orig.name+' — Cópia'};
+  const copy=JSON.parse(JSON.stringify({...orig,id:'plan_'+Date.now(),name:orig.name+' — Cópia'}));
   _np.plans.splice(idx+1,0,copy);
   _np.activePlanIdx=idx+1;
   _npRenderPlans();
@@ -2770,18 +2873,15 @@ function _npSetColor(planIdx, color, pop){
   if(pop) pop.remove();
 }
 async function savePrescription(){
-  // salva textarea ativo antes de serializar
-  const ta=document.querySelector('#np_plans_area textarea');
-  if(ta&&_np) _np.plans[_np.activePlanIdx].content=ta.value;
   const title=(document.getElementById('np_title')?.value||_np?.title||'').trim();
   const clientId=document.getElementById('np_cliId')?.value||null;
   const errEl=document.getElementById('npErr');
   if(!title){if(errEl){errEl.textContent='Título é obrigatório.';errEl.style.display='block';}return;}
-  if(!_np?.plans?.length||!_np.plans.some(p=>p.content.trim())){
-    if(errEl){errEl.textContent='Preencha o conteúdo de pelo menos um plano.';errEl.style.display='block';}return;
+  if(!_np?.plans?.length||!_np.plans.some(p=>p.blocks?.some(b=>b.exercises?.some(e=>e.name.trim())))){
+    if(errEl){errEl.textContent='Adicione pelo menos um exercício com nome.';errEl.style.display='block';}return;
   }
   if(!clientId||!profId){showToast('Cliente não identificado.');return;}
-  const content=JSON.stringify({plans:_np.plans});
+  const content=JSON.stringify({plans:_np.plans.map(p=>({name:p.name,focus:p.focus,color:p.color,blocks:p.blocks}))});
   const {error}=await sb.from('workout_prescriptions').insert({
     client_id:clientId, professional_id:profId,
     title, content, type:_np.tipo,
@@ -2814,15 +2914,34 @@ async function renderViewDetalhePrescricao(params={}){
   const renderDetailPlans=()=>{
     const pl=plans[activeIdx];
     const tabs=plans.map((pl2,i)=>`<button class="plan-tab${i===activeIdx?' active':''}" data-pidx="${i}">${esc(pl2.name)}</button>`).join('');
+    let bodyHtml='';
+    if(pl.blocks&&pl.blocks.length){
+      bodyHtml=pl.blocks.map(blk=>{
+        const exRows=blk.exercises.map(ex=>{
+          const parts=[ex.sets?ex.sets+'×':'',ex.reps||'',ex.load||'',ex.rest?'↻ '+ex.rest:''].filter(Boolean).join(' · ');
+          return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px">${esc(ex.name)||'—'}</div>
+            ${parts?`<div style="font-size:11px;color:var(--muted)">${parts}</div>`:''}
+            ${ex.notes?`<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:2px">${esc(ex.notes)}</div>`:''}
+          </div>`;
+        }).join('');
+        return `<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden">
+          <div style="padding:10px 14px;background:var(--cream);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--ink);letter-spacing:.5px">${esc(blk.name)}</div>
+          <div style="padding:0 14px 4px">${exRows}</div>
+        </div>`;
+      }).join('');
+    } else {
+      bodyHtml=`<div class="presc-content">${esc(pl.content||'')}</div>`;
+    }
     return `<div class="plans-tab-row" id="dtl_tab_row">${tabs}</div>
       <div class="plan-header-card">
-        <div style="width:14px;height:14px;border-radius:50%;background:${pl.color};flex-shrink:0"></div>
+        <div style="width:14px;height:14px;border-radius:50%;background:${pl.color||'#6b7a42'};flex-shrink:0"></div>
         <div class="plan-name-col">
           <div style="font-size:15px;font-weight:700;color:var(--ink)">${esc(pl.name)}</div>
           ${pl.focus?`<div style="font-size:12px;color:var(--muted)">${esc(pl.focus)}</div>`:''}
         </div>
       </div>
-      <div class="presc-content">${esc(pl.content)}</div>`;
+      ${bodyHtml}`;
   };
   vc.innerHTML=_vHd(esc(p.title))+`
   <div class="dash-inner" style="padding-bottom:90px">
