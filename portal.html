@@ -109,9 +109,51 @@ button{min-height:44px;}
 .s-arquivada{background:rgba(26,24,20,.07);color:var(--ink);}
 
 .empty-p{text-align:center;padding:32px 0;color:var(--muted);font-size:13px;}
+
+/* ── LOGIN ── */
+.portal-login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#f7f5f0;}
+.portal-login-card{background:#fff;border-radius:20px;padding:36px 28px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+.portal-login-logo{font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;color:#6b7a42;margin-bottom:4px;}
+.portal-login-logo span{font-style:normal;color:#1a1814;}
+.portal-login-title{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;color:#1a1814;margin:16px 0 6px;}
+.portal-login-sub{font-size:13px;color:#9a9588;margin-bottom:28px;line-height:1.5;}
+.portal-field{margin-bottom:16px;}
+.portal-field label{display:block;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9a9588;margin-bottom:7px;}
+.portal-field input{width:100%;padding:13px 14px;background:#f7f5f0;border:1.5px solid #e4e0d8;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:#1a1814;outline:none;transition:border-color .2s;min-height:44px;}
+.portal-field input:focus{border-color:#6b7a42;}
+.portal-hint{font-size:11px;color:#9a9588;margin-top:5px;line-height:1.4;}
+.btn-portal-login{width:100%;padding:14px;background:#6b7a42;color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;min-height:44px;margin-top:8px;transition:opacity .2s;}
+.btn-portal-login:hover{opacity:.88;}
+.btn-portal-login:disabled{opacity:.6;cursor:not-allowed;}
+.portal-login-msg{font-size:13px;text-align:center;margin-top:14px;min-height:18px;}
+.portal-login-msg.err{color:#c0392b;}
+.btn-portal-logout{background:none;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(255,255,255,.7);cursor:pointer;min-height:36px;transition:all .2s;}
+.btn-portal-logout:hover{background:rgba(255,255,255,.1);color:#fff;}
 </style>
 </head>
 <body>
+
+<!-- LOGIN -->
+<div id="loginScreen" style="display:none">
+  <div class="portal-login-wrap">
+    <div class="portal-login-card">
+      <div class="portal-login-logo">Anamnese<span>App</span></div>
+      <div class="portal-login-title">Bem-vindo ao seu portal</div>
+      <div class="portal-login-sub">Acesse seus dados de treino e evolução</div>
+      <div class="portal-field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" autocomplete="email" inputmode="email" placeholder="seu@email.com">
+      </div>
+      <div class="portal-field">
+        <label>Senha</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Sua data de nascimento (DDMMAA)" onkeydown="if(event.key==='Enter')doPortalLogin()">
+        <div class="portal-hint">Ex: se nasceu em 28/05/1998, a senha é <strong>280598</strong></div>
+      </div>
+      <button class="btn-portal-login" id="btnLogin" onclick="doPortalLogin()">Entrar</button>
+      <div class="portal-login-msg" id="loginMsg"></div>
+    </div>
+  </div>
+</div>
 
 <!-- LOADING -->
 <div id="loadingScreen" class="full-center">
@@ -131,7 +173,10 @@ button{min-height:44px;}
 <div id="portal" style="display:none">
   <header class="portal-header">
     <div class="portal-logo">Anamnese<span>App</span></div>
-    <div class="portal-client-name" id="portalClientName"></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="portal-client-name" id="portalClientName"></div>
+      <button class="btn-portal-logout" onclick="portalLogout()">Sair</button>
+    </div>
   </header>
 
   <main class="portal-main">
@@ -221,30 +266,51 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function _show(id){ document.getElementById(id).style.display=''; }
 function _hide(id){ document.getElementById(id).style.display='none'; }
 
-// ── VERIFY TOKEN ──────────────────────────────────────────────────
-(async()=>{
-  if(!sb || !clientId || !token){
-    _hide('loadingScreen'); _show('deniedScreen'); return;
-  }
+// ── AUTH ──────────────────────────────────────────────────────────
+function showPortalLogin(){
+  _hide('loadingScreen');
+  _show('loginScreen');
+}
+
+function portalLogout(){
+  localStorage.removeItem('portal_session');
+  location.reload();
+}
+
+async function doPortalLogin(){
+  const email = (document.getElementById('loginEmail').value||'').trim().toLowerCase();
+  const senha = (document.getElementById('loginPassword').value||'').trim();
+  const msgEl = document.getElementById('loginMsg');
+  const btnEl = document.getElementById('btnLogin');
+  if(!email||!senha){ msgEl.className='portal-login-msg err'; msgEl.textContent='Preencha email e senha.'; return; }
+  btnEl.disabled=true; btnEl.textContent='Entrando…'; msgEl.textContent='';
   const {data, error} = await sb.from('clients')
     .select('*')
-    .eq('id', clientId)
-    .eq('portal_token', token)
-    .gt('portal_token_expires_at', new Date().toISOString())
+    .eq('portal_email', email)
+    .eq('portal_password', senha)
+    .eq('portal_access_enabled', true)
     .maybeSingle();
-
-  if(error || !data){
-    _hide('loadingScreen'); _show('deniedScreen'); return;
+  if(error||!data){
+    btnEl.disabled=false; btnEl.textContent='Entrar';
+    msgEl.className='portal-login-msg err';
+    msgEl.textContent='Email ou senha incorretos. Verifique seus dados.';
+    return;
   }
+  const token = crypto.randomUUID();
+  const expires = new Date(Date.now()+30*24*60*60*1000).toISOString();
+  await sb.from('clients').update({portal_session:token, portal_session_expires:expires, portal_last_login:new Date().toISOString()}).eq('id',data.id);
+  localStorage.setItem('portal_session', JSON.stringify({clientId:data.id, token, expires}));
+  _hide('loginScreen');
+  loadPortalContent(data);
+}
 
+async function loadPortalContent(data){
   _hide('loadingScreen');
   _show('portal');
   document.getElementById('portalClientName').textContent = data.name || '';
   document.title = `Portal de ${data.name || 'Cliente'} — AnamneseApp`;
-
   renderDados(data);
-
-  // Carrega o resto em paralelo
+  const cid = data.id;
   const [avalsRes, metasRes, anamRes] = await Promise.all([
     sb.from('assessments')
       .select(`id,created_at,modality,status,notes,
@@ -253,25 +319,61 @@ function _hide(id){ document.getElementById(id).style.display='none'; }
         assessment_skinfolds(percentual_gordura),
         assessment_vo2(vo2max_estimado),
         assessment_strength(preensao_d_kg,preensao_e_kg)`)
-      .eq('client_id', clientId)
+      .eq('client_id', cid)
       .eq('status', 'concluida')
       .order('created_at', {ascending: false}),
     sb.from('client_goals')
       .select('*')
-      .eq('client_id', clientId)
+      .eq('client_id', cid)
       .eq('status', 'ativa')
       .order('created_at', {ascending: false}),
     sb.from('anamneses')
       .select('id,created_at,status,mode,patient_name')
-      .eq('client_id', clientId)
+      .eq('client_id', cid)
       .order('created_at', {ascending: false})
   ]);
-
   _portalAvals = avalsRes.data || [];
   renderAvals(_portalAvals);
   renderMetas(metasRes.data || []);
   renderAnam(anamRes.data || []);
   loadPortalChart('peso', document.querySelector('#metricSelP .metric-btn-p.active'));
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+(async()=>{
+  if(!sb){ showPortalLogin(); return; }
+
+  // 1. Sessão salva no localStorage
+  try{
+    const saved = JSON.parse(localStorage.getItem('portal_session')||'{}');
+    if(saved.token && saved.expires && new Date(saved.expires) > new Date()){
+      const {data} = await sb.from('clients')
+        .select('*')
+        .eq('id', saved.clientId)
+        .eq('portal_session', saved.token)
+        .eq('portal_access_enabled', true)
+        .maybeSingle();
+      if(data){ loadPortalContent(data); return; }
+    }
+  }catch(e){}
+
+  // 2. Legado: token na URL
+  const params    = new URLSearchParams(location.search);
+  const urlClientId = params.get('client_id');
+  const urlToken    = params.get('token');
+  if(urlClientId && urlToken){
+    const {data} = await sb.from('clients')
+      .select('*')
+      .eq('id', urlClientId)
+      .eq('portal_token', urlToken)
+      .maybeSingle();
+    if(data && data.portal_token_expires_at && new Date(data.portal_token_expires_at) > new Date()){
+      loadPortalContent(data); return;
+    }
+  }
+
+  // 3. Mostrar login
+  showPortalLogin();
 })();
 
 // ── SEÇÃO 1: DADOS ────────────────────────────────────────────────

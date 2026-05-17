@@ -222,6 +222,12 @@ tr:hover td{background:var(--cream);}
 .btn-delete:hover{border-color:var(--danger);color:var(--danger);}
 .btn-new-ficha{padding:8px 16px;background:var(--olive);color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;min-height:44px;white-space:nowrap;}
 .btn-new-ficha:hover{opacity:.88;}
+.portal-access-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;}
+.portal-access-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.portal-status-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.portal-status-badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;}
+.portal-status-on{background:rgba(107,122,66,.12);color:#6b7a42;}
+.portal-status-off{background:rgba(154,149,136,.12);color:#9a9588;}
 
 /* ── FORM EDITOR ── */
 .fe-mode-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
@@ -1446,6 +1452,27 @@ async function renderViewCliente(params={}){
     return isNaN(age)||age<0?'':age+' anos';
   })();
   const meta = [client.phone,client.email,client.objetivo,sexLabel,ageStr].filter(Boolean).map(esc).join(' · ')||'Sem informações adicionais';
+  const _portalOn = client.portal_access_enabled === true;
+  const _portalEmail = esc(client.portal_email || '');
+  const _portalCardHtml = _portalOn
+    ? `<div class="portal-access-card">
+        <div class="portal-access-title">PORTAL DO ALUNO</div>
+        <div class="portal-status-row">
+          <span class="portal-status-badge portal-status-on">● Ativo</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn-view" style="font-size:11px" onclick="resendPortalCredentials('${clientId}')">Reenviar credenciais</button>
+            <button class="btn-view" style="font-size:11px;color:var(--danger);border-color:var(--danger)" onclick="revokePortalAccess('${clientId}')">Revogar acesso</button>
+          </div>
+        </div>
+        ${_portalEmail ? '<div style="font-size:11px;color:var(--muted);margin-top:6px">Email: '+_portalEmail+'</div>' : ''}
+      </div>`
+    : `<div class="portal-access-card">
+        <div class="portal-access-title">PORTAL DO ALUNO</div>
+        <div class="portal-status-row">
+          <span class="portal-status-badge portal-status-off">● Sem acesso</span>
+          <button class="btn-new-ficha" style="font-size:11px" onclick="generatePortalAccess('${clientId}')">Gerar acesso</button>
+        </div>
+      </div>`;
   vc.innerHTML = _vHd(client.name,
     `<button class="btn-view" style="white-space:nowrap;display:flex;align-items:center;gap:4px" onclick="generateClientReport('${clientId}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>PDF</button>
      <button class="btn-view" style="margin-left:4px;white-space:nowrap" onclick="navigateTo('editar-cliente',{id:'${clientId}'})">Editar</button>`
@@ -1463,10 +1490,10 @@ async function renderViewCliente(params={}){
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Enviar link anamnese
       </button>
       <button class="btn-new-ficha" onclick="navigateTo('nova-avaliacao',{clientId:'${clientId}',clientName:'${esc(client.name).replace(/'/g,"\\'")}' })">+ Nova avaliação</button>
-      <button class="btn-view" id="btnPortal_${clientId}" onclick="generatePortalToken('${clientId}')">🔗 Portal do cliente</button>
       <button class="btn-view" onclick="_copyRetornoLink('${clientId}','${esc(client.name).replace(/'/g,"\\'")}')">📋 Retorno</button>
       <button class="btn-new-ficha" style="font-size:11px" onclick="navigateTo('nova-prescricao',{clientId:'${clientId}',clientName:'${esc(client.name).replace(/'/g,"\\'")}' })">+ Prescrição</button>
     </div>
+    ${_portalCardHtml}
     <div id="clientResumoCards"></div>
     <div class="evolution-section">
       <h3>Evolução</h3>
@@ -1916,56 +1943,97 @@ async function generateClientReport(clientId){
   showToast('Relatório gerado!');
 }
 
-// ── PORTAL DO CLIENTE ────────────────────────────────────────────
-async function generatePortalToken(clientId){
-  if(!profId){ showToast('Profissional não carregado.'); return; }
-  // Feedback visual no botão
-  const btnEl = document.getElementById('btnPortal_'+clientId);
-  if(btnEl){ btnEl.textContent='⏳ Gerando…'; btnEl.disabled=true; }
-  const _resetBtn = ()=>{ if(btnEl){ btnEl.textContent='🔗 Portal do cliente'; btnEl.disabled=false; } };
-  // Abre janela ANTES do await para não ser bloqueada por popup blocker
-  const isMob = window.innerWidth < 900;
-  let win = null;
-  if(!isMob){
-    win = window.open('', '_blank');
-    if(win){
-      win.document.write(`<style>*{margin:0;box-sizing:border-box}body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f7f5f0;font-family:'DM Sans',sans-serif;color:#9a9588;flex-direction:column;gap:12px}</style><div style="font-family:serif;font-style:italic;font-size:22px;color:#6b7a42">AnamneseApp</div><div>Gerando portal…</div>`);
-      win.document.close();
-    }
-  }
-  const token = crypto.randomUUID();
-  const expires = new Date(Date.now() + 90*24*60*60*1000).toISOString();
-  const {error} = await sb.from('clients')
-    .update({portal_token: token, portal_token_expires_at: expires})
-    .eq('id', clientId);
-  if(error){
-    win?.close(); _resetBtn();
-    showToast('Erro ao gerar token: '+error.message);
-    return;
-  }
-  const link = `${location.origin}/portal?client_id=${clientId}&token=${token}`;
-  const cli = allClients.find(c=>c.id===clientId);
-  if(cli){ cli.portal_token=token; cli.portal_token_expires_at=expires; }
-  if(win){
-    // Desktop: navega na janela já aberta
-    win.location.href = link;
-  } else {
-    // Mobile: tenta share nativo, fallback para clipboard
-    _resetBtn();
-    if(navigator.share){
-      try{
-        await navigator.share({ title:'Portal AnamneseApp', url: link });
-      } catch(e){ /* cancelou */ }
-    } else {
-      try{ await navigator.clipboard.writeText(link); } catch(e){}
-      showToast('Link copiado! Compartilhe com o cliente.');
-    }
-    return;
-  }
-  // Desktop: tenta copiar link também
-  _resetBtn();
-  try{ await navigator.clipboard.writeText(link); } catch(e){}
-  showToast('Portal aberto! Link copiado.');
+// ── PORTAL DO ALUNO — LOGIN POR EMAIL/SENHA ───────────────────────
+function buildPortalAccessMsg(client, senha){
+  return `Olá, ${client.name.split(' ')[0]}! 👋\n\nSeu acesso ao *Portal do Aluno* foi criado. Acesse seus dados de treino, avaliações e evolução:\n\n🔗 *Link:* ${location.origin}/portal\n📧 *Email:* ${client.portal_email}\n🔑 *Senha:* ${senha}\n_(sua data de nascimento no formato DDMMAA)_\n\nQualquer dúvida, me chame! 💪`;
+}
+
+function _showPortalCredModal(client, senha){
+  const url = location.origin+'/portal';
+  const el = document.createElement('div');
+  el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;';
+  const _copy=(txt,lbl)=>{ navigator.clipboard.writeText(txt).then(()=>showToast(lbl+' copiado!')).catch(()=>{}); };
+  el.innerHTML=`<div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div style="font-family:'Instrument Serif',serif;font-size:20px;margin-bottom:6px;color:#1a1814">Acesso gerado com sucesso!</div>
+    <div style="font-size:12px;color:#9a9588;margin-bottom:18px">Envie as credenciais abaixo ao cliente.</div>
+    <div style="background:#f7f5f0;border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #e4e0d8">
+        <span style="color:#9a9588">URL</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:#1a1814;font-weight:500">${url}</span>
+          <button onclick="_copy('${url}','Link')" style="background:none;border:none;cursor:pointer;color:#9a9588;font-size:16px;padding:0;min-height:auto">⧉</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #e4e0d8">
+        <span style="color:#9a9588">Email</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:#1a1814;font-weight:500">${esc(client.portal_email)}</span>
+          <button onclick="_copy('${client.portal_email}','Email')" style="background:none;border:none;cursor:pointer;color:#9a9588;font-size:16px;padding:0;min-height:auto">⧉</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0">
+        <span style="color:#9a9588">Senha</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:#1a1814;font-weight:500">${senha}</span>
+          <button onclick="_copy('${senha}','Senha')" style="background:none;border:none;cursor:pointer;color:#9a9588;font-size:16px;padding:0;min-height:auto">⧉</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="_sendPortalWA()" style="flex:1;padding:12px;background:#6b7a42;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;min-height:44px">Enviar via WhatsApp</button>
+      <button onclick="_copyPortalAll()" style="padding:12px 16px;background:none;border:1px solid #e4e0d8;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:#9a9588;cursor:pointer;min-height:44px">Copiar tudo</button>
+      <button id="_portalCredClose" style="padding:12px 16px;background:none;border:1px solid #e4e0d8;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:#9a9588;cursor:pointer;min-height:44px">Fechar</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  const msg = buildPortalAccessMsg(client, senha);
+  el.querySelector('#_portalCredClose').onclick = ()=>el.remove();
+  window._sendPortalWA  = ()=>{ const n=client.phone?client.phone.replace(/\D/g,''):''; window.open('https://wa.me/'+(n?n:'')+'?text='+encodeURIComponent(msg),'_blank'); };
+  window._copyPortalAll = ()=>{ navigator.clipboard.writeText(msg).then(()=>showToast('Credenciais copiadas!')).catch(()=>{}); };
+  window._copy          = (txt,lbl)=>{ navigator.clipboard.writeText(txt).then(()=>showToast(lbl+' copiado!')).catch(()=>{}); };
+}
+
+async function generatePortalAccess(clientId){
+  const client = allClients.find(c=>c.id===clientId);
+  if(!client){ showToast('Cliente não encontrado.'); return; }
+  if(!client.dob){ showToast('Cadastre a data de nascimento do cliente para gerar o acesso.'); return; }
+  const dob = new Date(client.dob);
+  const senha = String(dob.getDate()).padStart(2,'0')+String(dob.getMonth()+1).padStart(2,'0')+String(dob.getFullYear()).slice(-2);
+  const portalEmail = client.email || (client.phone ? client.phone.replace(/\D/g,'')+'@portal.com' : null);
+  if(!portalEmail){ showToast('Cadastre o email ou telefone do cliente para gerar o acesso.'); return; }
+  const {error} = await sb.from('clients').update({
+    portal_email: portalEmail.trim().toLowerCase(),
+    portal_password: senha,
+    portal_access_enabled: true
+  }).eq('id', clientId);
+  if(error){ showToast('Erro ao gerar acesso: '+error.message); return; }
+  client.portal_email = portalEmail.trim().toLowerCase();
+  client.portal_password = senha;
+  client.portal_access_enabled = true;
+  renderViewCliente({id: clientId});
+  _showPortalCredModal(client, senha);
+}
+
+async function revokePortalAccess(clientId){
+  showConfirm('Revogar acesso do portal? O cliente não conseguirá mais fazer login.', async ()=>{
+    const {error} = await sb.from('clients').update({
+      portal_access_enabled: false, portal_session: null
+    }).eq('id', clientId);
+    if(error){ showToast('Erro: '+error.message); return; }
+    const cli = allClients.find(c=>c.id===clientId);
+    if(cli){ cli.portal_access_enabled=false; cli.portal_session=null; }
+    showToast('Acesso do portal revogado.');
+    renderViewCliente({id: clientId});
+  });
+}
+
+async function resendPortalCredentials(clientId){
+  const client = allClients.find(c=>c.id===clientId);
+  if(!client){ showToast('Cliente não encontrado.'); return; }
+  if(!client.dob){ showToast('Data de nascimento não cadastrada.'); return; }
+  const dob = new Date(client.dob);
+  const senha = String(dob.getDate()).padStart(2,'0')+String(dob.getMonth()+1).padStart(2,'0')+String(dob.getFullYear()).slice(-2);
+  _showPortalCredModal(client, senha);
 }
 
 // ── GRÁFICO DE EVOLUÇÃO ───────────────────────────────────────────
