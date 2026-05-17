@@ -251,6 +251,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .prefill-banner button{background:none;border:none;font-size:18px;color:var(--olive);cursor:pointer;padding:0 4px;line-height:1;}
 .btn-conclude-av{background:none;color:var(--olive);border:2px solid var(--olive);}
 
+/* ── LAUDO ── */
+.laudo-area{width:100%;min-height:300px;padding:14px;font-family:'Courier New',monospace;font-size:12px;line-height:1.7;background:var(--white);border:1.5px solid var(--border);border-radius:10px;resize:vertical;color:var(--ink);}
+.laudo-area:focus{border-color:var(--olive);outline:none;}
+.btn-gen-laudo{padding:12px 24px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;min-height:44px;}
+.btn-gen-laudo:hover{background:#2d2a24;}
+
+/* ── CHECKLIST ── */
+.checklist-bar{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+.checklist-bar-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.checklist-bar-title{font-size:13px;font-weight:600;color:var(--ink);}
+.checklist-progress{font-size:12px;color:var(--olive);font-weight:600;}
+.checklist-items{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;display:none;}
+.checklist-items.open{display:grid;}
+.chk-item{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .2s;font-size:12px;color:var(--muted);background:var(--white);}
+.chk-item.done{background:rgba(107,122,66,.08);border-color:var(--olive);color:var(--ink);font-weight:500;}
+
 @media(max-width:480px){
   .grid2,.grid3,.summary-grid{grid-template-columns:1fr;}
   .av-patient{display:none;}
@@ -307,6 +323,15 @@ button,.btn-action,.btn-back,.btn-prev,.btn-next,.btn-info,.radio-opt,.protocol-
 <div class="av-progress">
   <div class="progress-steps" id="progressSteps"></div>
   <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+</div>
+
+<!-- CHECKLIST BAR -->
+<div class="checklist-bar" id="checklistBar" style="margin:8px 16px 0">
+  <div class="checklist-bar-header" onclick="toggleChecklistOpen()">
+    <span class="checklist-bar-title">✅ Checklist da Consulta</span>
+    <span class="checklist-progress">0/10 ✓</span>
+  </div>
+  <div class="checklist-items"></div>
 </div>
 
 <div class="av-body" id="avBody"></div>
@@ -410,6 +435,8 @@ let D = {
   // clinical data from anamnese
   _lesoes_note:'', _meds_note:'', _diag_note:'', _cirurg_note:'', _gestante:'',
   _objetivo:'', _nivel:'', _has_restricoes:false,
+  // skinfolds result (% calculated from dobras)
+  skinfolds_result:'',
   // record IDs for upsert
   _ids:{ biometrics:null, circumferences:null, skinfolds:null, posture:null, vo2:null, strength:null, mobility:null }
 };
@@ -568,6 +595,7 @@ function _showDobrasResult(box, pct, soma, dens, extra, invalidDens, nFilled){
   box.style.display='block';
   // Sincroniza com módulo 1
   D.percentual_gordura_bio=pct.toFixed(1);
+  D.skinfolds_result=pct.toFixed(1);
   if(mgKg){ D.massa_gorda_kg=mgKg; D.massa_magra_kg=mmKg; }
   const pgEl=document.querySelector('[data-f="percentual_gordura_bio"]');
   const mgEl=document.querySelector('[data-f="massa_gorda_kg"]');
@@ -927,7 +955,15 @@ function navHTML(showPrev){
     <button class="btn-next" onclick="nextMod()">${isLast?'Revisar e Salvar →':'Próximo →'}</button>
   </div>`;
 }
-function nextMod(){ saveCurrentFields(); currentMod++; render(); }
+function nextMod(){
+  saveCurrentFields();
+  // Auto-marca checklist com base no módulo atual
+  const modToItem={1:'biometria',2:'mobilidade',3:'circunf',4:'dobras',5:'postural',6:'vo2',7:'forca'};
+  const itemId=modToItem[currentMod];
+  if(itemId) _markChkItem(itemId);
+  currentMod++;
+  render();
+}
 function prevMod(){ saveCurrentFields(); currentMod--; render(); }
 
 // ── MODULE 1 ─────────────────────────────────────────────────
@@ -1522,6 +1558,169 @@ function mod7(){
 }
 
 // ── FINAL SCREEN ─────────────────────────────────────────────
+// ── LAUDO AUTOMÁTICO ─────────────────────────────────────────
+function classifGorduraTexto(pct, sex){
+  if(sex==='M'){
+    if(pct<6) return 'essencial';
+    if(pct<=13) return 'atleta';
+    if(pct<=17) return 'fitness';
+    if(pct<=25) return 'aceitável';
+    return 'obesidade';
+  }
+  if(pct<14) return 'essencial';
+  if(pct<=20) return 'atleta';
+  if(pct<=24) return 'fitness';
+  if(pct<=31) return 'aceitável';
+  return 'obesidade';
+}
+
+function generateLaudo(){
+  const nome = _patientName || 'Paciente';
+  const hoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const prof = _profName || 'Profissional';
+  const idade = calcAge() || '';
+  const sex = D.patient_sex==='F'?'feminino':D.patient_sex==='M'?'masculino':'';
+  const peso = D.peso_kg?D.peso_kg+'kg':'';
+  const altura = D.altura_cm?D.altura_cm+'cm':'';
+  const imc = D.peso_kg&&D.altura_cm?(parseFloat(D.peso_kg)/((parseFloat(D.altura_cm)/100)**2)).toFixed(1):'';
+  const classIMC = !imc?'':(parseFloat(imc)<18.5?'abaixo do peso':parseFloat(imc)<25?'eutrófico':parseFloat(imc)<30?'sobrepeso':'obesidade');
+  const pctG = D.skinfolds_result || D.percentual_gordura_bio || '';
+  const classG = pctG ? classifGorduraTexto(parseFloat(pctG), D.patient_sex) : '';
+  const vo2 = D.vo2max_estimado || '';
+  const classVO2 = D.classificacao || '';
+  const preensaoD = D.preensao_d_kg || '';
+  const preensaoE = D.preensao_e_kg || '';
+
+  let laudo = 'LAUDO DE AVALIAÇÃO FÍSICA\n';
+  laudo += '─'.repeat(40)+'\n\n';
+  laudo += 'Paciente: '+nome;
+  if(idade) laudo += ' | '+idade+' anos';
+  if(sex) laudo += ' | Sexo '+sex;
+  laudo += '\nData: '+hoje;
+  if(prof) laudo += ' | Avaliador: '+prof;
+  laudo += '\n\n';
+  if(peso||altura||imc){
+    laudo += 'COMPOSIÇÃO CORPORAL\n';
+    if(peso&&altura) laudo += 'O(A) avaliado(a) apresenta peso de '+peso+' e estatura de '+altura;
+    if(imc) laudo += ', com Índice de Massa Corporal (IMC) de '+imc+' kg/m², classificado como '+classIMC;
+    laudo += '.\n';
+    if(pctG) laudo += 'O percentual de gordura corporal foi de '+pctG+'%, classificado como '+classG+'.\n';
+    laudo += '\n';
+  }
+  if(D.cintura_cm||D.abdomen_cm||D.quadril_cm){
+    laudo += 'CIRCUNFERÊNCIAS\n';
+    if(D.cintura_cm) laudo += 'Circunferência de cintura: '+D.cintura_cm+'cm. ';
+    if(D.abdomen_cm) laudo += 'Abdômen: '+D.abdomen_cm+'cm. ';
+    if(D.quadril_cm) laudo += 'Quadril: '+D.quadril_cm+'cm.';
+    laudo += '\n\n';
+  }
+  if(vo2){
+    laudo += 'CAPACIDADE CARDIORRESPIRATÓRIA\n';
+    laudo += 'O VO2máx estimado foi de '+vo2+' ml/kg/min';
+    if(classVO2) laudo += ', classificado como '+classVO2;
+    laudo += ' segundo os critérios da ACSM.\n\n';
+  }
+  if(preensaoD||preensaoE){
+    laudo += 'FORÇA MUSCULAR\n';
+    if(preensaoD) laudo += 'Força de preensão manual direita: '+preensaoD+'kg. ';
+    if(preensaoE) laudo += 'Esquerda: '+preensaoE+'kg.';
+    laudo += '\n\n';
+  }
+  if(D._lesoes||D._has_restricoes){
+    laudo += 'CONSIDERAÇÕES CLÍNICAS\n';
+    if(D._lesoes) laudo += 'Histórico de lesões/dores: '+D._lesoes+'.\n';
+    if(D._meds) laudo += 'Medicamentos em uso: '+D._meds+'.\n';
+    laudo += '\n';
+  }
+  laudo += 'CONCLUSÃO\n';
+  laudo += 'Com base nos dados coletados, recomenda-se programa individualizado de ';
+  laudo += D._objetivo?D._objetivo.toLowerCase():'condicionamento físico';
+  laudo += ', com acompanhamento regular e reavaliação em 3 meses.\n\n';
+  laudo += '_________________________________\n';
+  laudo += prof+'\n';
+  laudo += 'Data: '+hoje;
+  return laudo;
+}
+
+function gerarLaudo(){
+  const ta = document.getElementById('laudoArea');
+  if(!ta) return;
+  ta.value = generateLaudo();
+  _markChkItem('laudo');
+  updateChecklistProgress();
+}
+
+function copiarLaudo(){
+  const ta = document.getElementById('laudoArea');
+  if(!ta||!ta.value) return;
+  navigator.clipboard.writeText(ta.value).then(()=>showToast('Laudo copiado!'));
+}
+
+function enviarLaudoWpp(){
+  const ta = document.getElementById('laudoArea');
+  if(!ta||!ta.value){ showToast('Gere o laudo antes de enviar.'); return; }
+  window.open('https://wa.me/?text='+encodeURIComponent(ta.value),'_blank');
+}
+
+// ── CHECKLIST DE CONSULTA ─────────────────────────────────────────────────────
+const CHECKLIST_ITEMS=[
+  {id:'anamnese',   label:'Anamnese',           icon:'📋'},
+  {id:'biometria',  label:'Biometria',           icon:'⚖️'},
+  {id:'circunf',    label:'Circunferências',     icon:'📏'},
+  {id:'dobras',     label:'Dobras cutâneas',     icon:'📐'},
+  {id:'postural',   label:'Postural',            icon:'🧍'},
+  {id:'vo2',        label:'VO2 / Cardio',        icon:'❤️'},
+  {id:'forca',      label:'Força',               icon:'💪'},
+  {id:'mobilidade', label:'Mobilidade',          icon:'🤸'},
+  {id:'laudo',      label:'Laudo emitido',       icon:'📄'},
+  {id:'feedback',   label:'Feedback ao cliente', icon:'💬'},
+];
+let _chkState = {};
+const _chkLsKey = ()=>'checklist_'+(_savedAsmId||_asmId||'new');
+
+function loadChkState(){
+  try{ const s=localStorage.getItem(_chkLsKey()); if(s) _chkState=JSON.parse(s); }catch(e){}
+}
+function saveChkState(){
+  try{ localStorage.setItem(_chkLsKey(), JSON.stringify(_chkState)); }catch(e){}
+}
+function renderChecklist(){
+  const bar = document.getElementById('checklistBar');
+  if(!bar) return;
+  const done = CHECKLIST_ITEMS.filter(it=>_chkState[it.id]).length;
+  bar.querySelector('.checklist-progress').textContent = done+'/'+CHECKLIST_ITEMS.length+' ✓';
+  const cont = bar.querySelector('.checklist-items');
+  if(!cont) return;
+  cont.innerHTML = CHECKLIST_ITEMS.map(it=>'<div class="chk-item'+((_chkState[it.id])?' done':'')+'" onclick="toggleChkItem(\''+it.id+'\')">'+it.icon+' '+it.label+'</div>').join('');
+}
+function toggleChkItem(id){
+  _chkState[id]=!_chkState[id];
+  saveChkState();
+  renderChecklist();
+}
+function _markChkItem(id){
+  if(!_chkState[id]){ _chkState[id]=true; saveChkState(); renderChecklist(); }
+}
+function updateChecklistProgress(){
+  renderChecklist();
+}
+function toggleChecklistOpen(){
+  const cont = document.querySelector('.checklist-items');
+  if(cont) cont.classList.toggle('open');
+}
+async function saveChecklistToSB(){
+  if(!sb||!_profId) return;
+  const items = CHECKLIST_ITEMS.map(it=>({id:it.id,label:it.label,done:!!_chkState[it.id]}));
+  try{
+    await sb.from('consultation_checklists').upsert({
+      assessment_id: _savedAsmId||_asmId||null,
+      client_id: _clientId||null,
+      professional_id: _profId,
+      items,
+    },{onConflict:'assessment_id'});
+  }catch(e){ console.warn('[saveChecklist]',e); }
+}
+
 function renderFinal(){
   renderProgress();
   const imc = (D.peso_kg && D.altura_cm)
@@ -1570,6 +1769,16 @@ function renderFinal(){
         ${sumCard('Postural',[['Fotos',[D.foto_anterior_url,D.foto_posterior_url,D.foto_lateral_d_url,D.foto_lateral_e_url].filter(Boolean).length+'/4'],['Desvios',D.desvios.length+' identificados']])}
         ${sumCard('VO2 Máx',[['Protocolo',D.protocolo_vo2],['Resultado',vo2Result]])}
         ${sumCard('Força',[['Preensão D',D.preensao_d_kg?D.preensao_d_kg+' kg':'—'],['1RM Supino',rmS],['1RM Leg',rmL]])}
+      </div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">📄 Laudo Profissional</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Clique em Gerar para criar o laudo automaticamente. Você pode editar antes de copiar ou enviar.</div>
+        <button class="btn-gen-laudo" onclick="gerarLaudo()">Gerar laudo</button>
+        <textarea class="laudo-area" id="laudoArea" placeholder="Clique em 'Gerar laudo' para criar o texto automaticamente, ou escreva diretamente aqui…" style="margin-top:12px"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn-action" style="background:var(--cream);color:var(--ink);flex:1" onclick="copiarLaudo()">📋 Copiar laudo</button>
+          <button class="btn-action" style="background:#25d366;color:#fff;flex:1" onclick="enviarLaudoWpp()">💬 Enviar WhatsApp</button>
+        </div>
       </div>
       <div class="save-msg" id="saveMsg"></div>
       <button class="btn-action btn-save-av" onclick="saveAll()">
@@ -1723,6 +1932,7 @@ async function saveAll(){
       });
     } catch(mobErr){ console.warn('[saveAll] assessment_mobility (rode mobility_strength_update.sql):', mobErr.message); }
 
+    await saveChecklistToSB();
     saveLS();
     showMsg('Avaliação salva com sucesso!','ok');
     showToast('Salvo!');
@@ -2152,6 +2362,8 @@ if(_clientId){
   }catch(e){}
 }
 render();
+loadChkState();
+renderChecklist();
 if(_asmId && sb) loadExistingData();
 else if(_clientId && sb) prefillFromAnamnese();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
