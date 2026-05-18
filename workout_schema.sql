@@ -12,8 +12,12 @@ CREATE TABLE IF NOT EXISTS workout_prescriptions (
   updated_at timestamptz DEFAULT now()
 );
 ALTER TABLE workout_prescriptions ENABLE ROW LEVEL SECURITY;
+-- Profissional: acesso total (insert/update/delete)
 CREATE POLICY "prof_own" ON workout_prescriptions FOR ALL USING (
   professional_id IN (SELECT id FROM professionals WHERE user_id = auth.uid())
 );
+-- Portal do aluno: leitura pública filtrada por client_id no JS
+CREATE POLICY "wp_portal_select" ON workout_prescriptions
+  FOR SELECT USING (true);
 CREATE INDEX IF NOT EXISTS wp_client_idx ON workout_prescriptions(client_id);
 CREATE INDEX IF NOT EXISTS wp_prof_idx ON workout_prescriptions(professional_id);
