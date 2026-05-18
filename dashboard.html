@@ -1042,6 +1042,40 @@ let _newAvalReturnToClient = false;
 let _np = null; // estado da prescrição em edição
 const _NP_COLORS = ['#6b7a42','#a8893a','#3b6ea5','#7b5ea7','#c0392b','#16a085','#e67e22'];
 const _NP_PLAN_NAMES = ['Treino A','Treino B','Treino C','Treino D','Treino E','Treino F'];
+
+// ── RENDER HELPERS PRESCRIÇÃO ─────────────────────────────────────
+function _renderPlanBody(plan){
+  if(!plan) return '';
+  if(plan.blocks&&plan.blocks.length){
+    return plan.blocks.map(blk=>{
+      const exRows=blk.exercises.filter(e=>e.name&&e.name.trim()).map(ex=>{
+        const parts=[ex.sets?ex.sets+'×':'',ex.reps||'',ex.load||'',ex.rest?'↻ '+ex.rest:''].filter(Boolean).join(' · ');
+        return `<div style="padding:6px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(ex.name)}</div>
+          ${parts?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${parts}</div>`:''}
+          ${ex.notes?`<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:1px">${esc(ex.notes)}</div>`:''}
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--olive);margin-bottom:6px">${esc(blk.name)}</div>
+        ${exRows||''}
+      </div>`;
+    }).join('');
+  }
+  if(plan.content) return `<div class="presc-content">${esc(plan.content)}</div>`;
+  return '';
+}
+function renderPrescContent(content){
+  let plans=[];
+  try{ const r=JSON.parse(content); if(r?.plans) plans=r.plans; }catch(e){}
+  if(!plans.length) return `<div class="presc-content">${esc(content||'')}</div>`;
+  return plans.map((pl,i)=>{
+    const hdr=plans.length>1
+      ? `<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)">${esc(pl.name)}${pl.focus?` — <span style="font-weight:400;color:var(--muted)">${esc(pl.focus)}</span>`:''}</div>`
+      : '';
+    return hdr+_renderPlanBody(pl);
+  }).join('<div style="border-top:1px solid var(--border);margin:10px 0"></div>');
+}
 function _npNewPlan(idx=0){
   return {
     id:'plan_'+Date.now()+'_'+idx,
@@ -2617,14 +2651,13 @@ async function loadPrescricoes(clientId){
     let plans2=[];
     try{const pp=JSON.parse(p.content);if(pp?.plans)plans2=pp.plans;else plans2=[{content:p.content}];}catch(e){plans2=[{content:p.content}];}
     const planBadge=plans2.length>1?`<span style="font-size:11px;background:rgba(107,122,66,.12);color:var(--olive);padding:2px 7px;border-radius:10px;font-weight:600">${plans2.length} planos</span> `:'';
-    const previewContent=plans2[0]?.content||p.content;
     return `<div class="presc-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div class="presc-card-title">${esc(p.title)}</div>
         <span class="presc-badge ${typeCls[p.type]||'presc-musc'}">${typeLabel[p.type]||p.type}</span>
       </div>
       <div class="presc-card-meta">${planBadge}${periodo?`📅 ${periodo}`:''} <span class="badge-status s-${p.status==='ativa'?'nova':p.status==='pausada'?'lida':'arquivada'}">${p.status}</span></div>
-      <div class="presc-content" style="max-height:120px">${esc(previewContent.slice(0,400))}${previewContent.length>400?'\n…':''}</div>
+      <div style="max-height:160px;overflow:hidden;margin:8px 0">${_renderPlanBody(plans2[0])}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn-view" onclick="navigateTo('detalhe-prescricao',{id:'${p.id}',clientId:'${clientId}'})">Abrir</button>
         <button class="btn-view" onclick="_prescWpp('${p.id}')">WhatsApp</button>
@@ -2914,25 +2947,6 @@ async function renderViewDetalhePrescricao(params={}){
   const renderDetailPlans=()=>{
     const pl=plans[activeIdx];
     const tabs=plans.map((pl2,i)=>`<button class="plan-tab${i===activeIdx?' active':''}" data-pidx="${i}">${esc(pl2.name)}</button>`).join('');
-    let bodyHtml='';
-    if(pl.blocks&&pl.blocks.length){
-      bodyHtml=pl.blocks.map(blk=>{
-        const exRows=blk.exercises.map(ex=>{
-          const parts=[ex.sets?ex.sets+'×':'',ex.reps||'',ex.load||'',ex.rest?'↻ '+ex.rest:''].filter(Boolean).join(' · ');
-          return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
-            <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px">${esc(ex.name)||'—'}</div>
-            ${parts?`<div style="font-size:11px;color:var(--muted)">${parts}</div>`:''}
-            ${ex.notes?`<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:2px">${esc(ex.notes)}</div>`:''}
-          </div>`;
-        }).join('');
-        return `<div style="background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden">
-          <div style="padding:10px 14px;background:var(--cream);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--ink);letter-spacing:.5px">${esc(blk.name)}</div>
-          <div style="padding:0 14px 4px">${exRows}</div>
-        </div>`;
-      }).join('');
-    } else {
-      bodyHtml=`<div class="presc-content">${esc(pl.content||'')}</div>`;
-    }
     return `<div class="plans-tab-row" id="dtl_tab_row">${tabs}</div>
       <div class="plan-header-card">
         <div style="width:14px;height:14px;border-radius:50%;background:${pl.color||'#6b7a42'};flex-shrink:0"></div>
@@ -2941,7 +2955,7 @@ async function renderViewDetalhePrescricao(params={}){
           ${pl.focus?`<div style="font-size:12px;color:var(--muted)">${esc(pl.focus)}</div>`:''}
         </div>
       </div>
-      ${bodyHtml}`;
+      ${_renderPlanBody(pl)}`;
   };
   vc.innerHTML=_vHd(esc(p.title))+`
   <div class="dash-inner" style="padding-bottom:90px">
